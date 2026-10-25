@@ -25,8 +25,8 @@ $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
     <!-- Minimal Header Navigation Template -->
     <header class="border-bottom bg-white py-3 sticky-top">
         <div class="container d-flex align-items-center justify-content-between">
-            <a href="<?php echo $ROOT_DIR; ?>/index.php" class="navbar-brand fw-bold fs-4 text-dark m-0">
-                Campus<span class="text-warning">Bite</span>
+            <a href="<?php echo $ROOT_DIR; ?>/index.php" class="navbar-brand cb-brand-title fs-4 m-0">
+                Campus<span class="cb-brand-accent">Bite</span>
             </a>
 
             <!-- Search Slot -->
