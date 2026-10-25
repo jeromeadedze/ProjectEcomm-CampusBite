@@ -12,8 +12,8 @@ if (is_logged_in()) {
     <div class="col-md-7 col-lg-6">
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
             <div class="text-center mb-4">
-                <div class="d-inline-flex p-3 rounded-circle bg-warning-subtle text-warning-emphasis mb-2 fs-3">
-                    <i class="bi bi-fire"></i>
+                <div class="d-inline-flex p-3 rounded-circle bg-light text-dark mb-2 fs-3">
+                    <i class="bi bi-person-plus"></i>
                 </div>
                 <h3 class="fw-bold">Create CampusBite Account</h3>
                 <p class="text-muted small">Join Ashesi's fastest campus food ordering platform</p>
