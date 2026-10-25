@@ -1,497 +1,119 @@
 /* ============================================================
-   CampusBite - Premium Stylesheet
-   Design Philosophy: Vibrant African Warmth (Amber/Crimson/Emerald),
-   Modern Glassmorphism, Micro-interactions, Crisp Typography.
+   CampusBite - Project Design System
+   Color Palette:
+   1. Jet Black: #121212 / #1A1A1A (Contrast, text, surfaces)
+   2. Vibrant Orange: #FF4500 / #FF3D00 (Brand accent, primary CTA)
+   3. Crisp White: #FFFFFF (Clean card & content background)
+   4. Neutral Gray Background: #FAFAFA / #F4F4F5
+   RULE: NO GRADIENTS anywhere. Pure solid, crisp, modern surfaces.
    ============================================================ */
 
 :root {
-    --primary-color: #E65100;       /* Rich Amber Flame */
-    --primary-light: #FF9800;       /* Golden Mango */
-    --primary-dark: #BF360C;        /* Deep Terracotta */
-    --accent-green: #10B981;        /* Fresh Herb Emerald */
-    --accent-red: #EF4444;          /* Pepper Red */
-    --accent-purple: #7C3AED;       /* Premium Pass Violet */
-    --bg-main: #F8FAFC;             /* Clean Canvas */
-    --bg-card: #FFFFFF;
-    --text-main: #0F172A;           /* Deep Charcoal */
-    --text-muted: #64748B;          /* Soft Slate */
-    --border-color: #E2E8F0;
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 20px;
+    --cb-black: #121212;
+    --cb-dark: #1E1E1E;
+    --cb-orange: #FF4500;
+    --cb-orange-hover: #E03E00;
+    --cb-white: #FFFFFF;
+    --cb-bg: #F8F9FA;
+    --cb-surface: #FFFFFF;
+    --cb-border: #E5E7EB;
+    --cb-text-main: #121212;
+    --cb-text-muted: #6B7280;
+    
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
     --radius-full: 9999px;
-    --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
-    --shadow-elevated: 0 12px 30px -4px rgba(230, 81, 0, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
-    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: var(--bg-main);
-    color: var(--text-main);
+    background-color: var(--cb-bg);
+    color: var(--cb-text-main);
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
 }
 
-a {
-    color: inherit;
-    text-decoration: none;
-    transition: var(--transition);
-}
-
-/* ── Custom Header ── */
-.cb-header {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    padding: 0.75rem 1.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-}
-
-.cb-navbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.cb-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-size: 1.5rem;
+/* Brand typography */
+.cb-brand-title {
     font-weight: 800;
+    color: var(--cb-black);
+    text-decoration: none;
     letter-spacing: -0.5px;
-    color: var(--primary-dark);
-}
-
-.cb-brand i {
-    color: var(--primary-color);
-    font-size: 1.7rem;
 }
 
 .cb-brand-accent {
-    color: var(--primary-color);
+    color: var(--cb-orange);
 }
 
-/* Search Bar */
-.cb-search-box {
-    flex: 1;
-    max-width: 550px;
-    position: relative;
-}
-
-.cb-search-input {
-    width: 100%;
-    padding: 0.7rem 1rem 0.7rem 2.8rem;
-    border-radius: var(--radius-full);
-    border: 1px solid var(--border-color);
-    background: #F1F5F9;
-    font-size: 0.95rem;
-    transition: var(--transition);
-}
-
-.cb-search-input:focus {
-    background: #FFFFFF;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(230, 81, 0, 0.12);
-    outline: none;
-}
-
-.cb-search-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-}
-
-/* Nav Actions & Pills */
-.cb-nav-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.cb-cart-pill {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    background: #FFF7ED;
-    border: 1px solid #FFEDD5;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-full);
+/* Solid Buttons (No Gradients) */
+.btn-primary, .cb-btn-primary {
+    background-color: var(--cb-orange) !important;
+    border-color: var(--cb-orange) !important;
+    color: var(--cb-white) !important;
     font-weight: 600;
-    color: var(--primary-color);
-    font-size: 0.95rem;
-}
-
-.cb-cart-pill:hover {
-    background: var(--primary-color);
-    color: #FFFFFF;
-    border-color: var(--primary-color);
-}
-
-.cb-badge {
-    background: var(--primary-dark);
-    color: white;
-    font-size: 0.75rem;
-    padding: 2px 7px;
     border-radius: var(--radius-full);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    box-shadow: none !important;
 }
 
-.cb-btn-primary {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: white;
+.btn-primary:hover, .cb-btn-primary:hover {
+    background-color: var(--cb-orange-hover) !important;
+    border-color: var(--cb-orange-hover) !important;
+    color: var(--cb-white) !important;
+}
+
+.btn-dark, .cb-btn-dark {
+    background-color: var(--cb-black) !important;
+    border-color: var(--cb-black) !important;
+    color: var(--cb-white) !important;
     font-weight: 600;
-    padding: 0.6rem 1.25rem;
     border-radius: var(--radius-full);
-    border: none;
-    box-shadow: 0 4px 12px rgba(230, 81, 0, 0.25);
-    transition: var(--transition);
 }
 
-.cb-btn-primary:hover {
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(230, 81, 0, 0.35);
+.btn-dark:hover, .cb-btn-dark:hover {
+    background-color: var(--cb-dark) !important;
+    border-color: var(--cb-dark) !important;
 }
 
-/* ── Hero Banner ── */
-.cb-hero-banner {
-    background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+.btn-outline-primary, .cb-btn-outline {
+    color: var(--cb-orange) !important;
+    border-color: var(--cb-orange) !important;
+    background-color: transparent !important;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+}
+
+.btn-outline-primary:hover, .cb-btn-outline:hover {
+    background-color: var(--cb-orange) !important;
+    color: var(--cb-white) !important;
+}
+
+/* Cards & Surfaces (Solid flat design) */
+.cb-card {
+    background-color: var(--cb-white);
+    border: 1px solid var(--cb-border);
     border-radius: var(--radius-lg);
-    padding: 2.5rem 2rem;
-    margin: 1.5rem 0 2.5rem 0;
-    border: 1px solid #FED7AA;
-    position: relative;
-    overflow: hidden;
+    box-shadow: var(--shadow-card);
 }
 
-.cb-hero-title {
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: #431407;
-    line-height: 1.2;
-    margin-bottom: 0.75rem;
+/* Inputs & Form Controls */
+.form-control:focus, .form-select:focus {
+    border-color: var(--cb-orange);
+    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.15);
 }
 
-.cb-hero-subtitle {
-    font-size: 1.1rem;
-    color: #7C2D12;
-    max-width: 600px;
-    margin-bottom: 1.5rem;
+/* Badges */
+.badge-orange {
+    background-color: var(--cb-orange);
+    color: var(--cb-white);
 }
 
-.cb-zone-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: white;
-    padding: 0.35rem 0.8rem;
-    border-radius: var(--radius-full);
-    font-size: 0.85rem;
-    font-weight: 600;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.cb-zone-a { color: var(--accent-green); border: 1px solid #A7F3D0; }
-.cb-zone-b { color: #EA580C; border: 1px solid #FED7AA; }
-
-/* ── Vendor Pills Bar ── */
-.cb-vendor-scroll {
-    display: flex;
-    gap: 0.75rem;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-    margin-bottom: 2rem;
-}
-
-.cb-vendor-chip {
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1.1rem;
-    border-radius: var(--radius-full);
-    background: white;
-    border: 1px solid var(--border-color);
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--text-main);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-}
-
-.cb-vendor-chip:hover, .cb-vendor-chip.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-/* ── Product Cards ── */
-.cb-product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-}
-
-.cb-product-card {
-    background: white;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-    transition: var(--transition);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.cb-product-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-elevated);
-    border-color: #FDBA74;
-}
-
-.cb-product-img-wrap {
-    height: 190px;
-    background: #F1F5F9;
-    position: relative;
-    overflow: hidden;
-}
-
-.cb-product-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
-}
-
-.cb-product-card:hover .cb-product-img {
-    transform: scale(1.05);
-}
-
-.cb-product-badge {
-    position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.3rem 0.7rem;
-    border-radius: var(--radius-full);
-    backdrop-filter: blur(8px);
-}
-
-.cb-product-body {
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.cb-product-vendor {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--primary-color);
-    margin-bottom: 0.3rem;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.cb-product-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: var(--text-main);
-    line-height: 1.35;
-}
-
-.cb-product-desc {
-    font-size: 0.88rem;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-    flex: 1;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.cb-product-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 0.75rem;
-    border-top: 1px solid #F1F5F9;
-}
-
-.cb-product-price {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: #0F172A;
-}
-
-.cb-btn-add {
-    background: #FFF7ED;
-    color: var(--primary-color);
-    border: 1px solid #FFEDD5;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    font-size: 0.9rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.cb-btn-add:hover {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-/* ── Live Order Tracking Timeline ── */
-.cb-tracking-card {
-    background: white;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
-    padding: 2rem;
-    box-shadow: var(--shadow-soft);
-}
-
-.cb-timeline {
-    position: relative;
-    padding-left: 2rem;
-    margin-top: 1.5rem;
-}
-
-.cb-timeline::before {
-    content: '';
-    position: absolute;
-    left: 7px;
-    top: 5px;
-    bottom: 5px;
-    width: 2px;
-    background: #E2E8F0;
-}
-
-.cb-timeline-step {
-    position: relative;
-    margin-bottom: 1.75rem;
-}
-
-.cb-timeline-step:last-child {
-    margin-bottom: 0;
-}
-
-.cb-timeline-node {
-    position: absolute;
-    left: -2rem;
-    top: 0;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: white;
-    border: 3px solid #CBD5E1;
-}
-
-.cb-timeline-step.active .cb-timeline-node {
-    border-color: var(--accent-green);
-    background: var(--accent-green);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
-}
-
-.cb-timeline-step.completed .cb-timeline-node {
-    border-color: var(--accent-green);
-    background: var(--accent-green);
-}
-
-.cb-timeline-time {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.cb-timeline-title {
-    font-weight: 700;
-    font-size: 0.98rem;
-    margin-bottom: 0.2rem;
-}
-
-/* ── Pass Promo Box ── */
-.cb-pass-card {
-    background: linear-gradient(135deg, #4C1D95 0%, #7C3AED 100%);
-    color: white;
-    border-radius: var(--radius-lg);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.cb-pass-badge {
-    background: #FDE047;
-    color: #713F12;
-    font-weight: 800;
-    font-size: 0.75rem;
-    padding: 0.3rem 0.8rem;
-    border-radius: var(--radius-full);
-    display: inline-block;
-    margin-bottom: 0.75rem;
-}
-
-/* ── Cart & Tables ── */
-.cb-table {
-    width: 100%;
-    background: white;
-    border-radius: var(--radius-md);
-    border-collapse: separate;
-    border-spacing: 0;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-}
-
-.cb-table th {
-    background: #F8FAFC;
-    padding: 1rem 1.25rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border-color);
-    text-transform: uppercase;
-}
-
-.cb-table td {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
-}
-
-.cb-table tr:last-child td {
-    border-bottom: none;
-}
-
-/* ── Footer ── */
-.cb-footer {
-    background: #0F172A;
-    color: #94A3B8;
-    padding: 3rem 0 2rem 0;
-    margin-top: 4rem;
-}
-
-.cb-footer a {
-    color: #CBD5E1;
-}
-
-.cb-footer a:hover {
-    color: #FFFFFF;
+.badge-dark {
+    background-color: var(--cb-black);
+    color: var(--cb-white);
 }
