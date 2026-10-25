@@ -2,6 +2,6 @@
 define('ROOT_DIR', '.');
 require_once __DIR__ . '/core/core.php';
 
-// Load the main storefront view
+// Direct to the clean base template view
 require_once __DIR__ . '/views/home.php';
 ?>
