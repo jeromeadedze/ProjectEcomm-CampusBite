@@ -1,18 +1,18 @@
 /* ============================================================
    CampusBite - Project Design System
    Color Palette:
-   1. Jet Black: #121212 / #1A1A1A (Contrast, text, surfaces)
-   2. Vibrant Orange: #FF4500 / #FF3D00 (Brand accent, primary CTA)
+   1. Jet Black: #0F0F0F / #1A1A1A (Contrast, text, surfaces)
+   2. Vibrant Orange: #E04E25 / #C9411C (Brand accent, primary CTA)
    3. Crisp White: #FFFFFF (Clean card & content background)
    4. Neutral Gray Background: #FAFAFA / #F4F4F5
    RULE: NO GRADIENTS anywhere. Pure solid, crisp, modern surfaces.
    ============================================================ */
 
 :root {
-    --cb-black: #121212;
+    --cb-black: #0F0F0F;
     --cb-dark: #1E1E1E;
-    --cb-orange: #FF4500;
-    --cb-orange-hover: #E03E00;
+    --cb-orange: #E04E25;
+    --cb-orange-hover: #C9411C;
     --cb-white: #FFFFFF;
     --cb-bg: #F8F9FA;
     --cb-surface: #FFFFFF;
@@ -104,7 +104,7 @@ body {
 /* Inputs & Form Controls */
 .form-control:focus, .form-select:focus {
     border-color: var(--cb-orange);
-    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.15);
+    box-shadow: 0 0 0 3px rgba(224, 78, 37, 0.15);
 }
 
 /* Badges */

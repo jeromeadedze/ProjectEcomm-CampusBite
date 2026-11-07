@@ -1,67 +1,65 @@
 <?php
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 require_once __DIR__ . '/layout/header.php';
+require_once __DIR__ . '/../controllers/CustomerController.php';
 
 if (is_logged_in()) {
     header("Location: " . $ROOT_DIR . "/index.php");
     exit;
 }
+
+// Values from a rejected submission, so nobody has to retype them
+$form = $_SESSION['register_form'] ?? [];
+unset($_SESSION['register_form']);
+
+$formValue = function ($field) use ($form) {
+    return htmlspecialchars($form[$field] ?? '');
+};
+$selectedHostel = $form['campus_hostel'] ?? '';
 ?>
 
-<div class="row justify-content-center my-4">
-    <div class="col-md-7 col-lg-6">
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div class="text-center mb-4">
-                <div class="d-inline-flex p-3 rounded-circle bg-light text-dark mb-2 fs-3">
-                    <i class="bi bi-person-plus"></i>
-                </div>
-                <h3 class="fw-bold">Create CampusBite Account</h3>
-                <p class="text-muted small">Join Ashesi's fastest campus food ordering platform</p>
+<section class="cb-auth cb-auth-wide">
+    <h2>Create your account</h2>
+    <p class="cb-auth-lead">Order from campus and Berekuso kitchens and have it brought to your door.</p>
+
+    <form id="registerForm" action="<?php echo $ROOT_DIR; ?>/actions/register_action.php" method="POST" novalidate>
+        <div class="cb-auth-grid">
+            <div class="cb-field cb-field-full">
+                <label for="customer_name">Full name</label>
+                <input type="text" id="customer_name" name="customer_name" value="<?php echo $formValue('customer_name'); ?>" autocomplete="name" aria-describedby="name_error" required>
+                <p class="cb-field-error" id="name_error"></p>
             </div>
-
-            <form action="<?php echo $ROOT_DIR; ?>/actions/register_action.php" method="POST">
-                <div class="row g-3 mb-3">
-                    <div class="col-12">
-                        <label class="form-label small fw-semibold text-muted">Full Name</label>
-                        <input type="text" name="customer_name" class="form-control rounded-pill px-3" placeholder="e.g. Jerome Adedze" required>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-semibold text-muted">Email Address (Ashesi preferred)</label>
-                        <input type="email" name="customer_email" class="form-control rounded-pill px-3" placeholder="student@ashesi.edu.gh" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-semibold text-muted">Password</label>
-                        <input type="password" name="customer_pass" class="form-control rounded-pill px-3" placeholder="Minimum 6 characters" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-semibold text-muted">Phone Number (MTN MoMo / Telecel)</label>
-                        <input type="tel" name="customer_contact" class="form-control rounded-pill px-3" placeholder="024XXXXXXX" required>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-semibold text-muted">Campus Residence / Hostel (Default drop point)</label>
-                        <select name="campus_hostel" class="form-select rounded-pill px-3">
-                            <option value="Walter Sisulu Hall">Walter Sisulu Hall (On-Campus)</option>
-                            <option value="Wangari Maathai Hall">Wangari Maathai Hall (On-Campus)</option>
-                            <option value="Charlotte Court">Charlotte Court (Berekuso)</option>
-                            <option value="Masere Hostel">Masere Hostel (Berekuso)</option>
-                            <option value="Dufie Hostel">Dufie Hostel (Berekuso)</option>
-                            <option value="Engineering & FabLab Complex">Engineering & FabLab Complex</option>
-                            <option value="Faculty / Admin Office">Faculty / Admin Office</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button type="submit" class="cb-btn-primary btn w-100 py-3 mb-3">
-                    <i class="bi bi-person-check-fill me-1"></i> Register Account
-                </button>
-            </form>
-
-            <div class="text-center small text-muted">
-                Already registered? 
-                <a href="<?php echo $ROOT_DIR; ?>/views/login.php" class="text-danger fw-semibold">Sign in here</a>
+            <div class="cb-field cb-field-full">
+                <label for="customer_email">Email address</label>
+                <input type="email" id="customer_email" name="customer_email" value="<?php echo $formValue('customer_email'); ?>" placeholder="name@ashesi.edu.gh" autocomplete="email" aria-describedby="email_error" required>
+                <p class="cb-field-error" id="email_error"></p>
+            </div>
+            <div class="cb-field cb-field-full">
+                <label for="customer_pass">Password</label>
+                <input type="password" id="customer_pass" name="customer_pass" autocomplete="new-password" aria-describedby="pass_hint pass_error" required>
+                <p class="cb-field-hint" id="pass_hint">At least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.</p>
+                <p class="cb-field-error" id="pass_error"></p>
+            </div>
+            <div class="cb-field">
+                <label for="customer_contact">Mobile money number</label>
+                <input type="tel" id="customer_contact" name="customer_contact" value="<?php echo $formValue('customer_contact'); ?>" placeholder="0241234567" autocomplete="tel" aria-describedby="contact_error" required>
+                <p class="cb-field-error" id="contact_error"></p>
+            </div>
+            <div class="cb-field">
+                <label for="campus_hostel">Delivery spot</label>
+                <select id="campus_hostel" name="campus_hostel">
+                    <?php foreach (CustomerController::HOSTELS as $hostelValue => $hostelLabel): ?>
+                        <option value="<?php echo htmlspecialchars($hostelValue); ?>" <?php echo $selectedHostel === $hostelValue ? 'selected' : ''; ?>><?php echo htmlspecialchars($hostelLabel); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
         </div>
-    </div>
-</div>
+        <button type="submit" class="cb-checkout">Create account</button>
+    </form>
+
+    <p class="cb-auth-switch">Already have an account? <a href="<?php echo $ROOT_DIR; ?>/views/login.php">Sign in</a></p>
+</section>
+
+<script src="<?php echo $ROOT_DIR; ?>/js/validate.js"></script>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

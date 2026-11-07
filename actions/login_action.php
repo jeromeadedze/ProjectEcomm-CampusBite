@@ -2,6 +2,10 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
+// Only this known destination is accepted, so the link can't send people off-site
+$toCheckout = ($_POST['redirect'] ?? '') === 'checkout';
+$loginPage = '../views/login.php' . ($toCheckout ? '?redirect=checkout' : '');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['customer_email'] ?? '');
     $pass = $_POST['customer_pass'] ?? '';
@@ -11,23 +15,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $custCtrl->loginCustomer($email, $pass);
 
         if ($user) {
-            $_SESSION['customer_id'] = $user['customer_id'];
-            $_SESSION['customer_name'] = $user['customer_name'];
-            $_SESSION['customer_email'] = $user['customer_email'];
-            $_SESSION['user_role'] = $user['user_role'];
-            $_SESSION['has_pass'] = $user['has_pass'];
-
-            $_SESSION['success'] = "Welcome back, " . htmlspecialchars($user['customer_name']) . "!";
-            header("Location: ../index.php");
+            log_in_customer($user);
+            $_SESSION['success'] = "Welcome back, " . $user['customer_name'] . "!";
+            header("Location: " . ($toCheckout ? '../views/checkout.php' : '../index.php'));
             exit;
         } else {
-            $_SESSION['error'] = "Invalid email or password combination.";
+            $_SESSION['error'] = "That email and password don't match. Check them and try again.";
         }
     } else {
-        $_SESSION['error'] = "Please fill in all login fields.";
+        $_SESSION['error'] = "Enter your email and password to sign in.";
     }
 }
 
-header("Location: ../views/login.php");
+header("Location: " . $loginPage);
 exit;
 ?>

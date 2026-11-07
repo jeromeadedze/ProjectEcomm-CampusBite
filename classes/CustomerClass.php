@@ -11,6 +11,12 @@ class CustomerClass extends Database
         return $this->execute($sql, [$name, $email, $hashed, $country, $city, $contact, $hostel]);
     }
 
+    public function emailExists($email)
+    {
+        $sql = "SELECT customer_id FROM customer WHERE customer_email = ?";
+        return (bool) $this->fetchOne($sql, [$email]);
+    }
+
     public function getCustomerByEmail($email)
     {
         $sql = "SELECT * FROM customer WHERE customer_email = ?";

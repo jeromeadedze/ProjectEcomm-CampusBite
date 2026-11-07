@@ -17,6 +17,18 @@ function is_logged_in() {
 }
 
 /**
+ * Start a signed-in session for a customer row
+ */
+function log_in_customer($user) {
+    session_regenerate_id(true);
+    $_SESSION['customer_id'] = $user['customer_id'];
+    $_SESSION['customer_name'] = $user['customer_name'];
+    $_SESSION['customer_email'] = $user['customer_email'];
+    $_SESSION['user_role'] = (int)$user['user_role'];
+    $_SESSION['has_pass'] = $user['has_pass'];
+}
+
+/**
  * Enforce authentication on protected pages
  */
 function require_login() {
