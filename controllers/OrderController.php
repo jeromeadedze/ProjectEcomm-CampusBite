@@ -54,5 +54,10 @@ class OrderController
     {
         return $this->orderModel->getTrackingHistory($orderId);
     }
+
+    public function getRecentOrdersWithSummary($customerId, $limit = 3)
+    {
+        return $this->orderModel->getRecentOrdersWithSummary($customerId, $limit);
+    }
 }
 ?>

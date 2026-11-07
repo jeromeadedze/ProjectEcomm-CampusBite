@@ -87,5 +87,27 @@ class OrderClass extends Database
         $sql = "SELECT * FROM order_tracking WHERE order_id = ? ORDER BY tracking_id ASC";
         return $this->fetchAll($sql, [$orderId]);
     }
+
+    // Latest orders for the home page, each with its first meal and a total
+    public function getRecentOrdersWithSummary($customerId, $limit = 3)
+    {
+        $sql = "SELECT o.order_id, o.invoice_no, o.order_date, o.order_status, o.delivery_fee,
+                       (SELECT COALESCE(SUM(od.qty * p.product_price), 0)
+                        FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                        WHERE od.order_id = o.order_id) AS items_total,
+                       (SELECT COUNT(*) FROM orderdetails od WHERE od.order_id = o.order_id) AS item_count,
+                       (SELECT p.product_title FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                        WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_title,
+                       (SELECT p.product_image FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                        WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_image,
+                       (SELECT b.brand_name FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                        JOIN brands b ON p.product_brand = b.brand_id
+                        WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_kitchen
+                FROM orders o
+                WHERE o.customer_id = ?
+                ORDER BY o.order_id DESC
+                LIMIT " . intval($limit);
+        return $this->fetchAll($sql, [$customerId]);
+    }
 }
 ?>

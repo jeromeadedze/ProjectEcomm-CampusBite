@@ -8,6 +8,7 @@ $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php', '.php');
 $pageTitles = [
     'index' => 'Home',
     'home' => 'Home',
+    'menu' => 'Food Order',
     'search_results' => 'Search',
     'single_product' => 'Food Order',
     'cart' => 'Bills',
@@ -24,6 +25,8 @@ $pageTitles = [
     'orders' => 'Orders',
 ];
 $pageTitle = $pageTitles[$currentPage] ?? 'CampusBite';
+// A page can set $pageHeading before including this file to show a different heading than its title
+$pageHeadingText = $pageHeading ?? $pageTitle;
 
 // Stamp stylesheets with their edit time so a change shows without a hard refresh
 $cssVersion = function ($file) {
@@ -54,7 +57,7 @@ $cssVersion = function ($file) {
         <?php require __DIR__ . '/sidebar.php'; ?>
         <main class="cb-main" id="MainContent">
             <div class="cb-top cb-page-title">
-                <h1><?php echo htmlspecialchars($pageTitle); ?></h1>
+                <h1><?php echo htmlspecialchars($pageHeadingText); ?></h1>
                 <form class="cb-search" action="<?php echo $ROOT_DIR; ?>/views/search_results.php" method="GET" role="search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                     <input type="search" name="q" placeholder="Search meals or kitchens" aria-label="Search meals or kitchens" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">

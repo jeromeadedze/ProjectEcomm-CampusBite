@@ -8,6 +8,14 @@ class ProductController
         'Zone B' => 'Zone B: Berekuso corridor (GH₵ 7.00 delivery)',
     ];
 
+    // Delivery fee in GH₵ for each zone, as shown on kitchen cards
+    const DELIVERY_FEES = [
+        'Zone A' => 4,
+        'Zone B' => 7,
+    ];
+
+    const DISHES_PER_PAGE = 24;
+
     const CATEGORY_ICONS = [
         'bi-egg-fried' => 'Fried egg',
         'bi-fire' => 'Flame',
@@ -322,5 +330,31 @@ class ProductController
         return $this->productModel->deleteProduct($id);
     }
 
+    // Shopper listings
+    public function getBrandsWithCounts()
+    {
+        return $this->productModel->getBrandsWithCounts();
+    }
+
+    public function getCategoriesWithDishes($brandId = 0)
+    {
+        return $this->productModel->getCategoriesWithDishes($brandId);
+    }
+
+    public function countAvailableProducts($brandId = 0, $catId = 0)
+    {
+        return $this->productModel->countAvailableProducts($brandId, $catId);
+    }
+
+    public function getAvailableProductsPage($brandId, $catId, $page)
+    {
+        $offset = (max(1, (int)$page) - 1) * self::DISHES_PER_PAGE;
+        return $this->productModel->getAvailableProductsPage($brandId, $catId, self::DISHES_PER_PAGE, $offset);
+    }
+
+    public function deliveryFeeForZone($zone)
+    {
+        return self::DELIVERY_FEES[$zone] ?? self::DELIVERY_FEES['Zone A'];
+    }
 }
 ?>

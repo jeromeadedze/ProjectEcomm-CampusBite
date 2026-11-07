@@ -173,3 +173,12 @@ a.cb-checkout-signin:hover,a.cb-checkout-link:hover{color:#fff}
 .cb-signin-note{font-size:11.5px;color:var(--muted);text-align:center;margin:8px 0 0;line-height:1.5}
 .cb-signin-note a{color:var(--ember);font-weight:600}
 .cb-page-title{margin-bottom:24px}
+
+/* Home and menu pages */
+.cb-sub{font-size:13px;color:var(--muted);margin:-10px 0 18px}
+.cb-link{color:var(--ember);font-weight:600}
+.cb-link:hover{color:var(--ember-d)}
+.cb-chip{text-decoration:none}
+.cb-vcard-icon i,.cb-cat-icon i{font-size:inherit;line-height:1;color:var(--ember)}
+.cb-hero-emoji i{color:#fff}
+.cb-dish-emoji i{color:var(--ember)}

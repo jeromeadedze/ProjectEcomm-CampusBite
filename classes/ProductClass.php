@@ -231,5 +231,73 @@ class ProductClass extends Database
         return $this->execute($sql, [$id]);
     }
 
+    // ==========================================
+    // SHOPPER LISTINGS (available meals in active kitchens only)
+    // ==========================================
+    public function getBrandsWithCounts()
+    {
+        $sql = "SELECT b.*, COUNT(p.product_id) AS dish_count
+                FROM brands b
+                LEFT JOIN products p ON p.product_brand = b.brand_id AND p.is_available = 1
+                WHERE b.is_active = 1
+                GROUP BY b.brand_id
+                ORDER BY b.brand_name ASC";
+        return $this->fetchAll($sql);
+    }
+
+    // Categories that have at least one meal shoppers can order
+    public function getCategoriesWithDishes($brandId = 0)
+    {
+        $sql = "SELECT c.*, COUNT(p.product_id) AS dish_count
+                FROM categories c
+                JOIN products p ON p.product_cat = c.cat_id AND p.is_available = 1
+                JOIN brands b ON p.product_brand = b.brand_id AND b.is_active = 1";
+        $params = [];
+        if ($brandId > 0) {
+            $sql .= " WHERE b.brand_id = ?";
+            $params[] = $brandId;
+        }
+        $sql .= " GROUP BY c.cat_id ORDER BY c.cat_name ASC";
+        return $this->fetchAll($sql, $params);
+    }
+
+    public function countAvailableProducts($brandId = 0, $catId = 0)
+    {
+        [$where, $params] = $this->availableFilter($brandId, $catId);
+        $sql = "SELECT COUNT(*) AS total
+                FROM products p
+                JOIN brands b ON p.product_brand = b.brand_id
+                WHERE $where";
+        $row = $this->fetchOne($sql, $params);
+        return (int)$row['total'];
+    }
+
+    public function getAvailableProductsPage($brandId, $catId, $limit, $offset)
+    {
+        [$where, $params] = $this->availableFilter($brandId, $catId);
+        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone
+                FROM products p
+                JOIN categories c ON p.product_cat = c.cat_id
+                JOIN brands b ON p.product_brand = b.brand_id
+                WHERE $where
+                ORDER BY p.product_id DESC
+                LIMIT " . intval($limit) . " OFFSET " . intval($offset);
+        return $this->fetchAll($sql, $params);
+    }
+
+    private function availableFilter($brandId, $catId)
+    {
+        $where = "p.is_available = 1 AND b.is_active = 1";
+        $params = [];
+        if ($brandId > 0) {
+            $where .= " AND p.product_brand = ?";
+            $params[] = $brandId;
+        }
+        if ($catId > 0) {
+            $where .= " AND p.product_cat = ?";
+            $params[] = $catId;
+        }
+        return [$where, $params];
+    }
 }
 ?>
