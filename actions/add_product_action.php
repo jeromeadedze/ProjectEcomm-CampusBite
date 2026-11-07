@@ -4,26 +4,31 @@ require_once __DIR__ . '/../controllers/ProductController.php';
 
 require_admin();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $cat = (int)$_POST['product_cat'];
-    $brand = (int)$_POST['product_brand'];
-    $title = trim($_POST['product_title'] ?? '');
-    $price = (float)($_POST['product_price'] ?? 0);
-    $desc = trim($_POST['product_desc'] ?? '');
-    $keywords = trim($_POST['product_keywords'] ?? '');
-    $prep = (int)($_POST['prep_time'] ?? 15);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: ../views/admin/product.php");
+    exit;
+}
 
-    $imageName = null;
-    if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION);
-        $imageName = uniqid() . '.' . $ext;
-        $target = __DIR__ . '/../images/products/' . $imageName;
-        move_uploaded_file($_FILES['product_image']['tmp_name'], $target);
-    }
+$controller = new ProductController();
+$file = $_FILES['product_image'] ?? null;
+$checked = $controller->checkProductForm($_POST, $file);
+$values = $checked['values'];
 
-    $prodCtrl = new ProductController();
-    $prodCtrl->addProduct($cat, $brand, $title, $price, $desc, $imageName, $keywords, $prep);
-    $_SESSION['success'] = "Meal added to the campus menu!";
+if ($checked['error']) {
+    $_SESSION['error'] = $checked['error'];
+    $_SESSION['product_form'] = $values;
+    header("Location: ../views/admin/product.php");
+    exit;
+}
+
+$imageName = $controller->saveProductImage($file);
+
+if ($controller->addProduct((int)$values['product_cat'], (int)$values['product_brand'], $values['product_title'], (float)$values['product_price'], $values['product_desc'], $imageName, $values['product_keywords'], (int)$values['prep_time'], $values['is_available'])) {
+    $_SESSION['success'] = "{$values['product_title']} was added to the menu.";
+} else {
+    $controller->deleteProductImage($imageName);
+    $_SESSION['error'] = "The meal couldn't be saved. Try again.";
+    $_SESSION['product_form'] = $values;
 }
 
 header("Location: ../views/admin/product.php");

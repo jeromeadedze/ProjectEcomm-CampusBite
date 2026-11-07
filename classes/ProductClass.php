@@ -184,22 +184,45 @@ class ProductClass extends Database
         return $this->fetchAll($sql, [$term, $term, $term, $term]);
     }
 
-    public function addProduct($cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime = 15)
+    // Includes sold-out meals and paused kitchens, with how many past orders contain each meal
+    public function getProductsForAdmin()
     {
-        $sql = "INSERT INTO products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords, prep_time_minutes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime]);
+        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone, b.is_active AS brand_active,
+                       (SELECT COUNT(*) FROM orderdetails od WHERE od.product_id = p.product_id) AS order_count
+                FROM products p
+                JOIN categories c ON p.product_cat = c.cat_id
+                JOIN brands b ON p.product_brand = b.brand_id
+                ORDER BY b.brand_name ASC, p.product_title ASC";
+        return $this->fetchAll($sql);
     }
 
-    public function updateProduct($id, $cat, $brand, $title, $price, $desc, $image = null, $keywords = '', $prepTime = 15)
+    public function productTitleExists($title, $brand, $excludeId = 0)
+    {
+        $sql = "SELECT product_id FROM products WHERE LOWER(product_title) = LOWER(?) AND product_brand = ? AND product_id != ?";
+        return (bool)$this->fetchOne($sql, [$title, $brand, $excludeId]);
+    }
+
+    public function countOrdersForProduct($id)
+    {
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM orderdetails WHERE product_id = ?", [$id]);
+        return (int)$row['total'];
+    }
+
+    public function addProduct($cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime = 15, $isAvailable = 1)
+    {
+        $sql = "INSERT INTO products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords, prep_time_minutes, is_available)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime, $isAvailable]);
+    }
+
+    public function updateProduct($id, $cat, $brand, $title, $price, $desc, $image = null, $keywords = '', $prepTime = 15, $isAvailable = 1)
     {
         if ($image) {
-            $sql = "UPDATE products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_image = ?, product_keywords = ?, prep_time_minutes = ? WHERE product_id = ?";
-            return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime, $id]);
-        } else {
-            $sql = "UPDATE products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_keywords = ?, prep_time_minutes = ? WHERE product_id = ?";
-            return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $keywords, $prepTime, $id]);
+            $sql = "UPDATE products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_image = ?, product_keywords = ?, prep_time_minutes = ?, is_available = ? WHERE product_id = ?";
+            return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime, $isAvailable, $id]);
         }
+        $sql = "UPDATE products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_keywords = ?, prep_time_minutes = ?, is_available = ? WHERE product_id = ?";
+        return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $keywords, $prepTime, $isAvailable, $id]);
     }
 
     public function deleteProduct($id)
@@ -207,5 +230,6 @@ class ProductClass extends Database
         $sql = "DELETE FROM products WHERE product_id = ?";
         return $this->execute($sql, [$id]);
     }
+
 }
 ?>

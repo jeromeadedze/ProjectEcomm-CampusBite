@@ -16,6 +16,10 @@
 .cb-btn-quiet{background:transparent;color:var(--ink);border-color:var(--line)}
 .cb-btn-quiet:hover{background:transparent;border-color:var(--ink);color:var(--ink)}
 
+.cb-field textarea{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;color:var(--ink);resize:vertical}
+.cb-field textarea:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
+.cb-field input[type=file]{font-size:13px}
+
 .cb-table-wrap{overflow-x:auto;margin:0 -6px}
 .cb-table{width:100%;border-collapse:collapse;font-size:13px}
 .cb-table th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:0 6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}

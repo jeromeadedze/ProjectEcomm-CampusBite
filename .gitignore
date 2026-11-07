@@ -2,3 +2,6 @@
 Thumbs.db
 /vendor/
 *.log
+
+AGENTS.md
+db_cred.php
