@@ -1,84 +1,98 @@
 <?php
-$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '../..';
-require_once __DIR__ . '/../layout/header.php';
+define('ROOT_DIR', '../..');
+require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
 
 require_admin();
 
-$prodCtrl = new ProductController();
-$categories = $prodCtrl->getAllCategories();
+$controller = new ProductController();
+$categories = $controller->getCategoriesForAdmin();
+
+$editCategory = isset($_GET['edit_id']) ? $controller->getCategoryById((int)$_GET['edit_id']) : null;
+
+// A rejected submission comes back with what was typed; otherwise show the saved category or the defaults
+$form = $_SESSION['category_form'] ?? null;
+unset($_SESSION['category_form']);
+
+if (!$form) {
+    $form = $editCategory
+        ? ['cat_name' => $editCategory['cat_name'], 'cat_icon' => $editCategory['cat_icon']]
+        : ['cat_name' => '', 'cat_icon' => 'bi-egg-fried'];
+}
+
+// Keep an icon that was saved before this list existed selectable
+$iconOptions = ProductController::CATEGORY_ICONS;
+if (!empty($form['cat_icon']) && !isset($iconOptions[$form['cat_icon']])) {
+    $iconOptions[$form['cat_icon']] = 'Current icon';
+}
+
+require_once __DIR__ . '/../layout/header.php';
+require __DIR__ . '/../layout/admin_nav.php';
 ?>
 
-<div class="my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="fw-bold m-0"><i class="bi bi-grid-fill text-warning me-2"></i>Food Categories</h3>
-            <span class="text-muted small">Organize menu classification</span>
+<section class="cb-card">
+    <h2><?php echo $editCategory ? 'Edit ' . htmlspecialchars($editCategory['cat_name']) : 'Add a category'; ?></h2>
+    <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editCategory ? 'update_category_action.php' : 'add_category_action.php'; ?>" method="POST">
+        <?php if ($editCategory): ?>
+            <input type="hidden" name="cat_id" value="<?php echo (int)$editCategory['cat_id']; ?>">
+        <?php endif; ?>
+        <div class="cb-field">
+            <label for="cat_name">Category name</label>
+            <input type="text" id="cat_name" name="cat_name" maxlength="100" value="<?php echo htmlspecialchars($form['cat_name']); ?>" placeholder="Rice &amp; Jollof Bowls" required>
         </div>
-        <button class="cb-btn-primary btn" data-bs-toggle="modal" data-bs-target="#addCatModal">
-            <i class="bi bi-plus-lg me-1"></i> Add Category
-        </button>
-    </div>
+        <div class="cb-field">
+            <label for="cat_icon">Icon</label>
+            <select id="cat_icon" name="cat_icon">
+                <?php foreach ($iconOptions as $iconValue => $iconLabel): ?>
+                    <option value="<?php echo htmlspecialchars($iconValue); ?>" <?php echo $form['cat_icon'] === $iconValue ? 'selected' : ''; ?>><?php echo htmlspecialchars($iconLabel); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="cb-admin-actions">
+            <button type="submit" class="cb-btn"><?php echo $editCategory ? 'Save changes' : 'Add category'; ?></button>
+            <?php if ($editCategory): ?>
+                <a class="cb-btn cb-btn-quiet" href="category.php">Cancel</a>
+            <?php endif; ?>
+        </div>
+    </form>
+</section>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <table class="cb-table mb-0">
+<section class="cb-card">
+    <h2>All categories</h2>
+    <div class="cb-table-wrap">
+        <table class="cb-table">
             <thead>
                 <tr>
-                    <th>Category ID</th>
-                    <th>Category Name</th>
-                    <th>Icon Class</th>
-                    <th>Action</th>
+                    <th>Category</th>
+                    <th class="num">Menu items</th>
+                    <th><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($categories as $c): ?>
-                    <tr>
-                        <td class="fw-bold">#<?php echo $c['cat_id']; ?></td>
-                        <td class="fw-semibold">
-                            <i class="bi <?php echo htmlspecialchars($c['cat_icon'] ?? 'bi-tag'); ?> text-primary me-2"></i>
-                            <?php echo htmlspecialchars($c['cat_name']); ?>
+                <?php if (empty($categories)): ?>
+                    <tr><td colspan="3" class="cb-table-empty">No categories yet. Add the first one above.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($categories as $category): ?>
+                    <?php $isEditing = $editCategory && (int)$editCategory['cat_id'] === (int)$category['cat_id']; ?>
+                    <tr <?php echo $isEditing ? 'class="is-editing"' : ''; ?>>
+                        <td class="cb-table-name">
+                            <i class="bi <?php echo htmlspecialchars($category['cat_icon'] ?? 'bi-egg-fried'); ?>" aria-hidden="true"></i><?php echo htmlspecialchars($category['cat_name']); ?>
                         </td>
-                        <td><code><?php echo htmlspecialchars($c['cat_icon'] ?? 'bi-tag'); ?></code></td>
+                        <td class="num"><?php echo (int)$category['product_count']; ?></td>
                         <td>
-                            <a href="<?php echo $ROOT_DIR; ?>/actions/delete_category_action.php?id=<?php echo $c['cat_id']; ?>" 
-                               class="btn btn-sm btn-outline-danger rounded-circle"
-                               onclick="return confirm('Delete this category?');">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                            <div class="cb-table-actions">
+                                <a href="category.php?edit_id=<?php echo (int)$category['cat_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($category['cat_name']); ?>">Edit</a>
+                                <form action="<?php echo $ROOT_DIR; ?>/actions/delete_category_action.php" method="POST" <?php if ((int)$category['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($category['cat_name']); ?>? This can't be undone."<?php endif; ?>>
+                                    <input type="hidden" name="cat_id" value="<?php echo (int)$category['cat_id']; ?>">
+                                    <button type="submit" aria-label="Delete <?php echo htmlspecialchars($category['cat_name']); ?>">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-</div>
-
-<!-- Add Category Modal -->
-<div class="modal fade" id="addCatModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content rounded-4 border-0 shadow">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold">Add Food Category</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="<?php echo $ROOT_DIR; ?>/actions/add_category_action.php" method="POST">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Category Name</label>
-                        <input type="text" name="cat_name" class="form-control rounded-pill" placeholder="e.g. Rice & Bowls, Local Dishes, Pastries" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Bootstrap Icon Class</label>
-                        <input type="text" name="cat_icon" class="form-control rounded-pill" placeholder="e.g. bi-egg-fried, bi-fire, bi-cup-straw" value="bi-egg-fried">
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="cb-btn-primary btn px-4">Save Category</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+</section>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

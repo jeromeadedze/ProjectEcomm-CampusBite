@@ -150,7 +150,7 @@ CREATE TABLE `order_tracking` (
 -- ============================================================
 
 INSERT INTO `categories` (`cat_id`, `cat_name`, `cat_icon`) VALUES
-(1, 'Rice & Jollof Bowls', 'bi-bowl'),
+(1, 'Rice & Jollof Bowls', 'bi-egg-fried'),
 (2, 'Local Staples (Fufu & Banku)', 'bi-fire'),
 (3, 'Grills & Shawarma', 'bi-segmented-nav'),
 (4, 'Healthy Bowls & Salads', 'bi-heart-pulse'),

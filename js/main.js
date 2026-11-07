@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.remove(), 4500);
     });
 
+    // Ask before a destructive form submits
+    document.querySelectorAll('form[data-confirm]').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+        });
+    });
+
     // Auto-dismiss alerts after 4.5s
     const alerts = document.querySelectorAll('.alert-dismissible');
     alerts.forEach(alert => {

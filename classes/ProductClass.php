@@ -12,22 +12,45 @@ class ProductClass extends Database
         return $this->fetchAll($sql);
     }
 
+    // Includes paused kitchens, which shoppers never see
+    public function getBrandsForAdmin()
+    {
+        $sql = "SELECT b.*, COUNT(p.product_id) AS product_count
+                FROM brands b
+                LEFT JOIN products p ON p.product_brand = b.brand_id
+                GROUP BY b.brand_id
+                ORDER BY b.brand_name ASC";
+        return $this->fetchAll($sql);
+    }
+
+    public function brandNameExists($name, $excludeId = 0)
+    {
+        $sql = "SELECT brand_id FROM brands WHERE LOWER(brand_name) = LOWER(?) AND brand_id != ?";
+        return (bool)$this->fetchOne($sql, [$name, $excludeId]);
+    }
+
+    public function countProductsByBrand($id)
+    {
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM products WHERE product_brand = ?", [$id]);
+        return (int)$row['total'];
+    }
+
     public function getBrandById($id)
     {
         $sql = "SELECT * FROM brands WHERE brand_id = ?";
         return $this->fetchOne($sql, [$id]);
     }
 
-    public function addBrand($name, $zone = 'Zone A', $location = '', $commission = 0.10)
+    public function addBrand($name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1)
     {
-        $sql = "INSERT INTO brands (brand_name, zone, location_desc, commission_rate) VALUES (?, ?, ?, ?)";
-        return $this->execute($sql, [$name, $zone, $location, $commission]);
+        $sql = "INSERT INTO brands (brand_name, zone, location_desc, commission_rate, is_active) VALUES (?, ?, ?, ?, ?)";
+        return $this->execute($sql, [$name, $zone, $location, $commission, $isActive]);
     }
 
-    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10)
+    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1)
     {
-        $sql = "UPDATE brands SET brand_name = ?, zone = ?, location_desc = ?, commission_rate = ? WHERE brand_id = ?";
-        return $this->execute($sql, [$name, $zone, $location, $commission, $id]);
+        $sql = "UPDATE brands SET brand_name = ?, zone = ?, location_desc = ?, commission_rate = ?, is_active = ? WHERE brand_id = ?";
+        return $this->execute($sql, [$name, $zone, $location, $commission, $isActive, $id]);
     }
 
     public function deleteBrand($id)
@@ -43,6 +66,28 @@ class ProductClass extends Database
     {
         $sql = "SELECT * FROM categories ORDER BY cat_name ASC";
         return $this->fetchAll($sql);
+    }
+
+    public function getCategoriesForAdmin()
+    {
+        $sql = "SELECT c.*, COUNT(p.product_id) AS product_count
+                FROM categories c
+                LEFT JOIN products p ON p.product_cat = c.cat_id
+                GROUP BY c.cat_id
+                ORDER BY c.cat_name ASC";
+        return $this->fetchAll($sql);
+    }
+
+    public function categoryNameExists($name, $excludeId = 0)
+    {
+        $sql = "SELECT cat_id FROM categories WHERE LOWER(cat_name) = LOWER(?) AND cat_id != ?";
+        return (bool)$this->fetchOne($sql, [$name, $excludeId]);
+    }
+
+    public function countProductsByCategory($id)
+    {
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM products WHERE product_cat = ?", [$id]);
+        return (int)$row['total'];
     }
 
     public function getCategoryById($id)
@@ -88,7 +133,7 @@ class ProductClass extends Database
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
-                WHERE p.is_available = 1
+                WHERE p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC
                 LIMIT " . intval($limit);
         return $this->fetchAll($sql);
@@ -110,7 +155,7 @@ class ProductClass extends Database
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
-                WHERE p.product_cat = ? AND p.is_available = 1
+                WHERE p.product_cat = ? AND p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC";
         return $this->fetchAll($sql, [$cat_id]);
     }
@@ -121,7 +166,7 @@ class ProductClass extends Database
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
-                WHERE p.product_brand = ? AND p.is_available = 1
+                WHERE p.product_brand = ? AND p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC";
         return $this->fetchAll($sql, [$brand_id]);
     }
@@ -134,7 +179,7 @@ class ProductClass extends Database
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
                 WHERE (p.product_title LIKE ? OR p.product_desc LIKE ? OR p.product_keywords LIKE ? OR b.brand_name LIKE ?)
-                AND p.is_available = 1
+                AND p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC";
         return $this->fetchAll($sql, [$term, $term, $term, $term]);
     }

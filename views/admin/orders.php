@@ -1,5 +1,5 @@
 <?php
-$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '../..';
+define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../layout/header.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
 
@@ -8,6 +8,8 @@ require_admin();
 $orderCtrl = new OrderController();
 $allOrders = $orderCtrl->getAllOrders();
 ?>
+
+<?php require __DIR__ . '/../layout/admin_nav.php'; ?>
 
 <div class="my-4">
     <div class="d-flex justify-content-between align-items-center mb-3">

@@ -1,104 +1,125 @@
 <?php
-$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '../..';
-require_once __DIR__ . '/../layout/header.php';
+define('ROOT_DIR', '../..');
+require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
 
 require_admin();
 
-$prodCtrl = new ProductController();
-$brands = $prodCtrl->getAllBrands();
+$controller = new ProductController();
+$brands = $controller->getBrandsForAdmin();
+
+$editBrand = isset($_GET['edit_id']) ? $controller->getBrandById((int)$_GET['edit_id']) : null;
+
+// A rejected submission comes back with what was typed; otherwise show the saved kitchen or the defaults
+$form = $_SESSION['brand_form'] ?? null;
+unset($_SESSION['brand_form']);
+
+if (!$form) {
+    $form = $editBrand
+        ? [
+            'brand_name' => $editBrand['brand_name'],
+            'zone' => $editBrand['zone'],
+            'location_desc' => $editBrand['location_desc'],
+            'commission_percent' => round($editBrand['commission_rate'] * 100),
+            'is_active' => (int)$editBrand['is_active'],
+        ]
+        : ['brand_name' => '', 'zone' => 'Zone A', 'location_desc' => '', 'commission_percent' => 10, 'is_active' => 1];
+}
+
+require_once __DIR__ . '/../layout/header.php';
+require __DIR__ . '/../layout/admin_nav.php';
 ?>
 
-<div class="my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="fw-bold m-0"><i class="bi bi-shop text-warning me-2"></i>Partner Kitchens & Vendors</h3>
-            <span class="text-muted small">Manage Ashesi on-campus & Berekuso corridor food partners</span>
+<section class="cb-card">
+    <h2><?php echo $editBrand ? 'Edit ' . htmlspecialchars($editBrand['brand_name']) : 'Add a kitchen'; ?></h2>
+    <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editBrand ? 'update_brand_action.php' : 'add_brand_action.php'; ?>" method="POST">
+        <?php if ($editBrand): ?>
+            <input type="hidden" name="brand_id" value="<?php echo (int)$editBrand['brand_id']; ?>">
+        <?php endif; ?>
+        <div class="cb-field">
+            <label for="brand_name">Kitchen name</label>
+            <input type="text" id="brand_name" name="brand_name" maxlength="100" value="<?php echo htmlspecialchars($form['brand_name']); ?>" placeholder="Hallmark Cafeteria" required>
         </div>
-        <button class="cb-btn-primary btn" data-bs-toggle="modal" data-bs-target="#addBrandModal">
-            <i class="bi bi-plus-lg me-1"></i> Add Kitchen
-        </button>
-    </div>
+        <div class="cb-field">
+            <label for="location_desc">Location</label>
+            <input type="text" id="location_desc" name="location_desc" maxlength="255" value="<?php echo htmlspecialchars($form['location_desc'] ?? ''); ?>" placeholder="Student Center Pavilion">
+        </div>
+        <div class="cb-field cb-field-full">
+            <label for="zone">Delivery zone</label>
+            <select id="zone" name="zone">
+                <?php foreach (ProductController::ZONES as $zoneValue => $zoneLabel): ?>
+                    <option value="<?php echo htmlspecialchars($zoneValue); ?>" <?php echo $form['zone'] === $zoneValue ? 'selected' : ''; ?>><?php echo htmlspecialchars($zoneLabel); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="cb-field">
+            <label for="commission_percent">Commission (%)</label>
+            <input type="number" id="commission_percent" name="commission_percent" min="0" max="100" step="1" value="<?php echo htmlspecialchars((string)$form['commission_percent']); ?>" required>
+        </div>
+        <div class="cb-field">
+            <label for="is_active">Status</label>
+            <select id="is_active" name="is_active" aria-describedby="status_hint">
+                <option value="1" <?php echo (int)$form['is_active'] === 1 ? 'selected' : ''; ?>>Active</option>
+                <option value="0" <?php echo (int)$form['is_active'] === 0 ? 'selected' : ''; ?>>Paused</option>
+            </select>
+            <p class="cb-field-hint" id="status_hint">Paused kitchens are hidden from shoppers.</p>
+        </div>
+        <div class="cb-admin-actions">
+            <button type="submit" class="cb-btn"><?php echo $editBrand ? 'Save changes' : 'Add kitchen'; ?></button>
+            <?php if ($editBrand): ?>
+                <a class="cb-btn cb-btn-quiet" href="brand.php">Cancel</a>
+            <?php endif; ?>
+        </div>
+    </form>
+</section>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <table class="cb-table mb-0">
+<section class="cb-card">
+    <h2>All kitchens</h2>
+    <div class="cb-table-wrap">
+        <table class="cb-table">
             <thead>
                 <tr>
-                    <th>Kitchen / Brand</th>
-                    <th>Delivery Zone</th>
-                    <th>Location Details</th>
-                    <th>Commission</th>
+                    <th>Kitchen</th>
+                    <th>Zone</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th class="num">Commission</th>
+                    <th class="num">Menu items</th>
+                    <th><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($brands as $b): ?>
-                    <tr>
-                        <td class="fw-bold fs-6">
-                            <i class="bi bi-fire text-warning me-2"></i><?php echo htmlspecialchars($b['brand_name']); ?>
+                <?php if (empty($brands)): ?>
+                    <tr><td colspan="6" class="cb-table-empty">No kitchens yet. Add the first one above.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($brands as $brand): ?>
+                    <?php $isEditing = $editBrand && (int)$editBrand['brand_id'] === (int)$brand['brand_id']; ?>
+                    <tr <?php echo $isEditing ? 'class="is-editing"' : ''; ?>>
+                        <td class="cb-table-name">
+                            <?php echo htmlspecialchars($brand['brand_name']); ?>
+                            <?php if (!empty($brand['location_desc'])): ?>
+                                <span class="cb-table-sub"><?php echo htmlspecialchars($brand['location_desc']); ?></span>
+                            <?php endif; ?>
                         </td>
+                        <td><?php echo htmlspecialchars($brand['zone']); ?></td>
                         <td>
-                            <span class="badge <?php echo ($b['zone'] === 'Zone B') ? 'bg-warning text-dark' : 'bg-success text-white'; ?> rounded-pill">
-                                <?php echo htmlspecialchars($b['zone']); ?>
-                            </span>
+                            <span class="cb-dot-status <?php echo $brand['is_active'] ? '' : 'off'; ?>"><?php echo $brand['is_active'] ? 'Active' : 'Paused'; ?></span>
                         </td>
-                        <td class="small text-muted"><?php echo htmlspecialchars($b['location_desc'] ?? 'Campus Ground'); ?></td>
-                        <td class="fw-semibold"><?php echo ((float)$b['commission_rate'] * 100); ?>%</td>
+                        <td class="num"><?php echo round($brand['commission_rate'] * 100); ?>%</td>
+                        <td class="num"><?php echo (int)$brand['product_count']; ?></td>
                         <td>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Active</span>
-                        </td>
-                        <td>
-                            <a href="<?php echo $ROOT_DIR; ?>/actions/delete_brand_action.php?id=<?php echo $b['brand_id']; ?>" 
-                               class="btn btn-sm btn-outline-danger rounded-circle"
-                               onclick="return confirm('Delete this kitchen vendor?');">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                            <div class="cb-table-actions">
+                                <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($brand['brand_name']); ?>">Edit</a>
+                                <form action="<?php echo $ROOT_DIR; ?>/actions/delete_brand_action.php" method="POST" <?php if ((int)$brand['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>? This can't be undone."<?php endif; ?>>
+                                    <input type="hidden" name="brand_id" value="<?php echo (int)$brand['brand_id']; ?>">
+                                    <button type="submit" aria-label="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-</div>
-
-<!-- Add Brand Modal -->
-<div class="modal fade" id="addBrandModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content rounded-4 border-0 shadow">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold">Register Kitchen / Food Vendor</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="<?php echo $ROOT_DIR; ?>/actions/add_brand_action.php" method="POST">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Kitchen Name</label>
-                        <input type="text" name="brand_name" class="form-control rounded-pill" placeholder="e.g. Hallmark Cafeteria, Peckish" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Delivery Zone</label>
-                        <select name="zone" class="form-select rounded-pill">
-                            <option value="Zone A">Zone A (On-Campus - GH₵ 4.00 flat)</option>
-                            <option value="Zone B">Zone B (Berekuso Corridor - GH₵ 7.00 flat)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Location / Landmark</label>
-                        <input type="text" name="location_desc" class="form-control rounded-pill" placeholder="e.g. Canteen Hall, Ground Floor">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Commission Rate (e.g. 0.08 for 8%, 0.10 for 10%)</label>
-                        <input type="number" step="0.01" name="commission_rate" class="form-control rounded-pill" value="0.10" required>
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="cb-btn-primary btn px-4">Save Kitchen</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+</section>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

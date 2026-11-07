@@ -46,6 +46,7 @@ $cssVersion = function ($file) {
     <link rel="stylesheet" href="<?php echo $ROOT_DIR; ?>/css/style.css?v=<?php echo $cssVersion('style.css'); ?>">
     <link rel="stylesheet" href="<?php echo $ROOT_DIR; ?>/css/campusbite.css?v=<?php echo $cssVersion('campusbite.css'); ?>">
     <link rel="stylesheet" href="<?php echo $ROOT_DIR; ?>/css/auth.css?v=<?php echo $cssVersion('auth.css'); ?>">
+    <link rel="stylesheet" href="<?php echo $ROOT_DIR; ?>/css/admin.css?v=<?php echo $cssVersion('admin.css'); ?>">
 </head>
 <body>
     <div class="cb" id="cb-app">

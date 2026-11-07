@@ -4,17 +4,23 @@ require_once __DIR__ . '/../controllers/ProductController.php';
 
 require_admin();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['brand_name'] ?? '');
-    $zone = trim($_POST['zone'] ?? 'Zone A');
-    $location = trim($_POST['location_desc'] ?? '');
-    $comm = (float)($_POST['commission_rate'] ?? 0.10);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: ../views/admin/brand.php");
+    exit;
+}
 
-    if (!empty($name)) {
-        $prodCtrl = new ProductController();
-        $prodCtrl->addBrand($name, $zone, $location, $comm);
-        $_SESSION['success'] = "Kitchen vendor registered successfully!";
-    }
+$controller = new ProductController();
+$checked = $controller->checkBrandForm($_POST);
+$values = $checked['values'];
+
+if ($checked['error']) {
+    $_SESSION['error'] = $checked['error'];
+    $_SESSION['brand_form'] = $values;
+} elseif ($controller->addBrand($values['brand_name'], $values['zone'], $values['location_desc'], (int)$values['commission_percent'] / 100, $values['is_active'])) {
+    $_SESSION['success'] = "{$values['brand_name']} was added.";
+} else {
+    $_SESSION['error'] = "The kitchen couldn't be saved. Try again.";
+    $_SESSION['brand_form'] = $values;
 }
 
 header("Location: ../views/admin/brand.php");

@@ -9,6 +9,8 @@ $custCtrl = new CustomerController();
 $customers = $custCtrl->getAllCustomers();
 ?>
 
+<?php require __DIR__ . '/layout/admin_nav.php'; ?>
+
 <div class="my-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold m-0"><i class="bi bi-people-fill text-warning me-2"></i>Campus Community Users</h3>
