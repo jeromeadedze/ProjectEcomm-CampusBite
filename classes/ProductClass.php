@@ -141,7 +141,7 @@ class ProductClass extends Database
 
     public function getProductById($id)
     {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone, b.location_desc
+        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone, b.location_desc, b.is_active AS brand_active
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -173,7 +173,8 @@ class ProductClass extends Database
 
     public function searchProducts($query)
     {
-        $term = "%" . $query . "%";
+        // Escape LIKE wildcards so "%" or "_" in a search are matched literally
+        $term = "%" . addcslashes($query, '%_\\') . "%";
         $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone 
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id

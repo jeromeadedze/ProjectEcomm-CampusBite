@@ -1,71 +1,92 @@
 <?php
+// Admin: every order, newest first, with its courier and status
 define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../layout/header.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
+require_once __DIR__ . '/../../controllers/CustomerController.php';
 
 require_admin();
 
-$orderCtrl = new OrderController();
-$allOrders = $orderCtrl->getAllOrders();
+$allOrders = (new OrderController())->getAllOrders();
+$couriers = (new CustomerController())->getCouriers();
+$activeCount = count(array_filter($allOrders, function ($o) {
+    return $o['order_status'] !== 'Delivered';
+}));
 ?>
 
 <?php require __DIR__ . '/../layout/admin_nav.php'; ?>
 
-<div class="my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="fw-bold m-0"><i class="bi bi-clipboard2-check text-warning me-2"></i>Campus Orders Management</h3>
-            <span class="text-muted small">Monitor kitchen order queues & courier handoffs</span>
-        </div>
-        <span class="badge bg-dark rounded-pill fs-6"><?php echo count($allOrders); ?> total orders</span>
-    </div>
+<p class="cb-sub"><?php echo $activeCount; ?> in progress · <?php echo count($allOrders); ?> total</p>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <table class="cb-table mb-0">
+<?php if (empty($couriers)): ?>
+    <p class="cb-empty">No couriers yet. On the <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/customers.php">Customers</a> tab, set an account's role to Courier to assign it orders.</p>
+<?php endif; ?>
+
+<section class="cb-card">
+    <div class="cb-table-wrap">
+        <table class="cb-table">
             <thead>
                 <tr>
                     <th>Invoice</th>
-                    <th>Customer & Contact</th>
-                    <th>Zone & Drop Point</th>
-                    <th>Total</th>
-                    <th>Payment Mode</th>
+                    <th>Customer</th>
+                    <th>Drop point</th>
+                    <th class="num">Total</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th>Courier</th>
+                    <th><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
+                <?php if (empty($allOrders)): ?>
+                    <tr><td colspan="7" class="cb-table-empty">No orders yet.</td></tr>
+                <?php endif; ?>
                 <?php foreach ($allOrders as $o): ?>
                     <tr>
-                        <td class="fw-bold">#<?php echo $o['invoice_no']; ?></td>
-                        <td>
-                            <div class="fw-semibold"><?php echo htmlspecialchars($o['customer_name']); ?></div>
-                            <small class="text-muted"><?php echo htmlspecialchars($o['customer_contact']); ?></small>
+                        <td class="cb-table-name">
+                            #<?php echo htmlspecialchars($o['invoice_no']); ?>
+                            <span class="cb-table-sub"><?php echo date('M d · h:i A', strtotime($o['order_date'])); ?></span>
                         </td>
                         <td>
-                            <span class="badge <?php echo ($o['delivery_zone'] === 'Zone B') ? 'bg-warning text-dark' : 'bg-success text-white'; ?> rounded-pill mb-1">
-                                <?php echo htmlspecialchars($o['delivery_zone']); ?>
-                            </span>
-                            <div class="small text-truncate" style="max-width: 180px;"><?php echo htmlspecialchars($o['drop_location']); ?></div>
-                        </td>
-                        <td class="fw-bold text-danger">GH₵ <?php echo number_format($o['amt'] ?? ($o['delivery_fee'] + 30), 2); ?></td>
-                        <td>
-                            <span class="badge bg-light text-dark border"><?php echo htmlspecialchars($o['payment_mode'] ?? 'Paystack'); ?></span>
+                            <?php echo htmlspecialchars($o['customer_name']); ?>
+                            <span class="cb-table-sub"><?php echo htmlspecialchars($o['customer_contact']); ?></span>
                         </td>
                         <td>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
-                                <?php echo htmlspecialchars($o['order_status']); ?>
-                            </span>
+                            <?php echo htmlspecialchars($o['drop_location']); ?>
+                            <span class="cb-table-sub"><?php echo htmlspecialchars($o['delivery_zone']); ?></span>
+                        </td>
+                        <td class="num">
+                            GH₵ <?php echo number_format($o['amt'] ?? ((float)$o['items_total'] + (float)$o['delivery_fee']), 2); ?>
+                            <span class="cb-table-sub"><?php echo htmlspecialchars($o['payment_mode'] ?? 'No payment recorded'); ?></span>
+                        </td>
+                        <td><span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $o['order_status'])); ?>"><?php echo htmlspecialchars($o['order_status']); ?></span></td>
+                        <td>
+                            <?php if (!empty($couriers)): ?>
+                                <form class="cb-inline-form" action="<?php echo $ROOT_DIR; ?>/actions/assign_courier_action.php" method="POST">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="order_id" value="<?php echo (int)$o['order_id']; ?>">
+                                    <label class="visually-hidden" for="courier-<?php echo (int)$o['order_id']; ?>">Courier for order #<?php echo htmlspecialchars($o['invoice_no']); ?></label>
+                                    <select id="courier-<?php echo (int)$o['order_id']; ?>" name="courier_id">
+                                        <option value="0">Unassigned</option>
+                                        <?php foreach ($couriers as $courier): ?>
+                                            <option value="<?php echo (int)$courier['customer_id']; ?>" <?php echo (int)$o['courier_id'] === (int)$courier['customer_id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($courier['customer_name']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" class="cb-btn cb-btn-quiet">Assign</button>
+                                </form>
+                            <?php else: ?>
+                                <span class="cb-muted"><?php echo htmlspecialchars($o['courier_name'] ?? 'Unassigned'); ?></span>
+                            <?php endif; ?>
                         </td>
                         <td>
-                            <a href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo $o['order_id']; ?>" class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                                <i class="bi bi-sliders"></i> Manage
-                            </a>
+                            <div class="cb-table-actions">
+                                <a href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$o['order_id']; ?>">Manage ›</a>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-</div>
+</section>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

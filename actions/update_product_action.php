@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../views/admin/product.php");
     exit;
 }
+require_csrf();
 
 $controller = new ProductController();
 $id = (int)($_POST['product_id'] ?? 0);

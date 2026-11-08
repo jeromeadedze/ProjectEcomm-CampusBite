@@ -6,6 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../views/register.php");
     exit;
 }
+require_csrf();
 
 $name = trim($_POST['customer_name'] ?? '');
 $email = trim($_POST['customer_email'] ?? '');

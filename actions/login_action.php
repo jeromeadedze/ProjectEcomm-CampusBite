@@ -7,6 +7,7 @@ $toCheckout = ($_POST['redirect'] ?? '') === 'checkout';
 $loginPage = '../views/login.php' . ($toCheckout ? '?redirect=checkout' : '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $email = trim($_POST['customer_email'] ?? '');
     $pass = $_POST['customer_pass'] ?? '';
 

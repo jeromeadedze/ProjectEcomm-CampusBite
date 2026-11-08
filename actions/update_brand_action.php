@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../views/admin/brand.php");
     exit;
 }
+require_csrf();
 
 $controller = new ProductController();
 $id = (int)($_POST['brand_id'] ?? 0);

@@ -33,6 +33,7 @@ require __DIR__ . '/../layout/admin_nav.php';
 <section class="cb-card">
     <h2><?php echo $editCategory ? 'Edit ' . htmlspecialchars($editCategory['cat_name']) : 'Add a category'; ?></h2>
     <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editCategory ? 'update_category_action.php' : 'add_category_action.php'; ?>" method="POST">
+        <?php echo csrf_field(); ?>
         <?php if ($editCategory): ?>
             <input type="hidden" name="cat_id" value="<?php echo (int)$editCategory['cat_id']; ?>">
         <?php endif; ?>
@@ -83,6 +84,7 @@ require __DIR__ . '/../layout/admin_nav.php';
                             <div class="cb-table-actions">
                                 <a href="category.php?edit_id=<?php echo (int)$category['cat_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($category['cat_name']); ?>">Edit</a>
                                 <form action="<?php echo $ROOT_DIR; ?>/actions/delete_category_action.php" method="POST" <?php if ((int)$category['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($category['cat_name']); ?>? This can't be undone."<?php endif; ?>>
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="cat_id" value="<?php echo (int)$category['cat_id']; ?>">
                                     <button type="submit" aria-label="Delete <?php echo htmlspecialchars($category['cat_name']); ?>">Delete</button>
                                 </form>

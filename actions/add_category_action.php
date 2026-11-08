@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../views/admin/category.php");
     exit;
 }
+require_csrf();
 
 $controller = new ProductController();
 $checked = $controller->checkCategoryForm($_POST);

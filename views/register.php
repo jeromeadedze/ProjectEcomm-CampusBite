@@ -23,6 +23,7 @@ $selectedHostel = $form['campus_hostel'] ?? '';
     <p class="cb-auth-lead">Order from campus and Berekuso kitchens and have it brought to your door.</p>
 
     <form id="registerForm" action="<?php echo $ROOT_DIR; ?>/actions/register_action.php" method="POST" novalidate>
+        <?php echo csrf_field(); ?>
         <div class="cb-auth-grid">
             <div class="cb-field cb-field-full">
                 <label for="customer_name">Full name</label>
@@ -60,6 +61,6 @@ $selectedHostel = $form['campus_hostel'] ?? '';
     <p class="cb-auth-switch">Already have an account? <a href="<?php echo $ROOT_DIR; ?>/views/login.php">Sign in</a></p>
 </section>
 
-<script src="<?php echo $ROOT_DIR; ?>/js/validate.js"></script>
+<script src="<?php echo $ROOT_DIR; ?>/js/validate.js?v=<?php echo filemtime(__DIR__ . '/../js/validate.js'); ?>"></script>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>
