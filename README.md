@@ -11,8 +11,8 @@ CampusBite is a campus food ordering and delivery web application built for Ashe
 - **Data Access Layer**: MySQL relational database (`database/campusbite.sql`) accessed securely via PDO prepared statements (`core/db_class.php`).
 
 ## Delivery Zones
-- **Zone A (GH₵ 4.00)**: On-Campus (Hallmark, Akonnor, Munchees, Hostels: Walter Sisulu, Wangari Maathai, FabLab, Library, Faculty).
-- **Zone B (GH₵ 7.00)**: Berekuso Corridor (Peckish, Eat Healthy, Hi5, Off-campus Hostels: Charlotte Court, Masere, Dufie).
+- **Zone A (GH₵ 5.00)**: On-Campus (Hallmark, Akonnor, Munchees, Hostels: Walter Sisulu, Wangari Maathai, FabLab, Library, Faculty).
+- **Zone B (GH₵ 10.00)**: Berekuso Corridor (Peckish, Eat Healthy, Hi5, Off-campus Hostels: Charlotte Court, Masere, Dufie).
 
 ## Setup Instructions
 1. Import `database/campusbite.sql` into MySQL/phpMyAdmin.
