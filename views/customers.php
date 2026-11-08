@@ -1,57 +1,63 @@
 <?php
+// Admin: every account, with a switch between customer and courier
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 require_once __DIR__ . '/layout/header.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
 require_admin();
 
-$custCtrl = new CustomerController();
-$customers = $custCtrl->getAllCustomers();
+$customers = (new CustomerController())->getAllCustomers();
+$courierCount = count(array_filter($customers, function ($c) {
+    return (int)$c['user_role'] === 3;
+}));
 ?>
 
 <?php require __DIR__ . '/layout/admin_nav.php'; ?>
 
-<div class="my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold m-0"><i class="bi bi-people-fill text-warning me-2"></i>Campus Community Users</h3>
-        <span class="badge bg-dark rounded-pill"><?php echo count($customers); ?> registered</span>
-    </div>
+<p class="cb-sub"><?php echo count($customers); ?> accounts · <?php echo $courierCount; ?> courier<?php echo $courierCount === 1 ? '' : 's'; ?>. Make an account a courier to assign it orders.</p>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <table class="cb-table mb-0">
+<section class="cb-card">
+    <div class="cb-table-wrap">
+        <table class="cb-table">
             <thead>
                 <tr>
-                    <th>User ID</th>
                     <th>Name</th>
-                    <th>Ashesi Email</th>
-                    <th>MoMo / Contact</th>
-                    <th>Hostel / Drop Point</th>
+                    <th>Phone</th>
+                    <th>Drop point</th>
+                    <?php if (PASS_ENABLED): ?><th>Pass</th><?php endif; ?>
                     <th>Role</th>
-                    <th>Pass Holder</th>
                 </tr>
             </thead>
             <tbody>
+                <?php if (empty($customers)): ?>
+                    <tr><td colspan="5" class="cb-table-empty">No accounts yet.</td></tr>
+                <?php endif; ?>
                 <?php foreach ($customers as $c): ?>
                     <tr>
-                        <td class="fw-bold">#<?php echo $c['customer_id']; ?></td>
-                        <td><?php echo htmlspecialchars($c['customer_name']); ?></td>
-                        <td class="small text-muted"><?php echo htmlspecialchars($c['customer_email']); ?></td>
-                        <td class="small"><?php echo htmlspecialchars($c['customer_contact']); ?></td>
-                        <td class="small"><?php echo htmlspecialchars($c['campus_hostel'] ?? 'Unspecified'); ?></td>
-                        <td>
-                            <?php if ($c['user_role'] == 1): ?>
-                                <span class="badge bg-danger rounded-pill">Admin</span>
-                            <?php elseif ($c['user_role'] == 3): ?>
-                                <span class="badge bg-info text-dark rounded-pill">Courier</span>
-                            <?php else: ?>
-                                <span class="badge bg-light text-dark border rounded-pill">Student / Staff</span>
-                            <?php endif; ?>
+                        <td class="cb-table-name">
+                            <?php echo htmlspecialchars($c['customer_name']); ?>
+                            <span class="cb-table-sub"><?php echo htmlspecialchars($c['customer_email']); ?></span>
                         </td>
+                        <td><?php echo htmlspecialchars($c['customer_contact']); ?></td>
+                        <td><?php echo htmlspecialchars($c['campus_hostel'] ?? 'Not set'); ?></td>
+                        <?php if (PASS_ENABLED): ?>
+                            <td><?php echo has_active_pass($c) ? 'Active' : '–'; ?></td>
+                        <?php endif; ?>
                         <td>
-                            <?php if (!empty($c['has_pass'])): ?>
-                                <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-stars"></i> Pass Active</span>
+                            <?php if ((int)$c['user_role'] === 1): ?>
+                                <span class="cb-zone cb-zone-b">Admin</span>
                             <?php else: ?>
-                                <span class="text-muted small">Standard</span>
+                                <form class="cb-inline-form" action="<?php echo $ROOT_DIR; ?>/actions/update_role_action.php" method="POST">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="customer_id" value="<?php echo (int)$c['customer_id']; ?>">
+                                    <label class="visually-hidden" for="role-<?php echo (int)$c['customer_id']; ?>">Role for <?php echo htmlspecialchars($c['customer_name']); ?></label>
+                                    <select id="role-<?php echo (int)$c['customer_id']; ?>" name="user_role">
+                                        <?php foreach (CustomerController::ASSIGNABLE_ROLES as $roleValue => $roleLabel): ?>
+                                            <option value="<?php echo $roleValue; ?>" <?php echo (int)$c['user_role'] === $roleValue ? 'selected' : ''; ?>><?php echo htmlspecialchars($roleLabel); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" class="cb-btn cb-btn-quiet">Save</button>
+                                </form>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -59,6 +65,6 @@ $customers = $custCtrl->getAllCustomers();
             </tbody>
         </table>
     </div>
-</div>
+</section>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

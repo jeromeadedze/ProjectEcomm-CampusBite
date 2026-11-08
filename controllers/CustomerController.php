@@ -51,6 +51,69 @@ class CustomerController
         return $this->customerModel->getCustomerById($id);
     }
 
+    // Same rules as sign-up (js/validate.js and register_action.php)
+    const PASSWORD_RULE = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/';
+    const PHONE_RULE = '/^[0-9+\-\s]{7,15}$/';
+
+    // Roles an admin can switch an account between (admins are only made in the database)
+    const ASSIGNABLE_ROLES = [2 => 'Student / Staff', 3 => 'Courier'];
+
+    /**
+     * Checks and saves name, phone and drop point. Returns ['values' => ..., 'error' => message or null].
+     */
+    public function updateProfile($id, $input)
+    {
+        $values = [
+            'customer_name' => trim($input['customer_name'] ?? ''),
+            'customer_contact' => trim($input['customer_contact'] ?? ''),
+            'campus_hostel' => trim($input['campus_hostel'] ?? ''),
+        ];
+
+        $error = null;
+        if (mb_strlen($values['customer_name']) < 2 || mb_strlen($values['customer_name']) > 100) {
+            $error = 'Enter your full name.';
+        } elseif (!preg_match(self::PHONE_RULE, $values['customer_contact'])) {
+            $error = 'Enter a valid phone number, such as 0241234567.';
+        } elseif (!array_key_exists($values['campus_hostel'], self::HOSTELS)) {
+            $error = 'Choose your delivery spot from the list.';
+        } elseif (!$this->customerModel->updateProfile($id, $values['customer_name'], $values['customer_contact'], $values['campus_hostel'])) {
+            $error = "Your details couldn't be saved. Try again.";
+        }
+
+        return ['values' => $values, 'error' => $error];
+    }
+
+    /**
+     * Changes the password after checking the current one. Returns an error message, or null on success.
+     */
+    public function changePassword($id, $current, $new, $confirm)
+    {
+        $user = $this->customerModel->getCustomerById($id);
+        if (!$user || !password_verify($current, $user['customer_pass'])) {
+            return 'Your current password is incorrect.';
+        }
+        if (!preg_match(self::PASSWORD_RULE, $new)) {
+            return 'Use at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.';
+        }
+        if ($new !== $confirm) {
+            return "The new passwords don't match.";
+        }
+        if (password_verify($new, $user['customer_pass'])) {
+            return 'Choose a password different from your current one.';
+        }
+        return $this->customerModel->updatePassword($id, $new) ? null : "Your password couldn't be changed. Try again.";
+    }
+
+    public function setRole($id, $role)
+    {
+        return array_key_exists($role, self::ASSIGNABLE_ROLES) ? $this->customerModel->setRole($id, $role) : false;
+    }
+
+    public function getCouriers()
+    {
+        return $this->customerModel->getCouriers();
+    }
+
     public function getAllCustomers()
     {
         return $this->customerModel->getAllCustomers();

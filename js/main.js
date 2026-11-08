@@ -7,6 +7,29 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.remove(), 4500);
     });
 
+    // Close the order panel; it stays closed until the cart changes
+    const panelClose = document.getElementById('cb-panel-close');
+    if (panelClose) {
+        panelClose.addEventListener('click', () => {
+            const app = document.getElementById('cb-app');
+            app.classList.remove('has-panel');
+            try { localStorage.setItem('cbPanelClosed', app.dataset.panelSignature); } catch (e) {}
+        });
+    }
+
+    // Quantity steppers on the product page: the − and + buttons nudge the number input within its min and max
+    document.querySelectorAll('[data-stepper]').forEach(stepper => {
+        const input = stepper.querySelector('input');
+        stepper.querySelectorAll('[data-step]').forEach(button => {
+            button.addEventListener('click', () => {
+                const min = Number(input.min) || 1;
+                const max = Number(input.max) || 99;
+                const next = (Number(input.value) || min) + Number(button.dataset.step);
+                input.value = Math.min(max, Math.max(min, next));
+            });
+        });
+    });
+
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {
         form.addEventListener('submit', event => {

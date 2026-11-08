@@ -8,6 +8,8 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 SET NAMES utf8mb4;
 
+DROP TABLE IF EXISTS `support_messages`;
+DROP TABLE IF EXISTS `favorites`;
 DROP TABLE IF EXISTS `order_tracking`;
 DROP TABLE IF EXISTS `payment`;
 DROP TABLE IF EXISTS `orderdetails`;
@@ -96,13 +98,15 @@ CREATE TABLE `orders` (
   `order_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `order_status` varchar(50) NOT NULL DEFAULT 'Placed', -- Placed, Preparing, Ready, In Transit, Delivered, Cancelled
   `delivery_zone` varchar(20) NOT NULL DEFAULT 'Zone A', -- Zone A or Zone B
-  `delivery_fee` double NOT NULL DEFAULT 4.00,
+  `delivery_fee` double NOT NULL DEFAULT 5.00,
   `drop_location` varchar(150) NOT NULL, -- e.g. 'Walter Sisulu Hall - Room 204', 'FabLab Courtyard'
   `special_instructions` varchar(255) DEFAULT NULL,
   `courier_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
   KEY `customer_id` (`customer_id`),
-  CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`)
+  KEY `courier_id` (`courier_id`),
+  CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
+  CONSTRAINT `orders_courier_fk` FOREIGN KEY (`courier_id`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 7. orderdetails ────────────────────────────────────────────────
@@ -110,6 +114,7 @@ CREATE TABLE `orderdetails` (
   `order_id` int(11) NOT NULL,
   `product_id` int(11) NOT NULL,
   `qty` int(11) NOT NULL,
+  `notes` varchar(255) DEFAULT NULL, -- customer's special request, copied from the cart
   KEY `order_id` (`order_id`),
   KEY `product_id` (`product_id`),
   CONSTRAINT `orderdetails_order_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
@@ -143,6 +148,33 @@ CREATE TABLE `order_tracking` (
   PRIMARY KEY (`tracking_id`),
   KEY `order_id` (`order_id`),
   CONSTRAINT `order_tracking_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── 10. favorites ───────────────────────────────────────────────────
+CREATE TABLE `favorites` (
+  `customer_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`customer_id`, `product_id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `favorites_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE,
+  CONSTRAINT `favorites_p_fk` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── 11. support_messages ────────────────────────────────────────────
+CREATE TABLE `support_messages` (
+  `message_id` int(11) NOT NULL AUTO_INCREMENT,
+  `customer_id` int(11) NOT NULL,
+  `order_id` int(11) DEFAULT NULL,
+  `topic` varchar(50) NOT NULL,
+  `message` text NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'Open', -- Open, Resolved
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`message_id`),
+  KEY `customer_id` (`customer_id`),
+  KEY `order_id` (`order_id`),
+  CONSTRAINT `support_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE,
+  CONSTRAINT `support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================

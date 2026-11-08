@@ -17,10 +17,10 @@ class OrderClass extends Database
         return false;
     }
 
-    public function addOrderDetail($orderId, $productId, $qty)
+    public function addOrderDetail($orderId, $productId, $qty, $notes = null)
     {
-        $sql = "INSERT INTO orderdetails (order_id, product_id, qty) VALUES (?, ?, ?)";
-        return $this->execute($sql, [$orderId, $productId, $qty]);
+        $sql = "INSERT INTO orderdetails (order_id, product_id, qty, notes) VALUES (?, ?, ?, ?)";
+        return $this->execute($sql, [$orderId, $productId, $qty, $notes]);
     }
 
     public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref)
@@ -32,9 +32,11 @@ class OrderClass extends Database
 
     public function getOrderById($orderId)
     {
-        $sql = "SELECT o.*, c.customer_name, c.customer_email, c.customer_contact 
+        $sql = "SELECT o.*, c.customer_name, c.customer_email, c.customer_contact,
+                       k.customer_name AS courier_name, k.customer_contact AS courier_contact
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
+                LEFT JOIN customer k ON o.courier_id = k.customer_id
                 WHERE o.order_id = ?";
         return $this->fetchOne($sql, [$orderId]);
     }
@@ -49,17 +51,30 @@ class OrderClass extends Database
         return $this->fetchAll($sql, [$orderId]);
     }
 
+    // Each order with its meal count and total paid (payment amount, or meals + delivery if there is no payment row)
     public function getOrdersByCustomer($customerId)
     {
-        $sql = "SELECT * FROM orders WHERE customer_id = ? ORDER BY order_id DESC";
+        $sql = "SELECT o.*,
+                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od WHERE od.order_id = o.order_id) AS item_count,
+                       COALESCE((SELECT SUM(p.amt) FROM payment p WHERE p.order_id = o.order_id),
+                                (SELECT COALESCE(SUM(od.qty * pr.product_price), 0)
+                                 FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                                 WHERE od.order_id = o.order_id) + o.delivery_fee) AS order_total
+                FROM orders o
+                WHERE o.customer_id = ?
+                ORDER BY o.order_id DESC";
         return $this->fetchAll($sql, [$customerId]);
     }
 
     public function getAllOrders()
     {
-        $sql = "SELECT o.*, c.customer_name, c.customer_contact, p.payment_mode, p.amt 
+        $sql = "SELECT o.*, c.customer_name, c.customer_contact, p.payment_mode, p.amt, k.customer_name AS courier_name,
+                       (SELECT COALESCE(SUM(od.qty * pr.product_price), 0)
+                        FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                        WHERE od.order_id = o.order_id) AS items_total
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
+                LEFT JOIN customer k ON o.courier_id = k.customer_id
                 LEFT JOIN payment p ON o.order_id = p.order_id
                 ORDER BY o.order_id DESC";
         return $this->fetchAll($sql);
@@ -74,6 +89,11 @@ class OrderClass extends Database
             $this->addTrackingUpdate($orderId, $status, $msg);
         }
         return $res;
+    }
+
+    public function assignCourier($orderId, $courierId)
+    {
+        return $this->execute("UPDATE orders SET courier_id = ? WHERE order_id = ?", [$courierId, $orderId]);
     }
 
     public function addTrackingUpdate($orderId, $status, $message)
