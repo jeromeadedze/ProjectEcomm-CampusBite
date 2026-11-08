@@ -19,14 +19,7 @@ if (!$order || ($order['customer_id'] != get_user_id() && !is_admin())) {
 $items = $orderCtrl->getOrderDetails($orderId);
 $tracking = $orderCtrl->getTrackingHistory($orderId);
 
-// Pre-defined pipeline steps
-$steps = [
-    'Placed' => 'Order Received by Kitchen',
-    'Preparing' => 'Kitchen Preparing Meal',
-    'Ready' => 'Ready for Courier Pickup',
-    'In Transit' => 'Student Courier on the Way',
-    'Delivered' => 'Delivered to Drop Point'
-];
+$steps = OrderController::STATUSES;
 
 $currentStatus = $order['order_status'];
 ?>
@@ -76,11 +69,12 @@ $currentStatus = $order['order_status'];
                 <!-- Quick Status Update for Admin / Merchant demo -->
                 <div class="mt-4 p-3 bg-light rounded-4 border">
                     <form action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST" class="d-flex align-items-center gap-2 m-0">
+                        <?php echo csrf_field(); ?>
                         <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
                         <label class="small fw-bold text-nowrap">Admin Simulate Status:</label>
                         <select name="status" class="form-select form-select-sm rounded-pill">
                             <?php foreach ($steps as $key => $label): ?>
-                                <option value="<?php echo $key; ?>" <?php echo ($currentStatus === $key) ? 'selected' : ''; ?>><?php echo $key; ?> — <?php echo $label; ?></option>
+                                <option value="<?php echo htmlspecialchars($key); ?>" <?php echo ($currentStatus === $key) ? 'selected' : ''; ?>><?php echo htmlspecialchars($key); ?> — <?php echo htmlspecialchars($label); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <button type="submit" class="btn btn-sm btn-dark rounded-pill px-3">Update</button>
@@ -94,6 +88,17 @@ $currentStatus = $order['order_status'];
             <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Drop Point & Contact</h5>
             <p class="mb-1 fw-semibold text-dark"><?php echo htmlspecialchars($order['drop_location']); ?></p>
             <p class="small text-muted mb-3">Recipient: <?php echo htmlspecialchars($order['customer_name']); ?> (<?php echo htmlspecialchars($order['customer_contact']); ?>)</p>
+            <p class="small mb-3">
+                <i class="bi bi-bicycle me-1"></i>
+                <?php if (!empty($order['courier_name'])): ?>
+                    Courier: <strong><?php echo htmlspecialchars($order['courier_name']); ?></strong> (<?php echo htmlspecialchars($order['courier_contact']); ?>)
+                <?php else: ?>
+                    <span class="text-muted">A courier will be assigned soon.</span>
+                <?php endif; ?>
+            </p>
+            <?php if (!is_admin()): ?>
+                <p class="small mb-3"><a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/contact.php?order_id=<?php echo (int)$order['order_id']; ?>">Get help with this order ›</a></p>
+            <?php endif; ?>
             <?php if (!empty($order['special_instructions'])): ?>
                 <div class="alert alert-light border small rounded-3 p-2 mb-3">
                     <strong>Note:</strong> <?php echo htmlspecialchars($order['special_instructions']); ?>
@@ -111,7 +116,10 @@ $currentStatus = $order['order_status'];
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
                         <div>
                             <span class="fw-semibold"><?php echo htmlspecialchars($it['product_title']); ?></span>
-                            <span class="text-muted small ms-2">x <?php echo $it['qty']; ?> (<?php echo htmlspecialchars($it['brand_name']); ?>)</span>
+                            <span class="text-muted small ms-2">x <?php echo (int)$it['qty']; ?> (<?php echo htmlspecialchars($it['brand_name']); ?>)</span>
+                            <?php if (!empty($it['notes'])): ?>
+                                <div class="small text-muted"><i class="bi bi-chat-left-text me-1"></i><?php echo htmlspecialchars($it['notes']); ?></div>
+                            <?php endif; ?>
                         </div>
                         <span class="fw-bold">GH₵ <?php echo number_format($itemSub, 2); ?></span>
                     </li>

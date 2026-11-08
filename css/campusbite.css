@@ -7,7 +7,10 @@ img{max-width:100%;display:block}
 button,input,select{font:inherit}
 
 .cb{--ink:#0F0F0F;--ember:#E04E25;--ember-d:#C9411C;--ember-soft:#FCEAE4;--paper:#F8F9FB;--card:#FFFFFF;--muted:#8A8D93;--line:#ECEDF0;
-  display:grid;grid-template-columns:210px minmax(0,1fr) 300px;max-width:1400px;margin:0 auto;min-height:100vh;background:var(--paper)}
+  display:grid;grid-template-columns:230px minmax(0,1fr);width:100%;min-height:100vh;background:var(--paper)}
+/* The order panel only takes a column while it is open */
+.cb.has-panel{grid-template-columns:230px minmax(0,1fr) 320px}
+.cb:not(.has-panel) .cb-panel{display:none}
 .cb h2{font-size:17px;font-weight:600;margin:0}
 .cb-row{display:flex;align-items:center;justify-content:space-between;margin:28px 0 14px}
 .cb-viewall{font-size:13px;color:var(--ember);font-weight:500}
@@ -32,8 +35,12 @@ button,input,select{font:inherit}
 .cb-upgrade p{font-size:13px;font-weight:600;line-height:1.5;margin:0 0 14px;position:relative;z-index:1}
 .cb-upgrade a{position:relative;z-index:1;display:inline-block;background:#fff;color:var(--ink);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px}
 
-.cb-main{padding:32px 30px 48px;min-width:0}
+.cb-main{padding:32px clamp(24px,3vw,56px) 48px;min-width:0}
 .cb-top{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.cb-top-actions{display:flex;align-items:center;gap:22px}
+.cb-top-actions .cb-icons{align-items:center}
+.cb-top-actions .cb-search{flex:0 1 320px;min-width:220px}
+.cb-top-actions .cb-avatar,.cb-top-actions .cb-signin{flex:none}
 .cb-top h1{font-size:24px;font-weight:600;margin:0}
 .cb-search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;width:min(320px,100%)}
 .cb-search input{border:0;outline:0;background:transparent;font-size:13px;width:100%;color:var(--ink)}
@@ -50,7 +57,7 @@ button,input,select{font:inherit}
 .cb-hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;position:relative}
 .cb-hero-tags span{background:rgba(255,255,255,.18);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:500}
 
-.cb-vendors{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.cb-vendors{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
 .cb-vcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s,transform .15s}
 .cb-vcard:hover{border-color:var(--ember);transform:translateY(-2px)}
 .cb-vcard-icon{width:46px;height:46px;border-radius:14px;background:var(--ember-soft);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:8px}
@@ -60,7 +67,7 @@ button,input,select{font:inherit}
 .cb-zone-a{background:var(--ember-soft);color:var(--ember)}
 .cb-zone-b{background:var(--ink);color:#fff}
 
-.cb-cats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.cb-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px}
 .cb-cat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 8px;text-align:center;font-size:12px;color:var(--muted);transition:border-color .15s,transform .15s}
 .cb-cat:hover{border-color:var(--ember);transform:translateY(-2px)}
 .cb-cat-icon{width:44px;height:44px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:30px}
@@ -98,7 +105,12 @@ button,input,select{font:inherit}
 .cb-pager a,.cb-pager span{border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:var(--card)}
 
 .cb-panel{background:var(--card);border-left:1px solid var(--line);padding:30px 24px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
-.cb-panel-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+.cb-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cb-panel-close{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.cb-panel-close:hover{background:var(--ember-soft);border-color:var(--ember);color:var(--ember)}
+.cb-panel-close svg{width:16px;height:16px}
+.cb-panel-bills{display:block;text-align:center;font-size:12.5px;font-weight:600;color:var(--ember);margin-top:12px}
+.cb-panel-bills:hover{color:var(--ember-d)}
 .cb-icons{display:flex;gap:16px;color:var(--ink)}
 .cb-icons a{position:relative}
 .cb-icons svg{width:20px;height:20px}
@@ -142,11 +154,13 @@ button,input,select{font:inherit}
 .cb-checkout[disabled]{opacity:.45;cursor:not-allowed}
 
 @media (max-width:1180px){
-  .cb{grid-template-columns:210px minmax(0,1fr)}
+  .cb,.cb.has-panel{grid-template-columns:210px minmax(0,1fr)}
   .cb-panel{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);position:static;height:auto}
 }
 @media (max-width:860px){
-  .cb{grid-template-columns:1fr}
+  .cb,.cb.has-panel{grid-template-columns:minmax(0,1fr)}
+  .cb-top-actions{justify-content:space-between}
+  .cb-top-actions .cb-search{flex:1 1 auto;min-width:0}
   .cb-side{flex-direction:row;align-items:center;padding:12px 16px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);gap:4px;height:auto;z-index:5}
   .cb-logo{margin:0 14px 0 0;font-size:19px;white-space:nowrap}
   .cb-nav{flex-direction:row;gap:4px}
@@ -182,3 +196,106 @@ a.cb-checkout-signin:hover,a.cb-checkout-link:hover{color:#fff}
 .cb-vcard-icon i,.cb-cat-icon i{font-size:inherit;line-height:1;color:var(--ember)}
 .cb-hero-emoji i{color:#fff}
 .cb-dish-emoji i{color:var(--ember)}
+
+/* ── Phase 2: product page, bill, favourites, settings, support ── */
+
+/* Heart on dish cards: the form wrapper takes the corner, the button sits inside it */
+.cb-heart-form{position:absolute;top:12px;right:12px;z-index:1;margin:0}
+.cb-heart-form .cb-heart{position:static}
+.cb-heart{display:flex;align-items:center;justify-content:center;transition:color .15s,transform .15s}
+.cb-heart:hover{color:var(--ember);transform:scale(1.1)}
+
+/* Quantity stepper: buttons around a number (product page) or a count (bill) */
+.cb-stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;margin:0}
+.cb-stepper button{width:38px;height:38px;border:0;background:transparent;font-size:18px;line-height:1;color:var(--ink);cursor:pointer;transition:background .15s,color .15s}
+.cb-stepper button:hover:not([disabled]){background:var(--ember-soft);color:var(--ember)}
+.cb-stepper button[disabled]{color:#C9CBD0;cursor:not-allowed}
+.cb-stepper input,.cb-stepper output{width:46px;text-align:center;font-weight:600;font-size:14px;border:0;background:transparent;padding:0;-moz-appearance:textfield}
+.cb .cb-field .cb-stepper input{width:46px;border:0;background:transparent;padding:0}
+.cb-stepper input::-webkit-outer-spin-button,.cb-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* Product page */
+.cb-meal{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(20px,3vw,44px);align-items:start}
+.cb-meal-media{background:var(--card);border:1px solid var(--line);border-radius:20px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cb-meal-media img{width:100%;height:100%;object-fit:cover}
+.cb-meal-media .cb-dish-emoji{font-size:140px}
+.cb-meal-price{font-size:28px;font-weight:600;margin:12px 0 14px}
+.cb-meal-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.cb-meal-tags span{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px}
+.cb-meal-tags i{color:var(--ember)}
+.cb-meal-desc{font-size:14px;line-height:1.7;color:#43464C;margin:0 0 22px}
+.cb-meal-form{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.cb-meal-save{margin-top:12px}
+.cb-meal-save .cb-btn{width:100%;gap:8px}
+.cb-meal-save .bi-heart-fill{color:var(--ember)}
+.cb-meal-note{text-align:left}
+
+/* Bill (cart) */
+.cb-bill{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+.cb-bill-kitchen{padding:18px 20px}
+.cb-bill-kitchen-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.cb .cb-card .cb-bill-kitchen-head h2{margin:0;font-size:15px}
+.cb-bill-kitchen-head .cb-zone{margin-top:0}
+.cb-bill-items{list-style:none;margin:0;padding:0}
+.cb-bill-item{display:grid;grid-template-columns:42px minmax(0,1fr) auto 96px auto;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.cb-bill-item:last-child{border-bottom:0;padding-bottom:0}
+.cb-bill-item.is-unavailable .cb-menu-img,.cb-bill-item.is-unavailable b{opacity:.5}
+.cb-bill-item-main{min-width:0;display:flex;flex-direction:column;gap:2px}
+.cb-bill-item-main b{font-weight:600;font-size:14px}
+.cb-bill-item-main small{font-size:12px;color:var(--muted)}
+.cb-bill-warn{color:var(--ember-d)!important;font-weight:600}
+.cb-bill-note i{color:var(--ember)}
+.cb-bill-line{font-weight:600;text-align:right;white-space:nowrap}
+.cb-bill-remove{width:34px;height:34px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px}
+.cb-bill-remove:hover{background:var(--ember-soft);color:var(--ember-d)}
+.cb-bill-item form{margin:0}
+.cb-bill-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:-4px}
+.cb-bill-foot form{margin:0}
+.cb-bill-summary{position:sticky;top:24px}
+.cb-bill-summary .cb-totals{border-top:0;margin-top:0;padding-top:0}
+.cb-bill-summary .cb-field-hint{margin:4px 0 2px}
+.cb-bill-empty{text-align:center;padding:48px 24px;max-width:520px;margin:12px auto 0}
+.cb-bill-empty-icon{width:64px;height:64px;border-radius:20px;background:var(--ember-soft);color:var(--ember);font-size:30px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px}
+.cb .cb-card.cb-bill-empty h2{font-size:19px;margin-bottom:6px}
+.cb-bill-empty p{font-size:13px;color:var(--muted);margin:0 0 20px}
+
+/* Order status pill, used on My Orders and the admin order list */
+.cb-status{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:4px 10px;background:var(--paper);border:1px solid var(--line);white-space:nowrap}
+.cb-status-placed{background:var(--ember-soft);border-color:#F6C9BA;color:var(--ember-d)}
+.cb-status-preparing,.cb-status-ready{background:#FFF6E0;border-color:#F3DFA8;color:#8A5A00}
+.cb-status-in-transit{background:#E8F0FE;border-color:#C6D7F8;color:#1E4FB8}
+.cb-status-delivered{background:#E6F6EE;border-color:#BFE6D1;color:#16774A}
+
+/* Settings and support */
+.cb-settings{display:grid;grid-template-columns:minmax(0,760px);gap:0}
+.cb-settings-signout{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.cb .cb-card.cb-settings-signout h2{margin-bottom:4px}
+.cb-settings-signout .cb-card-lead{margin:0}
+.cb-messages{list-style:none;margin:0;padding:0}
+.cb-messages li{padding:14px 0;border-bottom:1px solid var(--line)}
+.cb-messages li:first-child{padding-top:0}
+.cb-messages li:last-child{border-bottom:0;padding-bottom:0}
+.cb-messages li.is-resolved{opacity:.6}
+.cb-messages-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:13.5px}
+.cb-messages-head form{margin:0}
+.cb-messages p{font-size:13.5px;line-height:1.6;margin:0 0 6px}
+.cb-messages small{font-size:12px;color:var(--muted)}
+
+/* Small select + button side by side in admin tables */
+.cb-inline-form{display:flex;align-items:center;gap:8px;margin:0}
+.cb-inline-form select{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);max-width:180px}
+.cb-inline-form .cb-btn{padding:7px 12px;font-size:12px}
+
+@media (max-width:1100px){
+  .cb-bill{grid-template-columns:minmax(0,1fr)}
+  .cb-bill-summary{position:static}
+}
+@media (max-width:860px){
+  .cb-meal{grid-template-columns:minmax(0,1fr)}
+  .cb-meal-media .cb-dish-emoji{font-size:96px}
+  .cb-bill-item{grid-template-columns:42px minmax(0,1fr) auto;row-gap:10px}
+  .cb-bill-item .cb-stepper{grid-column:2}
+  .cb-bill-line{grid-column:3;grid-row:2}
+  .cb-bill-item>form:last-child{grid-column:3;grid-row:1}
+  .cb-settings-signout{flex-direction:column;align-items:flex-start}
+}

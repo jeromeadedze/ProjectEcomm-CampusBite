@@ -6,10 +6,15 @@ require_once __DIR__ . '/../controllers/CustomerController.php';
 
 require_login();
 
+if (is_admin()) {
+    header("Location: " . $ROOT_DIR . "/views/admin/orders.php");
+    exit;
+}
+
 $cartCtrl = new CartController();
 $custCtrl = new CustomerController();
 
-$cartIp = get_ip();
+$cartIp = get_cart_token();
 $userId = get_user_id();
 $cartItems = $cartCtrl->getCartItems($cartIp, $userId);
 
@@ -20,17 +25,9 @@ if (empty($cartItems)) {
 
 $user = $custCtrl->getCustomerById($userId);
 $subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
-$deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, !empty($user['has_pass']));
+$deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, has_active_pass($user));
 $grandTotal = $subtotal + $deliveryFee;
-
-// Determine predominant delivery zone
-$zone = 'Zone A';
-foreach ($cartItems as $item) {
-    if (isset($item['zone']) && $item['zone'] === 'Zone B') {
-        $zone = 'Zone B';
-        break;
-    }
-}
+$zone = $cartCtrl->deliveryZoneFor($cartItems);
 ?>
 
 <div class="row g-4 my-3 justify-content-center">
@@ -40,9 +37,7 @@ foreach ($cartItems as $item) {
             <p class="text-muted small mb-4">Complete your drop location details and select your Mobile Money or Card payment option.</p>
 
             <form action="<?php echo $ROOT_DIR; ?>/actions/checkout_process_action.php" method="POST">
-                <input type="hidden" name="delivery_zone" value="<?php echo $zone; ?>">
-                <input type="hidden" name="delivery_fee" value="<?php echo $deliveryFee; ?>">
-                <input type="hidden" name="total_amt" value="<?php echo $grandTotal; ?>">
+                <?php echo csrf_field(); ?>
 
                 <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>1. Delivery Drop Point (Ashesi Campus)</h5>
                 <div class="row g-3 mb-4">

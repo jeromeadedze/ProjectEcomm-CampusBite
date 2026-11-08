@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . "/../classes/CartClass.php";
+require_once __DIR__ . "/ProductController.php";
 
 class CartController
 {
@@ -15,9 +16,9 @@ class CartController
         return $this->cartModel->getCartItems($ip, $c_id);
     }
 
-    public function addToCart($p_id, $ip, $c_id = null, $qty = 1)
+    public function addToCart($p_id, $ip, $c_id = null, $qty = 1, $notes = null)
     {
-        return $this->cartModel->addToCart($p_id, $ip, $c_id, $qty);
+        return $this->cartModel->addToCart($p_id, $ip, $c_id, $qty, $notes);
     }
 
     public function updateCartQty($p_id, $ip, $qty, $c_id = null)
@@ -33,6 +34,34 @@ class CartController
     public function clearCart($ip, $c_id = null)
     {
         return $this->cartModel->clearCart($ip, $c_id);
+    }
+
+    public function mergeGuestCart($token, $c_id)
+    {
+        return $this->cartModel->mergeGuestCart($token, $c_id);
+    }
+
+    /**
+     * Zone B if any item comes from a Berekuso kitchen, otherwise Zone A
+     */
+    public function deliveryZoneFor($items)
+    {
+        foreach ($items as $item) {
+            if (isset($item['zone']) && $item['zone'] === 'Zone B') {
+                return 'Zone B';
+            }
+        }
+        return 'Zone A';
+    }
+
+    /**
+     * Cart items that have sold out, or whose kitchen was paused, since they were added
+     */
+    public function unavailableItems($items)
+    {
+        return array_values(array_filter($items, function ($item) {
+            return (int)$item['is_available'] !== 1 || (int)$item['brand_active'] !== 1;
+        }));
     }
 
     public function getCartCount($ip, $c_id = null)
@@ -57,8 +86,8 @@ class CartController
 
     /**
      * Determines delivery fee based on vendor zones present in cart
-     * Zone A (On-campus) = 4.00
-     * If any item is from Zone B (Berekuso) = 7.00
+     * One fee per order, from ProductController::DELIVERY_FEES:
+     * the Zone B fee if any item is from a Zone B (Berekuso) kitchen, otherwise the Zone A fee
      */
     public function calculateDeliveryFee($items, $hasPass = false)
     {
@@ -72,7 +101,7 @@ class CartController
                 break;
             }
         }
-        return $hasZoneB ? 7.00 : 4.00;
+        return (float)ProductController::DELIVERY_FEES[$hasZoneB ? 'Zone B' : 'Zone A'];
     }
 }
 ?>

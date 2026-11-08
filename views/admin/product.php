@@ -41,6 +41,7 @@ require __DIR__ . '/../layout/admin_nav.php';
         <p class="cb-card-lead">Add at least one <a href="brand.php">kitchen</a> and one <a href="category.php">category</a> before adding meals.</p>
     <?php else: ?>
     <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editProduct ? 'update_product_action.php' : 'add_product_action.php'; ?>" method="POST" enctype="multipart/form-data">
+        <?php echo csrf_field(); ?>
         <?php if ($editProduct): ?>
             <input type="hidden" name="product_id" value="<?php echo (int)$editProduct['product_id']; ?>">
         <?php endif; ?>
@@ -153,6 +154,7 @@ require __DIR__ . '/../layout/admin_nav.php';
                             <div class="cb-table-actions">
                                 <a href="product.php?edit_id=<?php echo (int)$product['product_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($product['product_title']); ?>">Edit</a>
                                 <form action="<?php echo $ROOT_DIR; ?>/actions/delete_product_action.php" method="POST" <?php if ((int)$product['order_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($product['product_title']); ?>? This can't be undone."<?php endif; ?>>
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="product_id" value="<?php echo (int)$product['product_id']; ?>">
                                     <button type="submit" aria-label="Delete <?php echo htmlspecialchars($product['product_title']); ?>">Delete</button>
                                 </form>

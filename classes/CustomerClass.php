@@ -31,8 +31,30 @@ class CustomerClass extends Database
 
     public function getAllCustomers()
     {
-        $sql = "SELECT customer_id, customer_name, customer_email, customer_contact, customer_city, campus_hostel, user_role, has_pass FROM customer ORDER BY customer_id DESC";
+        $sql = "SELECT customer_id, customer_name, customer_email, customer_contact, customer_city, campus_hostel, user_role, has_pass, pass_expiry FROM customer ORDER BY customer_id DESC";
         return $this->fetchAll($sql);
+    }
+
+    public function updateProfile($id, $name, $contact, $hostel)
+    {
+        $sql = "UPDATE customer SET customer_name = ?, customer_contact = ?, campus_hostel = ? WHERE customer_id = ?";
+        return $this->execute($sql, [$name, $contact, $hostel, $id]);
+    }
+
+    public function updatePassword($id, $newPass)
+    {
+        $sql = "UPDATE customer SET customer_pass = ? WHERE customer_id = ?";
+        return $this->execute($sql, [password_hash($newPass, PASSWORD_DEFAULT), $id]);
+    }
+
+    public function setRole($id, $role)
+    {
+        return $this->execute("UPDATE customer SET user_role = ? WHERE customer_id = ?", [$role, $id]);
+    }
+
+    public function getCouriers()
+    {
+        return $this->fetchAll("SELECT customer_id, customer_name, customer_contact FROM customer WHERE user_role = 3 ORDER BY customer_name ASC");
     }
 
     public function updatePassStatus($id, $hasPass, $expiryDate)

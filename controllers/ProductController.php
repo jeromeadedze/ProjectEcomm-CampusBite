@@ -4,14 +4,14 @@ require_once __DIR__ . "/../classes/ProductClass.php";
 class ProductController
 {
     const ZONES = [
-        'Zone A' => 'Zone A: on campus (GH₵ 4.00 delivery)',
-        'Zone B' => 'Zone B: Berekuso corridor (GH₵ 7.00 delivery)',
+        'Zone A' => 'Zone A: on campus (GH₵ 5.00 delivery)',
+        'Zone B' => 'Zone B: Berekuso corridor (GH₵ 10.00 delivery)',
     ];
 
-    // Delivery fee in GH₵ for each zone, as shown on kitchen cards
+    // Delivery fee in GH₵ for each zone. The single source for every fee shown or charged.
     const DELIVERY_FEES = [
-        'Zone A' => 4,
-        'Zone B' => 7,
+        'Zone A' => 5,
+        'Zone B' => 10,
     ];
 
     const DISHES_PER_PAGE = 24;
@@ -194,6 +194,14 @@ class ProductController
     public function getProductsByBrand($brand_id)
     {
         return $this->productModel->getProductsByBrand($brand_id);
+    }
+
+    /**
+     * Shoppers can only order a meal that is available from an active kitchen
+     */
+    public function isOrderable($product)
+    {
+        return $product && (int)$product['is_available'] === 1 && (int)$product['brand_active'] === 1;
     }
 
     public function searchProducts($query)

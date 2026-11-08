@@ -1,6 +1,11 @@
 <?php
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 require_once __DIR__ . '/layout/header.php';
+
+if (!PASS_ENABLED) {
+    header("Location: " . $ROOT_DIR . "/index.php");
+    exit;
+}
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
 $custCtrl = new CustomerController();
@@ -37,14 +42,23 @@ $user = is_logged_in() ? $custCtrl->getCustomerById(get_user_id()) : null;
                 </div>
             </div>
 
-            <?php if ($user && !empty($user['has_pass'])): ?>
+            <?php if ($user && has_active_pass($user)): ?>
                 <div class="alert alert-success bg-white text-success border-0 rounded-4 p-3 fw-bold mb-0">
                     <i class="bi bi-check-circle-fill me-2"></i> You already have an active CampusBite Pass! Valid through <?php echo htmlspecialchars($user['pass_expiry'] ?? '30 days'); ?>.
                 </div>
             <?php else: ?>
-                <a href="<?php echo is_logged_in() ? $ROOT_DIR . '/actions/subscribe_pass_action.php' : $ROOT_DIR . '/views/login.php'; ?>" class="btn btn-warning btn-lg rounded-pill px-4 fw-bold text-dark shadow">
-                    <i class="bi bi-lightning-charge-fill me-1"></i> Subscribe Now for GH₵ 35.00
-                </a>
+                <?php if (is_logged_in()): ?>
+                    <form action="<?php echo $ROOT_DIR; ?>/actions/subscribe_pass_action.php" method="POST" class="m-0">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="btn btn-warning btn-lg rounded-pill px-4 fw-bold text-dark shadow">
+                            <i class="bi bi-lightning-charge-fill me-1"></i> Subscribe Now for GH₵ 35.00
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <a href="<?php echo $ROOT_DIR; ?>/views/login.php" class="btn btn-warning btn-lg rounded-pill px-4 fw-bold text-dark shadow">
+                        <i class="bi bi-lightning-charge-fill me-1"></i> Subscribe Now for GH₵ 35.00
+                    </a>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>

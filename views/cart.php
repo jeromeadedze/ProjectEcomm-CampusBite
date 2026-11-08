@@ -1,130 +1,131 @@
 <?php
+// The bill, in the theme's layout: meals grouped by kitchen, with the order summary beside them
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 require_once __DIR__ . '/layout/header.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
+if (is_admin()) {
+    header("Location: " . $ROOT_DIR . "/views/admin/orders.php");
+    exit;
+}
+
 $cartCtrl = new CartController();
-$cartIp = get_ip();
-$userId = get_user_id();
-$cartItems = $cartCtrl->getCartItems($cartIp, $userId);
-$subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
+$cartItems = $cartCtrl->getCartItems(get_cart_token(), get_user_id());
+$subtotal = $cartCtrl->getCartTotal(get_cart_token(), get_user_id());
 $deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems);
+$deliveryZone = $cartCtrl->deliveryZoneFor($cartItems);
 $grandTotal = $subtotal + $deliveryFee;
+$hasUnavailable = !empty($cartCtrl->unavailableItems($cartItems));
+$mealCount = array_sum(array_column($cartItems, 'qty'));
+
+// Group the meals by kitchen, keeping each kitchen's zone for its badge
+$billKitchens = [];
+foreach ($cartItems as $item) {
+    $billKitchens[$item['brand_name']]['zone'] = $item['zone'];
+    $billKitchens[$item['brand_name']]['items'][] = $item;
+}
 ?>
 
-<div class="row g-4 my-3">
-    <div class="col-lg-8">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="fw-bold m-0"><i class="bi bi-cart3 text-warning me-2"></i>Your Order Bag</h3>
-            <span class="text-muted small"><?php echo count($cartItems); ?> unique items</span>
-        </div>
+<?php if (empty($cartItems)): ?>
+    <div class="cb-card cb-bill-empty">
+        <span class="cb-bill-empty-icon" aria-hidden="true"><i class="bi bi-bag"></i></span>
+        <h2>Your tray is empty</h2>
+        <p>Pick a kitchen and add a few meals. They'll show up here.</p>
+        <a class="cb-btn" href="<?php echo $ROOT_DIR; ?>/views/menu.php">Explore the menu</a>
+    </div>
+<?php else: ?>
+    <div class="cb-bill">
+        <div>
+            <p class="cb-sub"><?php echo $mealCount; ?> meal<?php echo $mealCount === 1 ? '' : 's'; ?> from <?php echo count($billKitchens); ?> kitchen<?php echo count($billKitchens) === 1 ? '' : 's'; ?></p>
 
-        <?php if (empty($cartItems)): ?>
-            <div class="card border-0 shadow-sm rounded-4 text-center py-5">
-                <div class="py-4">
-                    <i class="bi bi-bag-x text-muted" style="font-size: 3.5rem;"></i>
-                    <h5 class="fw-bold mt-3">Your order bag is empty</h5>
-                    <p class="text-muted">Hungry? Explore what's cooking at Hallmark, Akonnor, Munchees and Peckish!</p>
-                    <a href="<?php echo $ROOT_DIR; ?>/index.php" class="cb-btn-primary btn px-4">Browse Campus Menus</a>
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-                <table class="cb-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Meal & Kitchen</th>
-                            <th>Price</th>
-                            <th style="width: 140px;">Quantity</th>
-                            <th>Total</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($cartItems as $item): ?>
-                            <?php $lineTotal = (float)$item['product_price'] * (int)$item['qty']; ?>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <?php 
-                                            $thumb = !empty($item['product_image']) && file_exists(__DIR__ . '/../images/products/' . $item['product_image'])
-                                                ? $ROOT_DIR . '/images/products/' . htmlspecialchars($item['product_image'])
-                                                : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=120&q=80';
-                                        ?>
-                                        <img src="<?php echo $thumb; ?>" class="rounded-3" style="width: 50px; height: 50px; object-fit: cover;" alt="">
-                                        <div>
-                                            <h6 class="fw-bold mb-0 text-dark"><?php echo htmlspecialchars($item['product_title']); ?></h6>
-                                            <small class="text-muted d-block">
-                                                <i class="bi bi-shop"></i> <?php echo htmlspecialchars($item['brand_name']); ?>
-                                                <span class="badge bg-light text-secondary border ms-1"><?php echo htmlspecialchars($item['zone'] ?? 'Zone A'); ?></span>
-                                            </small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="fw-semibold">GH₵ <?php echo number_format($item['product_price'], 2); ?></td>
-                                <td>
-                                    <form action="<?php echo $ROOT_DIR; ?>/actions/update_qty_action.php" method="POST" class="d-flex align-items-center gap-1 m-0">
-                                        <input type="hidden" name="p_id" value="<?php echo $item['p_id']; ?>">
-                                        <input type="number" name="qty" value="<?php echo $item['qty']; ?>" min="1" max="20" class="form-control form-control-sm text-center rounded-pill" style="width: 60px;">
-                                        <button type="submit" class="btn btn-sm btn-light border rounded-circle" title="Update">
-                                            <i class="bi bi-arrow-repeat"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                                <td class="fw-bold text-dark">GH₵ <?php echo number_format($lineTotal, 2); ?></td>
-                                <td>
-                                    <a href="<?php echo $ROOT_DIR; ?>/actions/remove_from_cart_action.php?p_id=<?php echo $item['p_id']; ?>" class="btn btn-sm btn-outline-danger border-0 rounded-circle" title="Remove">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                </td>
-                            </tr>
+            <?php foreach ($billKitchens as $kitchenName => $kitchen): ?>
+                <section class="cb-card cb-bill-kitchen" aria-label="<?php echo htmlspecialchars($kitchenName); ?>">
+                    <div class="cb-bill-kitchen-head">
+                        <h2><?php echo htmlspecialchars($kitchenName); ?></h2>
+                        <em class="cb-zone <?php echo $kitchen['zone'] === 'Zone B' ? 'cb-zone-b' : 'cb-zone-a'; ?>"><?php echo htmlspecialchars($kitchen['zone']); ?></em>
+                    </div>
+
+                    <ul class="cb-bill-items">
+                        <?php foreach ($kitchen['items'] as $item): ?>
+                            <?php
+                            $qty = (int)$item['qty'];
+                            $itemImage = !empty($item['product_image']) && file_exists(__DIR__ . '/../images/products/' . $item['product_image'])
+                                ? $ROOT_DIR . '/images/products/' . htmlspecialchars($item['product_image'])
+                                : null;
+                            $itemUnavailable = (int)$item['is_available'] !== 1 || (int)$item['brand_active'] !== 1;
+                            ?>
+                            <li class="cb-bill-item<?php echo $itemUnavailable ? ' is-unavailable' : ''; ?>">
+                                <span class="cb-menu-img">
+                                    <?php if ($itemImage): ?>
+                                        <img src="<?php echo $itemImage; ?>" alt="">
+                                    <?php else: ?>
+                                        <i class="bi bi-egg-fried" aria-hidden="true"></i>
+                                    <?php endif; ?>
+                                </span>
+
+                                <div class="cb-bill-item-main">
+                                    <b><?php echo htmlspecialchars($item['product_title']); ?></b>
+                                    <small>GH₵ <?php echo number_format($item['product_price'], 2); ?> each</small>
+                                    <?php if ($itemUnavailable): ?>
+                                        <small class="cb-bill-warn">No longer available. Remove it to check out.</small>
+                                    <?php endif; ?>
+                                    <?php if (!empty($item['notes'])): ?>
+                                        <small class="cb-bill-note"><i class="bi bi-chat-left-text" aria-hidden="true"></i> <?php echo htmlspecialchars($item['notes']); ?></small>
+                                    <?php endif; ?>
+                                </div>
+
+                                <form class="cb-stepper" action="<?php echo $ROOT_DIR; ?>/actions/update_qty_action.php" method="POST" aria-label="Quantity of <?php echo htmlspecialchars($item['product_title']); ?>">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="p_id" value="<?php echo (int)$item['p_id']; ?>">
+                                    <button type="submit" name="qty" value="<?php echo $qty - 1; ?>" aria-label="One less" <?php echo $qty <= 1 ? 'disabled' : ''; ?>>−</button>
+                                    <output aria-live="polite"><?php echo $qty; ?></output>
+                                    <button type="submit" name="qty" value="<?php echo $qty + 1; ?>" aria-label="One more" <?php echo ($qty >= CartClass::MAX_QTY || $itemUnavailable) ? 'disabled' : ''; ?>>+</button>
+                                </form>
+
+                                <span class="cb-bill-line">GH₵ <?php echo number_format((float)$item['product_price'] * $qty, 2); ?></span>
+
+                                <form action="<?php echo $ROOT_DIR; ?>/actions/remove_from_cart_action.php" method="POST" data-confirm="Remove <?php echo htmlspecialchars($item['product_title']); ?> from your bill?">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="p_id" value="<?php echo (int)$item['p_id']; ?>">
+                                    <button type="submit" class="cb-bill-remove" aria-label="Remove <?php echo htmlspecialchars($item['product_title']); ?>" title="Remove"><i class="bi bi-trash3" aria-hidden="true"></i></button>
+                                </form>
+                            </li>
                         <?php endforeach; ?>
-                    </tbody>
-                </table>
+                    </ul>
+                </section>
+            <?php endforeach; ?>
+
+            <div class="cb-bill-foot">
+                <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/menu.php">‹ Add more meals</a>
+                <form action="<?php echo $ROOT_DIR; ?>/actions/clear_cart_action.php" method="POST" data-confirm="Clear every meal from your bill?">
+                    <?php echo csrf_field(); ?>
+                    <button type="submit" class="cb-btn cb-btn-quiet">Clear bill</button>
+                </form>
             </div>
-        <?php endif; ?>
-    </div>
-
-    <!-- Order Summary & Checkout Form -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 90px;">
-            <h5 class="fw-bold mb-3">Order Summary</h5>
-
-            <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Subtotal</span>
-                <span class="fw-semibold">GH₵ <?php echo number_format($subtotal, 2); ?></span>
-            </div>
-
-            <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Campus Delivery Fee</span>
-                <span class="fw-semibold text-success">GH₵ <?php echo number_format($deliveryFee, 2); ?></span>
-            </div>
-
-            <div class="alert alert-light border rounded-3 p-2 small mb-3 text-muted">
-                <i class="bi bi-info-circle me-1"></i> Zone A: GH₵ 4.00 (On-Campus) | Zone B: GH₵ 7.00 (Berekuso).
-            </div>
-
-            <hr>
-
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <span class="fw-bold fs-5">Grand Total</span>
-                <span class="fw-bold fs-4 text-danger">GH₵ <?php echo number_format($grandTotal, 2); ?></span>
-            </div>
-
-            <?php if (!empty($cartItems)): ?>
-                <?php if (is_logged_in()): ?>
-                    <a href="<?php echo $ROOT_DIR; ?>/views/checkout.php" class="cb-btn-primary btn btn-lg w-100 py-3 text-center">
-                        <i class="bi bi-credit-card-fill me-2"></i> Proceed to Checkout
-                    </a>
-                <?php else: ?>
-                    <a href="<?php echo $ROOT_DIR; ?>/views/login.php?redirect=checkout" class="btn btn-dark btn-lg w-100 py-3 rounded-pill text-center">
-                        <i class="bi bi-box-arrow-in-right me-2"></i> Sign In to Complete Order
-                    </a>
-                    <small class="text-center d-block text-muted mt-2">New student? <a href="<?php echo $ROOT_DIR; ?>/views/register.php" class="text-primary fw-semibold">Sign up</a> in 30 seconds</small>
-                <?php endif; ?>
-            <?php endif; ?>
         </div>
+
+        <aside class="cb-card cb-bill-summary" aria-label="Order summary">
+            <h2>Order summary</h2>
+            <div class="cb-totals">
+                <div><span>Meals (<?php echo $mealCount; ?>)</span><span>GH₵ <?php echo number_format($subtotal, 2); ?></span></div>
+                <div><span>Delivery (<?php echo htmlspecialchars($deliveryZone); ?>)</span><span>GH₵ <?php echo number_format($deliveryFee, 2); ?></span></div>
+                <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
+            </div>
+            <p class="cb-field-hint">
+                One delivery fee per order: GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone A'], 2); ?> for on-campus kitchens,
+                GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone B'], 2); ?> if any meal comes from a Berekuso kitchen.
+            </p>
+
+            <?php if ($hasUnavailable): ?>
+                <button type="button" class="cb-checkout" disabled>Remove unavailable meals to check out</button>
+            <?php elseif (is_logged_in()): ?>
+                <a class="cb-checkout cb-checkout-link" href="<?php echo $ROOT_DIR; ?>/views/checkout.php">Proceed to checkout</a>
+            <?php else: ?>
+                <a class="cb-checkout cb-checkout-signin" href="<?php echo $ROOT_DIR; ?>/views/login.php?redirect=checkout">Sign in to check out</a>
+                <p class="cb-signin-note">New here? <a href="<?php echo $ROOT_DIR; ?>/views/register.php">Create an account</a></p>
+            <?php endif; ?>
+        </aside>
     </div>
-</div>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

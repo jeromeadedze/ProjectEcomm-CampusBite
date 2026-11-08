@@ -15,6 +15,7 @@ $toCheckout = ($_GET['redirect'] ?? '') === 'checkout';
     <p class="cb-auth-lead"><?php echo $toCheckout ? 'Sign in to finish your order.' : 'Sign in to order from every campus kitchen.'; ?></p>
 
     <form action="<?php echo $ROOT_DIR; ?>/actions/login_action.php" method="POST">
+        <?php echo csrf_field(); ?>
         <?php if ($toCheckout): ?>
             <input type="hidden" name="redirect" value="checkout">
         <?php endif; ?>

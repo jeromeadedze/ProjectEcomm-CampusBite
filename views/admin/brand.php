@@ -33,6 +33,7 @@ require __DIR__ . '/../layout/admin_nav.php';
 <section class="cb-card">
     <h2><?php echo $editBrand ? 'Edit ' . htmlspecialchars($editBrand['brand_name']) : 'Add a kitchen'; ?></h2>
     <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editBrand ? 'update_brand_action.php' : 'add_brand_action.php'; ?>" method="POST">
+        <?php echo csrf_field(); ?>
         <?php if ($editBrand): ?>
             <input type="hidden" name="brand_id" value="<?php echo (int)$editBrand['brand_id']; ?>">
         <?php endif; ?>
@@ -110,6 +111,7 @@ require __DIR__ . '/../layout/admin_nav.php';
                             <div class="cb-table-actions">
                                 <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($brand['brand_name']); ?>">Edit</a>
                                 <form action="<?php echo $ROOT_DIR; ?>/actions/delete_brand_action.php" method="POST" <?php if ((int)$brand['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>? This can't be undone."<?php endif; ?>>
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="brand_id" value="<?php echo (int)$brand['brand_id']; ?>">
                                     <button type="submit" aria-label="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>">Delete</button>
                                 </form>

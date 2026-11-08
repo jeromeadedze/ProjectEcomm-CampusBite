@@ -8,6 +8,7 @@ $adminTabs = [
     'category' => ['label' => 'Categories', 'path' => '/views/admin/category.php'],
     'orders' => ['label' => 'Orders', 'path' => '/views/admin/orders.php'],
     'customers' => ['label' => 'Customers', 'path' => '/views/customers.php'],
+    'messages' => ['label' => 'Support', 'path' => '/views/admin/messages.php'],
 ];
 ?>
 <nav class="cb-admin-tabs" aria-label="Admin">
