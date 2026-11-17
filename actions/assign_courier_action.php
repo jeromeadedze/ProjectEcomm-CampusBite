@@ -3,7 +3,12 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
-require_admin();
+// Couriers are assigned by the kitchen the order is from (admins can too)
+require_login();
+if (!is_admin() && !is_kitchen()) {
+    header("Location: ../index.php");
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../views/admin/orders.php");
@@ -19,6 +24,8 @@ $courier = $courierId > 0 ? (new CustomerController())->getCustomerById($courier
 
 if (!$order) {
     $_SESSION['error'] = "That order no longer exists.";
+} elseif (is_kitchen() && (int)$order['brand_id'] !== get_kitchen_id()) {
+    $_SESSION['error'] = "That order isn't from your kitchen.";
 } elseif ($courierId > 0 && (!$courier || (int)$courier['user_role'] !== 3)) {
     $_SESSION['error'] = "Choose a courier from the list.";
 } elseif ((int)$order['courier_id'] === $courierId) {
@@ -31,5 +38,5 @@ if (!$order) {
     $_SESSION['error'] = "The courier couldn't be saved. Try again.";
 }
 
-redirect_back('../views/admin/orders.php');
+redirect_back('..' . staff_orders_path());
 ?>

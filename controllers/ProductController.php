@@ -105,6 +105,16 @@ class ProductController
         return $this->productModel->updateBrand($id, $name, $zone, $location, $commission, $isActive);
     }
 
+    public function updateBrandInfo($id, $location, $isActive)
+    {
+        return $this->productModel->updateBrandInfo($id, $location, $isActive);
+    }
+
+    public function getProductsForKitchen($brandId)
+    {
+        return $this->productModel->getProductsForKitchen($brandId);
+    }
+
     public function deleteBrand($id)
     {
         return $this->productModel->deleteBrand($id);

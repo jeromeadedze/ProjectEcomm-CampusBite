@@ -12,9 +12,8 @@ $courierCount = count(array_filter($customers, function ($c) {
 }));
 ?>
 
-<?php require __DIR__ . '/layout/admin_nav.php'; ?>
 
-<p class="cb-sub"><?php echo count($customers); ?> accounts · <?php echo $courierCount; ?> courier<?php echo $courierCount === 1 ? '' : 's'; ?>. Make an account a courier to assign it orders.</p>
+<p class="cb-sub"><?php echo count($customers); ?> accounts · <?php echo $courierCount; ?> courier<?php echo $courierCount === 1 ? '' : 's'; ?>. Make an account a courier so kitchens can assign it deliveries. Kitchen logins are managed on the Kitchens tab.</p>
 
 <section class="cb-card">
     <div class="cb-table-wrap">
@@ -46,6 +45,8 @@ $courierCount = count(array_filter($customers, function ($c) {
                         <td>
                             <?php if ((int)$c['user_role'] === 1): ?>
                                 <span class="cb-zone cb-zone-b">Admin</span>
+                            <?php elseif ((int)$c['user_role'] === 4): ?>
+                                <span class="cb-zone cb-zone-a">Kitchen · <?php echo htmlspecialchars($c['brand_name'] ?? 'none'); ?></span>
                             <?php else: ?>
                                 <form class="cb-inline-form" action="<?php echo $ROOT_DIR; ?>/actions/update_role_action.php" method="POST">
                                     <?php echo csrf_field(); ?>

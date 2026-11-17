@@ -18,7 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user) {
             log_in_customer($user);
             $_SESSION['success'] = "Welcome back, " . $user['customer_name'] . "!";
-            header("Location: " . ($toCheckout ? '../views/checkout.php' : '../index.php'));
+            if (!can_order()) {
+                header("Location: .." . home_path_for_role());
+            } else {
+                header("Location: " . ($toCheckout ? '../views/checkout.php' : '../index.php'));
+            }
             exit;
         } else {
             $_SESSION['error'] = "That email and password don't match. Check them and try again.";

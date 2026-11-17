@@ -22,7 +22,7 @@ class CartClass extends Database
     public function getCartItems($token, $c_id = null)
     {
         [$where, $params] = $this->owner($token, $c_id);
-        $sql = "SELECT c.*, p.product_title, p.product_price, p.product_image, p.is_available,
+        $sql = "SELECT c.*, p.product_title, p.product_price, p.product_image, p.is_available, p.product_brand,
                        b.brand_name, b.zone, b.is_active AS brand_active
                 FROM cart c
                 JOIN products p ON c.p_id = p.product_id
@@ -81,7 +81,16 @@ class CartClass extends Database
      */
     public function mergeGuestCart($token, $c_id)
     {
-        foreach ($this->getCartItems($token, null) as $item) {
+        $guestItems = $this->getCartItems($token, null);
+        if (empty($guestItems)) {
+            return true;
+        }
+        // One kitchen per bill: if the guest picked a different kitchen, their newer choice replaces the saved bill
+        $saved = $this->getCartItems($token, $c_id);
+        if (!empty($saved) && (int)$saved[0]['product_brand'] !== (int)$guestItems[0]['product_brand']) {
+            $this->clearCart($token, $c_id);
+        }
+        foreach ($guestItems as $item) {
             $this->addToCart($item['p_id'], $token, $c_id, (int)$item['qty'], $item['notes']);
         }
         return $this->clearCart($token, null);

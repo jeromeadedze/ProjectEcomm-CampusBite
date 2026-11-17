@@ -37,3 +37,10 @@
 @media (max-width:520px){
   .cb-auth-grid{grid-template-columns:minmax(0,1fr)}
 }
+
+/* A message that asks the shopper to choose, like starting a new bill from another kitchen */
+.cb-toast-choice>div{flex:1;display:flex;flex-direction:column;gap:10px}
+.cb-toast-actions{display:flex;flex-wrap:wrap;gap:8px}
+.cb-toast-actions form{margin:0}
+.cb-toast-actions .cb-btn{padding:7px 12px;font-size:12px}
+.cb-toast .cb-toast-actions button.cb-btn-quiet{color:var(--ink)}

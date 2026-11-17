@@ -6,8 +6,8 @@ require_once __DIR__ . '/../controllers/CustomerController.php';
 
 require_login();
 
-if (is_admin()) {
-    header("Location: " . $ROOT_DIR . "/views/admin/orders.php");
+if (!can_order()) {
+    header("Location: " . $ROOT_DIR . staff_orders_path());
     exit;
 }
 

@@ -63,10 +63,14 @@ class CustomerController
      */
     public function updateProfile($id, $input)
     {
+        // Kitchen staff have no delivery spot, so they keep whatever is stored (usually nothing)
+        $account = $this->customerModel->getCustomerById($id);
+        $needsHostel = (int)$account['user_role'] !== 4;
+
         $values = [
             'customer_name' => trim($input['customer_name'] ?? ''),
             'customer_contact' => trim($input['customer_contact'] ?? ''),
-            'campus_hostel' => trim($input['campus_hostel'] ?? ''),
+            'campus_hostel' => $needsHostel ? trim($input['campus_hostel'] ?? '') : ($account['campus_hostel'] ?? null),
         ];
 
         $error = null;
@@ -74,7 +78,7 @@ class CustomerController
             $error = 'Enter your full name.';
         } elseif (!preg_match(self::PHONE_RULE, $values['customer_contact'])) {
             $error = 'Enter a valid phone number, such as 0241234567.';
-        } elseif (!array_key_exists($values['campus_hostel'], self::HOSTELS)) {
+        } elseif ($needsHostel && !array_key_exists($values['campus_hostel'], self::HOSTELS)) {
             $error = 'Choose your delivery spot from the list.';
         } elseif (!$this->customerModel->updateProfile($id, $values['customer_name'], $values['customer_contact'], $values['campus_hostel'])) {
             $error = "Your details couldn't be saved. Try again.";
@@ -102,6 +106,49 @@ class CustomerController
             return 'Choose a password different from your current one.';
         }
         return $this->customerModel->updatePassword($id, $new) ? null : "Your password couldn't be changed. Try again.";
+    }
+
+    /**
+     * Creates a sign-in for a kitchen's staff. Returns ['values' => form values (no password), 'error' => message or null].
+     */
+    public function createKitchenAccount($input, $kitchenExists)
+    {
+        $values = [
+            'brand_id' => (int)($input['brand_id'] ?? 0),
+            'customer_name' => trim($input['customer_name'] ?? ''),
+            'customer_email' => trim($input['customer_email'] ?? ''),
+            'customer_contact' => trim($input['customer_contact'] ?? ''),
+        ];
+        $pass = $input['customer_pass'] ?? '';
+
+        $error = null;
+        if (!$kitchenExists($values['brand_id'])) {
+            $error = 'Choose the kitchen this account will run.';
+        } elseif (mb_strlen($values['customer_name']) < 2 || mb_strlen($values['customer_name']) > 100) {
+            $error = "Enter the staff member's full name.";
+        } elseif (!filter_var($values['customer_email'], FILTER_VALIDATE_EMAIL)) {
+            $error = 'Enter a valid email address for the kitchen login.';
+        } elseif ($this->customerModel->emailExists($values['customer_email'])) {
+            $error = 'That email already has an account. Use a different one for the kitchen login.';
+        } elseif (!preg_match(self::PHONE_RULE, $values['customer_contact'])) {
+            $error = 'Enter a valid phone number, such as 0241234567.';
+        } elseif (!preg_match(self::PASSWORD_RULE, $pass)) {
+            $error = 'The starting password needs at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.';
+        } elseif (!$this->customerModel->createKitchenAccount($values['customer_name'], $values['customer_email'], $pass, $values['customer_contact'], $values['brand_id'])) {
+            $error = "The kitchen login couldn't be created. Try again.";
+        }
+
+        return ['values' => $values, 'error' => $error];
+    }
+
+    public function getKitchenAccounts()
+    {
+        return $this->customerModel->getKitchenAccounts();
+    }
+
+    public function removeKitchenAccess($id)
+    {
+        return $this->customerModel->removeKitchenAccess($id);
     }
 
     public function setRole($id, $role)

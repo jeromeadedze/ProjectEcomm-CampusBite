@@ -32,10 +32,12 @@ CREATE TABLE `customer` (
   `campus_hostel` varchar(100) DEFAULT NULL, -- e.g. 'Walter Sisulu Hall', 'Wangari Maathai', 'Charlotte Court', etc.
   `customer_image` varchar(150) DEFAULT NULL,
   `user_role` int(11) NOT NULL DEFAULT 2, -- 1: Admin, 2: Customer (Student/Faculty), 3: Student Courier, 4: Kitchen Merchant
+  `brand_id` int(11) DEFAULT NULL, -- for kitchen accounts (role 4): the kitchen they run
   `has_pass` tinyint(1) NOT NULL DEFAULT 0, -- 1 if customer subscribed to GH₵ 35 CampusBite Pass
   `pass_expiry` date DEFAULT NULL,
   PRIMARY KEY (`customer_id`),
-  UNIQUE KEY `customer_email` (`customer_email`)
+  UNIQUE KEY `customer_email` (`customer_email`),
+  KEY `brand_id` (`brand_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 2. brands / vendors (Kitchens & Food Spots) ─────────────────────
@@ -49,6 +51,9 @@ CREATE TABLE `brands` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`brand_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Kitchen accounts point at their kitchen (added here because brands is created after customer)
+ALTER TABLE `customer` ADD CONSTRAINT `customer_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`) ON DELETE SET NULL;
 
 -- ── 3. categories (Meal types) ──────────────────────────────────────
 CREATE TABLE `categories` (
@@ -94,6 +99,7 @@ CREATE TABLE `cart` (
 CREATE TABLE `orders` (
   `order_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_id` int(11) NOT NULL,
+  `brand_id` int(11) DEFAULT NULL, -- the one kitchen this order is from
   `invoice_no` int(11) NOT NULL,
   `order_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `order_status` varchar(50) NOT NULL DEFAULT 'Placed', -- Placed, Preparing, Ready, In Transit, Delivered, Cancelled
@@ -105,6 +111,8 @@ CREATE TABLE `orders` (
   PRIMARY KEY (`order_id`),
   KEY `customer_id` (`customer_id`),
   KEY `courier_id` (`courier_id`),
+  KEY `brand_id` (`brand_id`),
+  CONSTRAINT `orders_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`),
   CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
   CONSTRAINT `orders_courier_fk` FOREIGN KEY (`courier_id`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -114,6 +122,7 @@ CREATE TABLE `orderdetails` (
   `order_id` int(11) NOT NULL,
   `product_id` int(11) NOT NULL,
   `qty` int(11) NOT NULL,
+  `price` double DEFAULT NULL, -- price per meal at the time of the order
   `notes` varchar(255) DEFAULT NULL, -- customer's special request, copied from the cart
   KEY `order_id` (`order_id`),
   KEY `product_id` (`product_id`),

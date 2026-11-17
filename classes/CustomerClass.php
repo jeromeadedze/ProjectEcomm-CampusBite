@@ -31,7 +31,9 @@ class CustomerClass extends Database
 
     public function getAllCustomers()
     {
-        $sql = "SELECT customer_id, customer_name, customer_email, customer_contact, customer_city, campus_hostel, user_role, has_pass, pass_expiry FROM customer ORDER BY customer_id DESC";
+        $sql = "SELECT c.customer_id, c.customer_name, c.customer_email, c.customer_contact, c.customer_city, c.campus_hostel, c.user_role, c.has_pass, c.pass_expiry, b.brand_name
+                FROM customer c LEFT JOIN brands b ON c.brand_id = b.brand_id
+                ORDER BY c.customer_id DESC";
         return $this->fetchAll($sql);
     }
 
@@ -45,6 +47,31 @@ class CustomerClass extends Database
     {
         $sql = "UPDATE customer SET customer_pass = ? WHERE customer_id = ?";
         return $this->execute($sql, [password_hash($newPass, PASSWORD_DEFAULT), $id]);
+    }
+
+    // ---------- Kitchen accounts (role 4) ----------
+
+    public function createKitchenAccount($name, $email, $pass, $contact, $brandId)
+    {
+        $sql = "INSERT INTO customer (customer_name, customer_email, customer_pass, customer_country, customer_city, customer_contact, user_role, brand_id)
+                VALUES (?, ?, ?, 'Ghana', 'Berekuso', ?, 4, ?)";
+        return $this->execute($sql, [$name, $email, password_hash($pass, PASSWORD_DEFAULT), $contact, $brandId]);
+    }
+
+    public function getKitchenAccounts()
+    {
+        $sql = "SELECT c.customer_id, c.customer_name, c.customer_email, c.customer_contact, c.brand_id, b.brand_name
+                FROM customer c
+                LEFT JOIN brands b ON c.brand_id = b.brand_id
+                WHERE c.user_role = 4
+                ORDER BY b.brand_name ASC, c.customer_name ASC";
+        return $this->fetchAll($sql);
+    }
+
+    // Turns a kitchen account back into a regular customer account
+    public function removeKitchenAccess($id)
+    {
+        return $this->execute("UPDATE customer SET user_role = 2, brand_id = NULL WHERE customer_id = ? AND user_role = 4", [$id]);
     }
 
     public function setRole($id, $role)

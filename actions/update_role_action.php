@@ -20,6 +20,8 @@ if (!$account) {
 } elseif ((int)$account['user_role'] === 1) {
     // Admins are only created or removed in the database
     $_SESSION['error'] = "Admin accounts can't be changed here.";
+} elseif ((int)$account['user_role'] === 4) {
+    $_SESSION['error'] = "Kitchen logins are managed on the Kitchens tab.";
 } elseif (!$custCtrl->setRole($id, $role)) {
     $_SESSION['error'] = "Choose a role from the list.";
 } else {

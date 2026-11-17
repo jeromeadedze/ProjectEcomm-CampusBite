@@ -2,8 +2,13 @@
 define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
+require_once __DIR__ . '/../../controllers/CustomerController.php';
 
 require_admin();
+
+$kitchenAccounts = (new CustomerController())->getKitchenAccounts();
+$loginForm = $_SESSION['kitchen_login_form'] ?? ['brand_id' => 0, 'customer_name' => '', 'customer_email' => '', 'customer_contact' => ''];
+unset($_SESSION['kitchen_login_form']);
 
 $controller = new ProductController();
 $brands = $controller->getBrandsForAdmin();
@@ -27,7 +32,6 @@ if (!$form) {
 }
 
 require_once __DIR__ . '/../layout/header.php';
-require __DIR__ . '/../layout/admin_nav.php';
 ?>
 
 <section class="cb-card">
@@ -114,6 +118,68 @@ require __DIR__ . '/../layout/admin_nav.php';
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="brand_id" value="<?php echo (int)$brand['brand_id']; ?>">
                                     <button type="submit" aria-label="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="cb-card" id="kitchen-logins">
+    <h2>Kitchen logins</h2>
+    <p class="cb-card-lead">Give a kitchen's staff their own sign-in. They get a kitchen portal to receive orders, assign couriers, update their menu and prices, and see their sales. Share the starting password with them privately; they can change it under My account.</p>
+    <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/create_kitchen_account_action.php" method="POST" autocomplete="off">
+        <?php echo csrf_field(); ?>
+        <div class="cb-field">
+            <label for="login_brand">Kitchen</label>
+            <select id="login_brand" name="brand_id" required>
+                <option value="" <?php echo (int)$loginForm['brand_id'] === 0 ? 'selected' : ''; ?> disabled>Choose a kitchen</option>
+                <?php foreach ($brands as $brand): ?>
+                    <option value="<?php echo (int)$brand['brand_id']; ?>" <?php echo (int)$loginForm['brand_id'] === (int)$brand['brand_id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($brand['brand_name']); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="cb-field">
+            <label for="login_name">Staff name</label>
+            <input type="text" id="login_name" name="customer_name" maxlength="100" value="<?php echo htmlspecialchars($loginForm['customer_name']); ?>" placeholder="Ama Mensah" required>
+        </div>
+        <div class="cb-field">
+            <label for="login_email">Sign-in email</label>
+            <input type="email" id="login_email" name="customer_email" maxlength="100" value="<?php echo htmlspecialchars($loginForm['customer_email']); ?>" placeholder="hallmark@campusbite.app" required>
+        </div>
+        <div class="cb-field">
+            <label for="login_contact">Phone</label>
+            <input type="tel" id="login_contact" name="customer_contact" maxlength="15" value="<?php echo htmlspecialchars($loginForm['customer_contact']); ?>" placeholder="0241234567" required>
+        </div>
+        <div class="cb-field cb-field-full">
+            <label for="login_pass">Starting password</label>
+            <input type="password" id="login_pass" name="customer_pass" minlength="8" autocomplete="new-password" aria-describedby="login_pass_hint" required>
+            <p class="cb-field-hint" id="login_pass_hint">At least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.</p>
+        </div>
+        <div class="cb-admin-actions"><button type="submit" class="cb-btn">Create kitchen login</button></div>
+    </form>
+
+    <div class="cb-table-wrap" style="margin-top:18px">
+        <table class="cb-table">
+            <thead><tr><th>Kitchen</th><th>Staff</th><th>Sign-in email</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+            <tbody>
+                <?php if (empty($kitchenAccounts)): ?>
+                    <tr><td colspan="4" class="cb-table-empty">No kitchen logins yet.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($kitchenAccounts as $account): ?>
+                    <tr>
+                        <td class="cb-table-name"><?php echo htmlspecialchars($account['brand_name'] ?? 'Kitchen removed'); ?></td>
+                        <td><?php echo htmlspecialchars($account['customer_name']); ?><span class="cb-table-sub"><?php echo htmlspecialchars($account['customer_contact']); ?></span></td>
+                        <td><?php echo htmlspecialchars($account['customer_email']); ?></td>
+                        <td>
+                            <div class="cb-table-actions">
+                                <form action="<?php echo $ROOT_DIR; ?>/actions/remove_kitchen_access_action.php" method="POST" data-confirm="Remove kitchen access for <?php echo htmlspecialchars($account['customer_name']); ?>? The account stays, but can no longer open the kitchen portal.">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="customer_id" value="<?php echo (int)$account['customer_id']; ?>">
+                                    <button type="submit">Remove access</button>
                                 </form>
                             </div>
                         </td>

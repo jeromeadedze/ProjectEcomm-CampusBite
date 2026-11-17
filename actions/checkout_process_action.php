@@ -7,9 +7,9 @@ require_once __DIR__ . '/../controllers/CustomerController.php';
 
 require_login();
 
-if (is_admin()) {
-    $_SESSION['error'] = "Admin accounts can't place orders.";
-    header("Location: ../views/admin/orders.php");
+if (!can_order()) {
+    $_SESSION['error'] = "Admin and kitchen accounts can't place orders.";
+    header("Location: .." . staff_orders_path());
     exit;
 }
 
@@ -57,6 +57,14 @@ if ($formError) {
     exit;
 }
 
+// One kitchen per order (bills from before this rule may still mix kitchens)
+$kitchenIds = $cartCtrl->kitchenIds($cartItems);
+if (count($kitchenIds) !== 1) {
+    $_SESSION['error'] = "Each order can only come from one kitchen. Remove the meals from the other kitchens to check out.";
+    header("Location: ../views/cart.php");
+    exit;
+}
+
 $unavailable = $cartCtrl->unavailableItems($cartItems);
 if ($unavailable) {
     $names = implode(', ', array_column($unavailable, 'product_title'));
@@ -74,12 +82,12 @@ $txnRef = "CB-" . strtoupper(bin2hex(random_bytes(5)));
 try {
     $orderCtrl->beginTransaction();
 
-    $orderId = $orderCtrl->createOrder($userId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes);
+    $orderId = $orderCtrl->createOrder($userId, $kitchenIds[0], $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes);
     if (!$orderId) {
         throw new RuntimeException('Order row was not created');
     }
     foreach ($cartItems as $item) {
-        $orderCtrl->addOrderDetail($orderId, $item['p_id'], $item['qty'], $item['notes']);
+        $orderCtrl->addOrderDetail($orderId, $item['p_id'], $item['qty'], $item['product_price'], $item['notes']);
     }
     $orderCtrl->recordPayment($grandTotal, $userId, $orderId, $paymentMode, $txnRef);
     $cartCtrl->clearCart($cartIp, $userId);

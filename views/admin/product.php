@@ -32,7 +32,6 @@ if (!$form) {
 }
 
 require_once __DIR__ . '/../layout/header.php';
-require __DIR__ . '/../layout/admin_nav.php';
 ?>
 
 <section class="cb-card">

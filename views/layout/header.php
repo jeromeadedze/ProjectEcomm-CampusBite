@@ -29,6 +29,11 @@ $pageTitles = [
     'settings' => 'Settings',
     'contact' => 'Help & Support',
     'messages' => 'Support Messages',
+    'kitchen_dashboard' => 'Kitchen Dashboard',
+    'admin_dashboard' => 'Admin Dashboard',
+    'kitchen_orders' => 'Kitchen Orders',
+    'kitchen_menu' => 'Kitchen Menu',
+    'kitchen_info' => 'Kitchen Info',
 ];
 $pageTitle = $pageTitles[$currentPage] ?? 'CampusBite';
 // A page can set $pageHeading before including this file to show a different heading than its title
@@ -36,17 +41,17 @@ $pageHeadingText = $pageHeading ?? $pageTitle;
 
 // Cart contents for the top-bar badge and the order panel
 $headerCart = new CartController();
-$panelItems = is_admin() ? [] : $headerCart->getCartItems(get_cart_token(), get_user_id());
+$panelItems = can_order() ? $headerCart->getCartItems(get_cart_token(), get_user_id()) : [];
 $panelCount = array_sum(array_map(function ($item) { return (int)$item['qty']; }, $panelItems));
 
 // The order panel only appears once something is in the cart, and never where it would repeat
-// the page itself (Bills, checkout) or for admins, who don't order
-$showPanel = $panelCount > 0 && !is_admin() && !in_array($currentPage, ['cart', 'checkout'], true);
+// the page itself (Bills, checkout) or for admins and kitchens, who don't order
+$showPanel = $panelCount > 0 && can_order() && !in_array($currentPage, ['cart', 'checkout'], true);
 // Changes whenever the cart changes, so a closed panel comes back after the next add
 $panelSignature = md5(json_encode(array_map(function ($item) { return [$item['p_id'], $item['qty']]; }, $panelItems)));
 
 // Meals the shopper has saved, so every dish card can show a filled heart
-$favoriteIds = (is_logged_in() && !is_admin()) ? (new FavoriteController())->getFavoriteIds(get_user_id()) : [];
+$favoriteIds = (is_logged_in() && can_order()) ? (new FavoriteController())->getFavoriteIds(get_user_id()) : [];
 
 // Stamp stylesheets with their edit time so a change shows without a hard refresh
 $cssVersion = function ($file) {
@@ -89,17 +94,19 @@ $cssVersion = function ($file) {
             <div class="cb-top cb-page-title">
                 <h1><?php echo htmlspecialchars($pageHeadingText); ?></h1>
                 <div class="cb-top-actions">
+                    <?php if (can_order()): ?>
                     <form class="cb-search" action="<?php echo $ROOT_DIR; ?>/views/search_results.php" method="GET" role="search">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                         <input type="search" name="q" placeholder="Search meals or kitchens" aria-label="Search meals or kitchens" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">
                     </form>
+                    <?php endif; ?>
                     <div class="cb-icons">
                         <?php if (is_logged_in()): ?>
-                            <a href="<?php echo $ROOT_DIR; ?>/views/my_orders.php" aria-label="Order updates" title="Order updates">
+                            <a href="<?php echo $ROOT_DIR . (can_order() ? '/views/my_orders.php' : staff_orders_path()); ?>" aria-label="Order updates" title="Order updates">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg>
                             </a>
                         <?php endif; ?>
-                        <?php if (!is_admin()): ?>
+                        <?php if (can_order()): ?>
                             <a href="<?php echo $ROOT_DIR; ?>/views/cart.php" aria-label="Cart, <?php echo $panelCount; ?> items" title="Cart">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2 12h11l2-8H6"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
                                 <?php if ($panelCount > 0): ?><span class="cb-dot"><?php echo $panelCount; ?></span><?php endif; ?>

@@ -7,8 +7,8 @@ require_once __DIR__ . '/../controllers/ProductController.php';
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 
 require_login();
-if (is_admin()) {
-    header("Location: " . $ROOT_DIR . "/views/admin/product.php");
+if (!can_order()) {
+    header("Location: " . $ROOT_DIR . staff_orders_path());
     exit;
 }
 

@@ -5,6 +5,12 @@ require_once __DIR__ . '/../controllers/OrderController.php';
 
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 
+// Admins and kitchen staff start in their own dashboards
+if (!can_order()) {
+    header("Location: " . $ROOT_DIR . home_path_for_role());
+    exit;
+}
+
 $productController = new ProductController();
 $kitchens = $productController->getBrandsWithCounts();
 $categories = $productController->getCategoriesWithDishes();

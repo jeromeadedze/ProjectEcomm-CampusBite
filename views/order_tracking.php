@@ -10,7 +10,9 @@ $orderCtrl = new OrderController();
 
 $order = $orderCtrl->getOrderById($orderId);
 
-if (!$order || ($order['customer_id'] != get_user_id() && !is_admin())) {
+// The customer, admins, and the kitchen the order is from can see it
+$isOrderKitchen = get_kitchen_id() !== null && get_kitchen_id() === (int)($order['brand_id'] ?? 0);
+if (!$order || ($order['customer_id'] != get_user_id() && !is_admin() && !$isOrderKitchen)) {
     $_SESSION['error'] = "Order not found or access restricted.";
     header("Location: " . $ROOT_DIR . "/index.php");
     exit;
@@ -65,13 +67,13 @@ $currentStatus = $order['order_status'];
                 <?php endforeach; ?>
             </div>
 
-            <?php if (is_admin()): ?>
-                <!-- Quick Status Update for Admin / Merchant demo -->
+            <?php if (is_admin() || $isOrderKitchen): ?>
+                <!-- Status update for admins and the order's own kitchen -->
                 <div class="mt-4 p-3 bg-light rounded-4 border">
                     <form action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST" class="d-flex align-items-center gap-2 m-0">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
-                        <label class="small fw-bold text-nowrap">Admin Simulate Status:</label>
+                        <label class="small fw-bold text-nowrap">Update status:</label>
                         <select name="status" class="form-select form-select-sm rounded-pill">
                             <?php foreach ($steps as $key => $label): ?>
                                 <option value="<?php echo htmlspecialchars($key); ?>" <?php echo ($currentStatus === $key) ? 'selected' : ''; ?>><?php echo htmlspecialchars($key); ?> — <?php echo htmlspecialchars($label); ?></option>
@@ -96,7 +98,7 @@ $currentStatus = $order['order_status'];
                     <span class="text-muted">A courier will be assigned soon.</span>
                 <?php endif; ?>
             </p>
-            <?php if (!is_admin()): ?>
+            <?php if (can_order()): ?>
                 <p class="small mb-3"><a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/contact.php?order_id=<?php echo (int)$order['order_id']; ?>">Get help with this order ›</a></p>
             <?php endif; ?>
             <?php if (!empty($order['special_instructions'])): ?>
@@ -110,7 +112,7 @@ $currentStatus = $order['order_status'];
                 <?php 
                     $totalMealCost = 0;
                     foreach ($items as $it): 
-                        $itemSub = (float)$it['product_price'] * (int)$it['qty'];
+                        $itemSub = (float)$it['unit_price'] * (int)$it['qty'];
                         $totalMealCost += $itemSub;
                 ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">

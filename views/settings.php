@@ -22,7 +22,7 @@ unset($_SESSION['settings_form']);
 <div class="cb-settings">
     <section class="cb-card">
         <h2>Your details</h2>
-        <p class="cb-card-lead">Couriers use your phone number and drop point to find you.</p>
+        <p class="cb-card-lead"><?php echo is_kitchen() ? 'CampusBite uses your phone number to reach the kitchen.' : 'Couriers use your phone number and drop point to find you.'; ?></p>
         <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/update_profile_action.php" method="POST">
             <?php echo csrf_field(); ?>
             <div class="cb-field cb-field-full">
@@ -33,6 +33,7 @@ unset($_SESSION['settings_form']);
                 <label for="customer_contact">Phone (MoMo / WhatsApp)</label>
                 <input type="tel" id="customer_contact" name="customer_contact" maxlength="15" autocomplete="tel" value="<?php echo htmlspecialchars($form['customer_contact']); ?>" required>
             </div>
+            <?php if (!is_kitchen()): ?>
             <div class="cb-field">
                 <label for="campus_hostel">Default drop point</label>
                 <select id="campus_hostel" name="campus_hostel" required>
@@ -42,6 +43,7 @@ unset($_SESSION['settings_form']);
                     <?php endforeach; ?>
                 </select>
             </div>
+            <?php endif; ?>
             <div class="cb-admin-actions">
                 <button type="submit" class="cb-btn">Save details</button>
             </div>
@@ -74,7 +76,7 @@ unset($_SESSION['settings_form']);
     <section class="cb-card cb-settings-signout">
         <div>
             <h2>Sign out</h2>
-            <p class="cb-card-lead">Your bill stays saved to your account for next time.</p>
+            <p class="cb-card-lead"><?php echo can_order() ? 'Your bill stays saved to your account for next time.' : 'Sign out when you leave a shared computer.'; ?></p>
         </div>
         <a class="cb-btn cb-btn-quiet" href="<?php echo $ROOT_DIR; ?>/logout.php">Sign out</a>
     </section>

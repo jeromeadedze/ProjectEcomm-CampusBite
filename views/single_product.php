@@ -8,8 +8,9 @@ $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 $prodCtrl = new ProductController();
 $product = $prodCtrl->getProductById((int)($_GET['id'] ?? 0));
 
-// Shoppers can't open sold-out meals or meals from paused kitchens; admins can still preview them
-if (!$product || (!$prodCtrl->isOrderable($product) && !is_admin())) {
+// Shoppers can't open sold-out meals or meals from paused kitchens; admins and the meal's own kitchen can still preview them
+$isOwnKitchen = get_kitchen_id() === (int)($product['product_brand'] ?? 0);
+if (!$product || (!$prodCtrl->isOrderable($product) && !is_admin() && !$isOwnKitchen)) {
     $_SESSION['error'] = "Sorry, that meal isn't available right now.";
     header("Location: " . $ROOT_DIR . "/views/menu.php");
     exit;
@@ -58,10 +59,14 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
             <p class="cb-meal-desc"><?php echo nl2br(htmlspecialchars($product['product_desc'])); ?></p>
         <?php endif; ?>
 
-        <?php if (is_admin()): ?>
+        <?php if (!can_order()): ?>
             <p class="cb-empty cb-meal-note">
-                Admin preview<?php echo $prodCtrl->isOrderable($product) ? '' : ': shoppers can\'t see this meal because it is sold out or its kitchen is paused'; ?>.
-                <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/admin/product.php?edit_id=<?php echo (int)$product['product_id']; ?>">Edit meal</a>
+                <?php echo is_admin() ? 'Admin preview' : 'Kitchen preview'; ?><?php echo $prodCtrl->isOrderable($product) ? '' : ': shoppers can\'t see this meal because it is sold out or its kitchen is paused'; ?>.
+                <?php if (is_admin()): ?>
+                    <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/admin/product.php?edit_id=<?php echo (int)$product['product_id']; ?>">Edit meal</a>
+                <?php elseif ($isOwnKitchen): ?>
+                    <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/kitchen/kitchen_menu.php?edit_id=<?php echo (int)$product['product_id']; ?>">Edit meal</a>
+                <?php endif; ?>
             </p>
         <?php else: ?>
             <form class="cb-meal-form" action="<?php echo $ROOT_DIR; ?>/actions/add_to_cart_action.php" method="POST">

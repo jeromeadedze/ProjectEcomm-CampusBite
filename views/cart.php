@@ -4,8 +4,8 @@ $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 require_once __DIR__ . '/layout/header.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
-if (is_admin()) {
-    header("Location: " . $ROOT_DIR . "/views/admin/orders.php");
+if (!can_order()) {
+    header("Location: " . $ROOT_DIR . staff_orders_path());
     exit;
 }
 
@@ -16,6 +16,7 @@ $deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems);
 $deliveryZone = $cartCtrl->deliveryZoneFor($cartItems);
 $grandTotal = $subtotal + $deliveryFee;
 $hasUnavailable = !empty($cartCtrl->unavailableItems($cartItems));
+$hasMixedKitchens = count($cartCtrl->kitchenIds($cartItems)) > 1;
 $mealCount = array_sum(array_column($cartItems, 'qty'));
 
 // Group the meals by kitchen, keeping each kitchen's zone for its badge
@@ -112,11 +113,13 @@ foreach ($cartItems as $item) {
                 <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
             </div>
             <p class="cb-field-hint">
-                One delivery fee per order: GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone A'], 2); ?> for on-campus kitchens,
-                GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone B'], 2); ?> if any meal comes from a Berekuso kitchen.
+                Each order comes from one kitchen. Delivery is GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone A'], 2); ?> from on-campus kitchens
+                and GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone B'], 2); ?> from Berekuso kitchens.
             </p>
 
-            <?php if ($hasUnavailable): ?>
+            <?php if ($hasMixedKitchens): ?>
+                <button type="button" class="cb-checkout" disabled>Keep meals from one kitchen to check out</button>
+            <?php elseif ($hasUnavailable): ?>
                 <button type="button" class="cb-checkout" disabled>Remove unavailable meals to check out</button>
             <?php elseif (is_logged_in()): ?>
                 <a class="cb-checkout cb-checkout-link" href="<?php echo $ROOT_DIR; ?>/views/checkout.php">Proceed to checkout</a>

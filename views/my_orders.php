@@ -25,6 +25,7 @@ $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
                     <tr>
                         <th>Invoice</th>
                         <th>Placed</th>
+                        <th>Kitchen</th>
                         <th>Drop point</th>
                         <th class="num">Meals</th>
                         <th class="num">Total</th>
@@ -37,6 +38,7 @@ $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
                         <tr>
                             <td class="cb-table-name">#<?php echo htmlspecialchars($ord['invoice_no']); ?></td>
                             <td><?php echo date('M d, Y · h:i A', strtotime($ord['order_date'])); ?></td>
+                            <td><?php echo htmlspecialchars($ord['brand_name'] ?? '–'); ?></td>
                             <td>
                                 <?php echo htmlspecialchars($ord['drop_location']); ?>
                                 <span class="cb-table-sub"><?php echo htmlspecialchars($ord['delivery_zone']); ?> delivery</span>

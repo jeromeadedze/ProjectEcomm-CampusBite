@@ -27,7 +27,6 @@ if (!empty($form['cat_icon']) && !isset($iconOptions[$form['cat_icon']])) {
 }
 
 require_once __DIR__ . '/../layout/header.php';
-require __DIR__ . '/../layout/admin_nav.php';
 ?>
 
 <section class="cb-card">

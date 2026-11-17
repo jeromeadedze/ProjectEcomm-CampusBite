@@ -42,6 +42,16 @@ class CartController
     }
 
     /**
+     * The kitchens the meals in a bill come from (a bill should only ever have one)
+     */
+    public function kitchenIds($items)
+    {
+        return array_values(array_unique(array_map(function ($item) {
+            return (int)$item['product_brand'];
+        }, $items)));
+    }
+
+    /**
      * Zone B if any item comes from a Berekuso kitchen, otherwise Zone A
      */
     public function deliveryZoneFor($items)

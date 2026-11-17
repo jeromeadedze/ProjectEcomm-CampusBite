@@ -12,7 +12,7 @@ $dishSaved = in_array((int)$dish['product_id'], $favoriteIds ?? [], true);
 $heartIcon = '<svg viewBox="0 0 24 24" fill="' . ($dishSaved ? 'currentColor' : 'none') . '" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
 ?>
 <article class="cb-dish">
-    <?php if (is_logged_in() && !is_admin()): ?>
+    <?php if (is_logged_in() && can_order()): ?>
         <form action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST" class="cb-heart-form">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="product_id" value="<?php echo (int)$dish['product_id']; ?>">
@@ -36,7 +36,7 @@ $heartIcon = '<svg viewBox="0 0 24 24" fill="' . ($dishSaved ? 'currentColor' : 
     <p class="cb-dish-name"><?php echo htmlspecialchars($dish['product_title']); ?></p>
     <div class="cb-dish-foot">
         <span class="cb-price">GH₵ <?php echo number_format($dish['product_price'], 2); ?></span>
-        <?php if (!is_admin()): ?>
+        <?php if (can_order()): ?>
         <form action="<?php echo $ROOT_DIR; ?>/actions/add_to_cart_action.php" method="POST">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="product_id" value="<?php echo (int)$dish['product_id']; ?>">

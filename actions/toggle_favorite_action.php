@@ -11,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 require_csrf();
 
-if (is_admin()) {
-    header("Location: ../views/admin/product.php");
+if (!can_order()) {
+    header("Location: .." . staff_orders_path());
     exit;
 }
 

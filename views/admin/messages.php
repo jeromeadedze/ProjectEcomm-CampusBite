@@ -12,7 +12,6 @@ $openCount = count(array_filter($messages, function ($msg) {
 }));
 ?>
 
-<?php require __DIR__ . '/../layout/admin_nav.php'; ?>
 
 <p class="cb-sub"><?php echo $openCount; ?> open · <?php echo count($messages); ?> total</p>
 

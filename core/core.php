@@ -10,6 +10,21 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 /**
+ * Kitchen accounts are re-checked against the database on every request, so removing
+ * someone's kitchen access (or moving them to another kitchen) takes effect immediately.
+ */
+function sync_kitchen_session() {
+    if ((int)($_SESSION['user_role'] ?? 0) !== 4 || empty($_SESSION['customer_id'])) {
+        return;
+    }
+    require_once __DIR__ . '/db_class.php';
+    $row = (new Database())->fetchOne("SELECT user_role, brand_id FROM customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
+    $_SESSION['user_role'] = $row ? (int)$row['user_role'] : 0;
+    $_SESSION['brand_id'] = ($row && (int)$row['user_role'] === 4) ? (int)$row['brand_id'] : null;
+}
+sync_kitchen_session();
+
+/**
  * Check if a user is currently logged in
  */
 function is_logged_in() {
@@ -29,6 +44,8 @@ function log_in_customer($user) {
     $_SESSION['customer_email'] = $user['customer_email'];
     $_SESSION['user_role'] = (int)$user['user_role'];
     $_SESSION['has_pass'] = has_active_pass($user) ? 1 : 0;
+    // Kitchen accounts (role 4) work on one kitchen
+    $_SESSION['brand_id'] = (int)$user['user_role'] === 4 ? (int)$user['brand_id'] : null;
 }
 
 /**
@@ -54,6 +71,57 @@ function is_admin() {
  */
 function is_courier() {
     return isset($_SESSION['user_role']) && (int)$_SESSION['user_role'] === 3;
+}
+
+/**
+ * Check if the user runs a kitchen (user_role = 4) that is linked to a kitchen
+ */
+function is_kitchen() {
+    return isset($_SESSION['user_role']) && (int)$_SESSION['user_role'] === 4 && !empty($_SESSION['brand_id']);
+}
+
+/**
+ * The kitchen a kitchen account runs, or null for everyone else
+ */
+function get_kitchen_id() {
+    return is_kitchen() ? (int)$_SESSION['brand_id'] : null;
+}
+
+/**
+ * Admins and kitchen staff manage orders; they don't place them
+ */
+function can_order() {
+    return !is_admin() && !is_kitchen();
+}
+
+/**
+ * Where a signed-in user lands: admins and kitchens go to their own dashboards, shoppers to the home page
+ */
+function home_path_for_role() {
+    if (is_kitchen()) {
+        return '/views/kitchen/kitchen_dashboard.php';
+    }
+    return is_admin() ? '/views/admin/admin_dashboard.php' : '/index.php';
+}
+
+/**
+ * Where staff go when they open a shopper-only page: admins to all orders, kitchens to their own
+ */
+function staff_orders_path() {
+    return is_kitchen() ? '/views/kitchen/kitchen_orders.php' : '/views/admin/orders.php';
+}
+
+/**
+ * Enforce kitchen access: only kitchen accounts linked to a kitchen
+ */
+function require_kitchen() {
+    require_login();
+    if (!is_kitchen()) {
+        $_SESSION['error'] = "That page is for kitchen accounts.";
+        $root = defined('ROOT_DIR') ? ROOT_DIR : '..';
+        header("Location: " . $root . "/index.php");
+        exit;
+    }
 }
 
 /**

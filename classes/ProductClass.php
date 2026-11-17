@@ -53,6 +53,24 @@ class ProductClass extends Database
         return $this->execute($sql, [$name, $zone, $location, $commission, $isActive, $id]);
     }
 
+    // What a kitchen can change about itself from its portal
+    public function updateBrandInfo($id, $location, $isActive)
+    {
+        return $this->execute("UPDATE brands SET location_desc = ?, is_active = ? WHERE brand_id = ?", [$location, $isActive, $id]);
+    }
+
+    // Every meal a kitchen has, sold out included, with how often each was ordered
+    public function getProductsForKitchen($brandId)
+    {
+        $sql = "SELECT p.*, c.cat_name,
+                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od WHERE od.product_id = p.product_id) AS meals_sold
+                FROM products p
+                JOIN categories c ON p.product_cat = c.cat_id
+                WHERE p.product_brand = ?
+                ORDER BY p.is_available DESC, p.product_title ASC";
+        return $this->fetchAll($sql, [$brandId]);
+    }
+
     public function deleteBrand($id)
     {
         $sql = "DELETE FROM brands WHERE brand_id = ?";
