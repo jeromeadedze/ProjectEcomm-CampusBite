@@ -65,7 +65,7 @@ $zone = $cartCtrl->deliveryZoneFor($cartItems);
                         <input type="text" name="drop_location" id="customLocation" class="form-control rounded-pill" placeholder="Or enter exact room e.g. Sisulu Room 208, or Lab 2" value="<?php echo htmlspecialchars($user['campus_hostel'] ?? ''); ?>" required>
                     </div>
                     <div class="col-12">
-                        <label class="form-label small fw-semibold text-muted">Delivery Instructions for Student Courier</label>
+                        <label class="form-label small fw-semibold text-muted">Delivery instructions for the kitchen</label>
                         <input type="text" name="notes" class="form-control rounded-pill" placeholder="e.g. Call when outside the courtyard / Leave with security desk">
                     </div>
                 </div>

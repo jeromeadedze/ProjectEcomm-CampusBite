@@ -29,13 +29,12 @@ require_once __DIR__ . '/../layout/header.php';
 
 $money = function ($amount) { return 'GH₵ ' . number_format($amount, 2); };
 $plural = function ($n, $word) { return $n . ' ' . $word . ($n === 1 ? '' : 's'); };
-$pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Ready' => 'Ready for pickup', 'In Transit' => 'Out for delivery', 'Delivered' => 'Delivered'];
+$pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Ready' => 'Ready to deliver', 'In Transit' => 'Out for delivery', 'Delivered' => 'Delivered'];
 ?>
 
 <p class="cb-sub">
     <?php echo $plural(count($kitchens), 'kitchen'); ?> ·
     <?php echo $plural((int)($roleCount[2] ?? 0), 'customer'); ?> ·
-    <?php echo $plural((int)($roleCount[3] ?? 0), 'courier'); ?> ·
     <?php echo $plural((int)($roleCount[4] ?? 0), 'kitchen login'); ?>
 </p>
 
@@ -47,7 +46,7 @@ $pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Rea
             <p class="cb-kpi-sub"><?php echo $plural($summary[$key]['orders'], 'order'); ?> · meal sales</p>
             <dl class="cb-kpi-split">
                 <div><dt>Commission</dt><dd><?php echo $money($summary[$key]['commission']); ?></dd></div>
-                <div><dt>Delivery fees</dt><dd><?php echo $money($summary[$key]['delivery']); ?></dd></div>
+                <div><dt>Delivery fees (kitchens keep)</dt><dd><?php echo $money($summary[$key]['delivery']); ?></dd></div>
                 <div class="is-total"><dt>CampusBite earns</dt><dd><?php echo $money($summary[$key]['earned']); ?></dd></div>
             </dl>
         </section>
@@ -142,10 +141,10 @@ $pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Rea
 <section class="cb-card">
     <div class="cb-table-wrap">
         <table class="cb-table">
-            <thead><tr><th>Invoice</th><th>Kitchen</th><th>Customer</th><th class="num">Total</th><th>Courier</th><th>Status</th></tr></thead>
+            <thead><tr><th>Invoice</th><th>Kitchen</th><th>Customer</th><th class="num">Total</th><th>Status</th></tr></thead>
             <tbody>
                 <?php if (empty($recentOrders)): ?>
-                    <tr><td colspan="6" class="cb-table-empty">No orders yet.</td></tr>
+                    <tr><td colspan="5" class="cb-table-empty">No orders yet.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($recentOrders as $o): ?>
                     <tr>
@@ -153,7 +152,6 @@ $pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Rea
                         <td><?php echo htmlspecialchars($o['brand_name'] ?? '–'); ?></td>
                         <td><?php echo htmlspecialchars($o['customer_name']); ?></td>
                         <td class="num"><?php echo $money($o['amt'] ?? ((float)$o['items_total'] + (float)$o['delivery_fee'])); ?></td>
-                        <td><?php echo htmlspecialchars($o['courier_name'] ?? 'Unassigned'); ?></td>
                         <td><span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $o['order_status'])); ?>"><?php echo htmlspecialchars($o['order_status']); ?></span></td>
                     </tr>
                 <?php endforeach; ?>

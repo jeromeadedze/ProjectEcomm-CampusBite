@@ -67,13 +67,6 @@ function is_admin() {
 }
 
 /**
- * Check if the user is a courier / runner (user_role = 3)
- */
-function is_courier() {
-    return isset($_SESSION['user_role']) && (int)$_SESSION['user_role'] === 3;
-}
-
-/**
  * Check if the user runs a kitchen (user_role = 4) that is linked to a kitchen
  */
 function is_kitchen() {

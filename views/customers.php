@@ -1,19 +1,15 @@
 <?php
-// Admin: every account, with a switch between customer and courier
-$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
-require_once __DIR__ . '/layout/header.php';
-require_once __DIR__ . '/../controllers/CustomerController.php';
-
+// Admin: every account and its role. Kitchen logins are created on the Kitchens tab.
+require_once __DIR__ . '/../core/core.php';
 require_admin();
 
+require_once __DIR__ . '/../controllers/CustomerController.php';
 $customers = (new CustomerController())->getAllCustomers();
-$courierCount = count(array_filter($customers, function ($c) {
-    return (int)$c['user_role'] === 3;
-}));
+require_once __DIR__ . '/layout/header.php';
 ?>
 
 
-<p class="cb-sub"><?php echo count($customers); ?> accounts · <?php echo $courierCount; ?> courier<?php echo $courierCount === 1 ? '' : 's'; ?>. Make an account a courier so kitchens can assign it deliveries. Kitchen logins are managed on the Kitchens tab.</p>
+<p class="cb-sub"><?php echo count($customers); ?> accounts. Kitchen logins are managed on the Kitchens tab.</p>
 
 <section class="cb-card">
     <div class="cb-table-wrap">
@@ -48,17 +44,7 @@ $courierCount = count(array_filter($customers, function ($c) {
                             <?php elseif ((int)$c['user_role'] === 4): ?>
                                 <span class="cb-zone cb-zone-a">Kitchen · <?php echo htmlspecialchars($c['brand_name'] ?? 'none'); ?></span>
                             <?php else: ?>
-                                <form class="cb-inline-form" action="<?php echo $ROOT_DIR; ?>/actions/update_role_action.php" method="POST">
-                                    <?php echo csrf_field(); ?>
-                                    <input type="hidden" name="customer_id" value="<?php echo (int)$c['customer_id']; ?>">
-                                    <label class="visually-hidden" for="role-<?php echo (int)$c['customer_id']; ?>">Role for <?php echo htmlspecialchars($c['customer_name']); ?></label>
-                                    <select id="role-<?php echo (int)$c['customer_id']; ?>" name="user_role">
-                                        <?php foreach (CustomerController::ASSIGNABLE_ROLES as $roleValue => $roleLabel): ?>
-                                            <option value="<?php echo $roleValue; ?>" <?php echo (int)$c['user_role'] === $roleValue ? 'selected' : ''; ?>><?php echo htmlspecialchars($roleLabel); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <button type="submit" class="cb-btn cb-btn-quiet">Save</button>
-                                </form>
+                                Student / Staff
                             <?php endif; ?>
                         </td>
                     </tr>

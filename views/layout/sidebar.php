@@ -43,6 +43,9 @@ $navLink = function ($pages) use ($currentPage) {
         <a href="<?php echo $ROOT_DIR; ?>/views/admin/orders.php" <?php echo $navLink(['orders', 'order_tracking']); ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Orders
         </a>
+        <a href="<?php echo $ROOT_DIR; ?>/views/admin/money.php" <?php echo $navLink(['money']); ?>>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/></svg>Money
+        </a>
         <a href="<?php echo $ROOT_DIR; ?>/views/admin/brand.php" <?php echo $navLink(['brand']); ?>>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M4 10h16l-1.5-5h-13z"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>Kitchens
         </a>

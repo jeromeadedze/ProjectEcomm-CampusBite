@@ -24,7 +24,7 @@ $pageHeading = $kitchen['brand_name'];
 require_once __DIR__ . '/../layout/header.php';
 
 $money = function ($amount) { return 'GH₵ ' . number_format($amount, 2); };
-$pipeline = ['Placed' => 'New', 'Preparing' => 'Preparing', 'Ready' => 'Ready for pickup', 'In Transit' => 'Out for delivery'];
+$pipeline = ['Placed' => 'New', 'Preparing' => 'Preparing', 'Ready' => 'Ready to deliver', 'In Transit' => 'Out for delivery'];
 ?>
 
 <p class="cb-sub">
@@ -52,7 +52,7 @@ $pipeline = ['Placed' => 'New', 'Preparing' => 'Preparing', 'Ready' => 'Ready fo
         </dl>
     </section>
 </div>
-<p class="cb-field-hint">Sales count meal prices only. Delivery fees go to CampusBite and the courier.</p>
+<p class="cb-field-hint">Sales count meal prices only. You deliver your own orders, so you keep each order's delivery fee on top of what your meals earn.</p>
 
 <div class="cb-row"><h2>Order queue</h2><a class="cb-viewall" href="kitchen_orders.php">All orders ›</a></div>
 <div class="cb-queue">

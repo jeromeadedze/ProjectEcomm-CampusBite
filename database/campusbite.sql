@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS `brands`; -- Acts as Kitchens/Vendors (Hallmark, Akonnor, M
 DROP TABLE IF EXISTS `categories`; -- Food Categories (Rice & Bowls, Local Dishes, Grills & Fast Food, Drinks, Snacks, Healthy)
 DROP TABLE IF EXISTS `customer`;
 
--- ── 1. customer (Students, Faculty, Couriers, Admins) ───────────────
+-- ── 1. customer (Students, Faculty, Kitchen staff, Admins) ──────────
 CREATE TABLE `customer` (
   `customer_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_name` varchar(100) NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE `customer` (
   `customer_contact` varchar(20) NOT NULL,
   `campus_hostel` varchar(100) DEFAULT NULL, -- e.g. 'Walter Sisulu Hall', 'Wangari Maathai', 'Charlotte Court', etc.
   `customer_image` varchar(150) DEFAULT NULL,
-  `user_role` int(11) NOT NULL DEFAULT 2, -- 1: Admin, 2: Customer (Student/Faculty), 3: Student Courier, 4: Kitchen Merchant
+  `user_role` int(11) NOT NULL DEFAULT 2, -- 1: Admin, 2: Customer (Student/Faculty), 4: Kitchen (role 3, courier, was retired: kitchens deliver their own orders)
   `brand_id` int(11) DEFAULT NULL, -- for kitchen accounts (role 4): the kitchen they run
   `has_pass` tinyint(1) NOT NULL DEFAULT 0, -- 1 if customer subscribed to GH₵ 35 CampusBite Pass
   `pass_expiry` date DEFAULT NULL,
@@ -107,14 +107,12 @@ CREATE TABLE `orders` (
   `delivery_fee` double NOT NULL DEFAULT 5.00,
   `drop_location` varchar(150) NOT NULL, -- e.g. 'Walter Sisulu Hall - Room 204', 'FabLab Courtyard'
   `special_instructions` varchar(255) DEFAULT NULL,
-  `courier_id` int(11) DEFAULT NULL,
+  `commission_rate` decimal(4,2) DEFAULT NULL, -- the kitchen's commission when the order was placed, so later rate changes don't alter past payouts
   PRIMARY KEY (`order_id`),
   KEY `customer_id` (`customer_id`),
-  KEY `courier_id` (`courier_id`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `orders_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`),
-  CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
-  CONSTRAINT `orders_courier_fk` FOREIGN KEY (`courier_id`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
+  CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 7. orderdetails ────────────────────────────────────────────────

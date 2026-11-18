@@ -4,14 +4,14 @@ Written on Nov 9, from the code on `main` (`bcf3c87`). Add a name in the **Owner
 
 ## What already works
 
-Customers can sign up, sign in, browse kitchens and categories, search, open a meal, add it to the bill and check out. They can follow an order through its five stages, save favourites, change their settings and message support. Admins manage kitchens, categories, meals, orders, couriers, customer roles and support messages. CSRF tokens protect every form.
+Customers can sign up, sign in, browse kitchens and categories, search, open a meal, add it to the bill and check out. They can follow an order through its five stages, save favourites, change their settings and message support. Admins manage kitchens, categories, meals, orders and support messages, and see a money report of sales, commission and what each kitchen is owed. Kitchens have their own portal and deliver their own orders. CSRF tokens protect every form.
 
 ## `feature/db`: database and diagrams
 
 | # | Task | Done when | Size | Owner |
 |---|---|---|---|---|
 | DB1 | **ERD.** Draw the entity-relationship diagram from `database/campusbite.sql`. | Every table, key and relationship is drawn, and the diagram is saved in `docs/`. | M | |
-| DB2 | **UML diagrams.** Draw a class diagram of `classes/` and `controllers/`, plus a use-case diagram for customer, admin and courier. | Both are saved in `docs/` and match the code. | M | |
+| DB2 | **UML diagrams.** Draw a class diagram of `classes/` and `controllers/`, plus a use-case diagram for customer, admin and kitchen. | Both are saved in `docs/` and match the code. | M | |
 | DB3 | **Seed images.** None of the 13 images the seed data refers to are in `images/products/`, so seeded meals and kitchens show broken pictures. | Every seeded meal and kitchen shows a photo after a fresh import. | S | |
 | DB4 | **Settings template.** `core/db_cred.php` is no longer in git, so a new teammate can't set up the project. | `core/db_cred.example.php` holds placeholder values and the README says to copy it. | S | |
 | DB5 | **Fresh import check.** Confirm `campusbite.sql` alone builds the full current schema, so new setups don't need the migration file. | A fresh import on an empty database runs every page without errors. | S | |
@@ -21,10 +21,11 @@ Customers can sign up, sign in, browse kitchens and categories, search, open a m
 | # | Task | Done when | Size | Owner |
 |---|---|---|---|---|
 | BE1 | **Real Paystack payment.** Checkout currently records a made-up transaction reference, so no money is taken. The ecomlab project has a working Paystack flow to reuse. | Checkout opens Paystack in test mode, the order is created only after Paystack confirms the payment, and failed or cancelled payments leave the bill unchanged. Keys stay out of git. | L | |
-| BE2 | **Courier page.** Admins can assign couriers to orders, but couriers (role 3) have no page of their own. | A courier signs in, sees their assigned deliveries and can mark them In Transit or Delivered. | M | |
+| BE2 | ~~**Courier page.**~~ Resolved Nov 17: the courier role was dropped. Kitchens deliver their own orders and mark them delivered from the kitchen portal. | Done. | – | |
 | BE3 | **Kitchen merchant role.** Role 4 exists in the database, but nothing uses it. | The team decides whether to build a kitchen view of incoming orders or drop the role. If it's built, a merchant sees and updates their own kitchen's orders. | M | |
 | BE4 | **CampusBite Pass.** It's turned off with `PASS_ENABLED = false` in `core/core.php`. | The team decides whether to finish it (paid through Paystack, giving free Zone A delivery) or remove its pages. | M | |
 | BE5 | **Delivery fee rule.** The site charges one fee per order (GH₵ 5 Zone A, GH₵ 10 Zone B), while the theme charged per kitchen. | The team picks one rule, and the cart, checkout, order panel and README all agree. | S | |
+| BE7 | **Paystack reconciliation.** Pairs with BE1. The admin Money page (`views/admin/money.php`) checks each order's total against the payment recorded at checkout. | Each payment is verified with Paystack's verify endpoint, the amount Paystack received is stored, and the Money page's payment check compares against that amount. | S | |
 | BE6 | **Admin overview data.** The theme's admin page showed counts: active and paused kitchens, meals on sale and sold-out meals. Order counts would be a useful addition. | A controller method returns those counts for FE4. | S | |
 
 ## `feature/frontend`: pages and polish
@@ -67,8 +68,8 @@ Run this on a fresh database with seed data, at desktop width and at phone width
 - [ ] Add meals from two kitchens, change quantities, add a note, remove an item and clear the bill.
 - [ ] Check out and pay with a Paystack test card (once BE1 is done). Cancel a payment and confirm the bill is unchanged.
 - [ ] Admin: add, edit, pause and delete a kitchen; add, edit and delete a category; add, edit, mark sold out and delete a meal with an image.
-- [ ] Admin: move an order through all five statuses and assign a courier; the customer's tracking page updates.
-- [ ] Courier: see the assigned order and mark it delivered (once BE2 is done).
+- [ ] Kitchen: move an order through all five statuses with the next-step button and mark it delivered; the customer's tracking page updates.
+- [ ] Admin: the Money page shows the delivered order under its kitchen, and the CSV download matches the page.
 - [ ] A paused kitchen and a sold-out meal can't be opened or ordered by a customer.
 - [ ] Favourites, settings (profile and password), and a support message that an admin can see and mark as handled.
 - [ ] A customer can't open any admin page, and an admin can't order.

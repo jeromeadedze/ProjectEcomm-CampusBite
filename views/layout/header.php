@@ -34,6 +34,7 @@ $pageTitles = [
     'kitchen_orders' => 'Kitchen Orders',
     'kitchen_menu' => 'Kitchen Menu',
     'kitchen_info' => 'Kitchen Info',
+    'money' => 'Money',
 ];
 $pageTitle = $pageTitles[$currentPage] ?? 'CampusBite';
 // A page can set $pageHeading before including this file to show a different heading than its title

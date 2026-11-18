@@ -130,7 +130,7 @@ require_once __DIR__ . '/../layout/header.php';
 
 <section class="cb-card" id="kitchen-logins">
     <h2>Kitchen logins</h2>
-    <p class="cb-card-lead">Give a kitchen's staff their own sign-in. They get a kitchen portal to receive orders, assign couriers, update their menu and prices, and see their sales. Share the starting password with them privately; they can change it under My account.</p>
+    <p class="cb-card-lead">Give a kitchen's staff their own sign-in. They get a kitchen portal to receive and deliver orders, update their menu and prices, and see their sales. Share the starting password with them privately; they can change it under My account.</p>
     <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/create_kitchen_account_action.php" method="POST" autocomplete="off">
         <?php echo csrf_field(); ?>
         <div class="cb-field">

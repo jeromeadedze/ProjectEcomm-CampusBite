@@ -354,3 +354,18 @@ a.cb-checkout-signin:hover,a.cb-checkout-link:hover{color:#fff}
 .cb .cb-card.cb-attention h2{margin-bottom:10px}
 .cb-attention ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;font-size:13.5px;line-height:1.6}
 .cb-attention .cb-status{margin-right:6px}
+
+/* Kitchen tickets: the next-step button, with other statuses tucked away */
+.cb-ticket-actions > form > .cb-btn{width:100%}
+.cb-ticket-more summary{font-size:12px;color:var(--muted);cursor:pointer;margin-top:2px}
+.cb-ticket-more .cb-inline-form{margin-top:8px}
+
+/* Money report */
+.cb-money-range{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+.cb-money-range label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted)}
+.cb-money-range input{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink)}
+.cb-money-range .cb-btn{padding:8px 14px;font-size:13px}
+.cb-table-total th,.cb-table-total td{font-weight:700;border-top:2px solid var(--line)}
+.cb-money-check{max-width:420px;margin:0 0 14px}
+.cb-money-ok{margin:0;font-size:13px;color:var(--muted)}
+.cb-money-ok i{color:#1F8A4C}

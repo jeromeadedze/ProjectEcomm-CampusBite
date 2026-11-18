@@ -31,7 +31,7 @@ $user = is_logged_in() ? $custCtrl->getCustomerById(get_user_id()) : null;
                 <div class="col-sm-4">
                     <div class="p-3 bg-white bg-opacity-10 rounded-3">
                         <h4 class="fw-bold mb-0">Priority</h4>
-                        <small class="opacity-75">Courier Dispatch</small>
+                        <small class="opacity-75">Delivery</small>
                     </div>
                 </div>
                 <div class="col-sm-4">

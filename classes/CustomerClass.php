@@ -74,16 +74,6 @@ class CustomerClass extends Database
         return $this->execute("UPDATE customer SET user_role = 2, brand_id = NULL WHERE customer_id = ? AND user_role = 4", [$id]);
     }
 
-    public function setRole($id, $role)
-    {
-        return $this->execute("UPDATE customer SET user_role = ? WHERE customer_id = ?", [$role, $id]);
-    }
-
-    public function getCouriers()
-    {
-        return $this->fetchAll("SELECT customer_id, customer_name, customer_contact FROM customer WHERE user_role = 3 ORDER BY customer_name ASC");
-    }
-
     public function updatePassStatus($id, $hasPass, $expiryDate)
     {
         $sql = "UPDATE customer SET has_pass = ?, pass_expiry = ? WHERE customer_id = ?";

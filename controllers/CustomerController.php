@@ -56,8 +56,6 @@ class CustomerController
     const PHONE_RULE = '/^[0-9+\-\s]{7,15}$/';
 
     // Roles an admin can switch an account between (admins are only made in the database)
-    const ASSIGNABLE_ROLES = [2 => 'Student / Staff', 3 => 'Courier'];
-
     /**
      * Checks and saves name, phone and drop point. Returns ['values' => ..., 'error' => message or null].
      */
@@ -149,16 +147,6 @@ class CustomerController
     public function removeKitchenAccess($id)
     {
         return $this->customerModel->removeKitchenAccess($id);
-    }
-
-    public function setRole($id, $role)
-    {
-        return array_key_exists($role, self::ASSIGNABLE_ROLES) ? $this->customerModel->setRole($id, $role) : false;
-    }
-
-    public function getCouriers()
-    {
-        return $this->customerModel->getCouriers();
     }
 
     public function getAllCustomers()

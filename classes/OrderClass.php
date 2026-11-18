@@ -3,15 +3,22 @@ require_once __DIR__ . "/../core/db_class.php";
 
 class OrderClass extends Database
 {
+    /**
+     * Commission rate for one order line (needs aliases o = orders, p = products, b = the meal's kitchen in brands).
+     * Uses the rate saved on the order when the meal is from the order's kitchen, otherwise the kitchen's current rate.
+     */
+    const LINE_RATE = "CASE WHEN p.product_brand = o.brand_id AND o.commission_rate IS NOT NULL THEN o.commission_rate ELSE b.commission_rate END";
+
     public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '')
     {
-        $sql = "INSERT INTO orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions)
-                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?)";
-        $success = $this->execute($sql, [$customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes]);
+        // The kitchen's commission rate is copied onto the order, so changing a rate later doesn't change past payouts
+        $sql = "INSERT INTO orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions, commission_rate)
+                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?, (SELECT commission_rate FROM brands WHERE brand_id = ?))";
+        $success = $this->execute($sql, [$customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $brandId]);
         if ($success) {
             $orderId = $this->getLastInsertId();
             // Create initial tracking entry
-            $this->addTrackingUpdate($orderId, 'Placed', 'Order placed successfully and received by kitchen.');
+            $this->addTrackingUpdate($orderId, 'Placed', 'Order placed and sent to the kitchen.');
             return $orderId;
         }
         return false;
@@ -34,11 +41,11 @@ class OrderClass extends Database
     public function getOrderById($orderId)
     {
         $sql = "SELECT o.*, c.customer_name, c.customer_email, c.customer_contact,
-                       k.customer_name AS courier_name, k.customer_contact AS courier_contact,
-                       b.brand_name, b.commission_rate
+                       b.brand_name, COALESCE(o.commission_rate, b.commission_rate) AS commission_rate,
+                       (SELECT ks.customer_contact FROM customer ks
+                        WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1) AS kitchen_contact
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
-                LEFT JOIN customer k ON o.courier_id = k.customer_id
                 LEFT JOIN brands b ON o.brand_id = b.brand_id
                 WHERE o.order_id = ?";
         return $this->fetchOne($sql, [$orderId]);
@@ -73,13 +80,12 @@ class OrderClass extends Database
 
     public function getAllOrders()
     {
-        $sql = "SELECT o.*, c.customer_name, c.customer_contact, p.payment_mode, p.amt, k.customer_name AS courier_name, b.brand_name,
+        $sql = "SELECT o.*, c.customer_name, c.customer_contact, p.payment_mode, p.amt, b.brand_name,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
                         FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
                         WHERE od.order_id = o.order_id) AS items_total
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
-                LEFT JOIN customer k ON o.courier_id = k.customer_id
                 LEFT JOIN brands b ON o.brand_id = b.brand_id
                 LEFT JOIN payment p ON o.order_id = p.order_id
                 ORDER BY o.order_id DESC";
@@ -101,13 +107,13 @@ class OrderClass extends Database
 
     /**
      * Orders, meal sales and CampusBite's commission since a date (all time when $since is null).
-     * Commission uses the rate of the kitchen each meal came from.
+     * Commission uses the rate saved on the order, or the kitchen's current rate for orders from before rates were saved.
      */
     public function getPlatformSales($since = null)
     {
         $sql = "SELECT COUNT(DISTINCT o.order_id) AS orders,
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0) AS sales,
-                       COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * b.commission_rate), 0) AS commission
+                       COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0) AS commission
                 FROM orders o
                 JOIN orderdetails od ON od.order_id = o.order_id
                 JOIN products p ON od.product_id = p.product_id
@@ -155,6 +161,63 @@ class OrderClass extends Database
         return $this->fetchAll($sql);
     }
 
+    // ---------- Money report (admin) ----------
+
+    /**
+     * Meal sales and commission per kitchen for orders placed between two datetimes, split into
+     * delivered orders (the kitchen is owed this) and orders still in progress (not owed yet).
+     * Meals are counted under the kitchen that cooked them.
+     */
+    public function getMealMoneyByKitchen($from, $to)
+    {
+        $sql = "SELECT p.product_brand AS brand_id,
+                       o.order_status = 'Delivered' AS delivered,
+                       COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0) AS sales,
+                       COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0) AS commission
+                FROM orders o
+                JOIN orderdetails od ON od.order_id = o.order_id
+                JOIN products p ON od.product_id = p.product_id
+                JOIN brands b ON p.product_brand = b.brand_id
+                WHERE o.order_date >= ? AND o.order_date < ?
+                GROUP BY p.product_brand, delivered";
+        return $this->fetchAll($sql, [$from, $to]);
+    }
+
+    /**
+     * Order counts and delivery fees per kitchen for orders placed between two datetimes,
+     * split into delivered and in progress. The delivery fee belongs to the kitchen that delivers the order.
+     */
+    public function getOrderMoneyByKitchen($from, $to)
+    {
+        $sql = "SELECT o.brand_id, o.order_status = 'Delivered' AS delivered,
+                       COUNT(*) AS orders, COALESCE(SUM(o.delivery_fee), 0) AS delivery
+                FROM orders o
+                WHERE o.order_date >= ? AND o.order_date < ?
+                GROUP BY o.brand_id, delivered";
+        return $this->fetchAll($sql, [$from, $to]);
+    }
+
+    /**
+     * Every order placed between two datetimes with what it should have cost (meals + delivery)
+     * and what was recorded as paid, for checking payments.
+     */
+    public function getPaymentCheck($from, $to)
+    {
+        $sql = "SELECT o.order_id, o.invoice_no, o.order_date, o.order_status, b.brand_name, c.customer_name,
+                       (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
+                        FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                        WHERE od.order_id = o.order_id) + o.delivery_fee AS expected,
+                       (SELECT SUM(pay.amt) FROM payment pay WHERE pay.order_id = o.order_id) AS paid,
+                       (SELECT COUNT(*) FROM payment pay WHERE pay.order_id = o.order_id) AS payments,
+                       (SELECT GROUP_CONCAT(pay.transaction_reference SEPARATOR ', ') FROM payment pay WHERE pay.order_id = o.order_id) AS refs
+                FROM orders o
+                JOIN customer c ON o.customer_id = c.customer_id
+                LEFT JOIN brands b ON o.brand_id = b.brand_id
+                WHERE o.order_date >= ? AND o.order_date < ?
+                ORDER BY o.order_date DESC";
+        return $this->fetchAll($sql, [$from, $to]);
+    }
+
     // ---------- Kitchen portal ----------
 
     /**
@@ -169,7 +232,7 @@ class OrderClass extends Database
             $where .= " AND o.order_status = 'Delivered'";
         }
         // Totals count only this kitchen's meals: orders from before the one-kitchen rule can mix kitchens
-        $sql = "SELECT o.*, c.customer_name, c.customer_contact, k.customer_name AS courier_name,
+        $sql = "SELECT o.*, c.customer_name, c.customer_contact,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
                         FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
                         WHERE od.order_id = o.order_id AND pr.product_brand = o.brand_id) AS items_total,
@@ -177,25 +240,30 @@ class OrderClass extends Database
                         WHERE od.order_id = o.order_id AND pr.product_brand = o.brand_id) AS item_count
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
-                LEFT JOIN customer k ON o.courier_id = k.customer_id
                 WHERE $where
                 ORDER BY o.order_id DESC";
         return $this->fetchAll($sql, [$brandId]);
     }
 
     /**
-     * Order count and meal sales for a kitchen since a date (or all time when $since is null)
+     * Order count, meal sales, commission and delivery fees for a kitchen since a date (or all time when $since is null)
      */
     public function getKitchenSales($brandId, $since = null)
     {
+        $params = $since ? [$brandId, $since] : [$brandId];
         $sql = "SELECT COUNT(DISTINCT o.order_id) AS orders,
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0) AS sales,
+                       COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0) AS commission,
                        COALESCE(SUM(od.qty), 0) AS meals
                 FROM orders o
                 JOIN orderdetails od ON od.order_id = o.order_id
                 JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                JOIN brands b ON p.product_brand = b.brand_id
                 WHERE o.brand_id = ?" . ($since ? " AND o.order_date >= ?" : "");
-        return $this->fetchOne($sql, $since ? [$brandId, $since] : [$brandId]);
+        $row = $this->fetchOne($sql, $params);
+        $fees = $this->fetchOne("SELECT COALESCE(SUM(delivery_fee), 0) AS fees FROM orders WHERE brand_id = ?" . ($since ? " AND order_date >= ?" : ""), $params);
+        $row['delivery'] = (float)$fees['fees'];
+        return $row;
     }
 
     public function countKitchenOrdersByStatus($brandId)
@@ -216,11 +284,6 @@ class OrderClass extends Database
                 ORDER BY meals DESC, sales DESC
                 LIMIT " . intval($limit);
         return $this->fetchAll($sql, [$brandId]);
-    }
-
-    public function assignCourier($orderId, $courierId)
-    {
-        return $this->execute("UPDATE orders SET courier_id = ? WHERE order_id = ?", [$courierId, $orderId]);
     }
 
     public function addTrackingUpdate($orderId, $status, $message)

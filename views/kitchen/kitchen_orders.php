@@ -1,23 +1,21 @@
 <?php
-// Kitchen portal: incoming orders by stage, with status updates and courier assignment
+// Kitchen portal: incoming orders by stage. The kitchen delivers its own orders and marks them delivered.
 define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
-require_once __DIR__ . '/../../controllers/CustomerController.php';
 
 require_kitchen();
 
 $orderCtrl = new OrderController();
 $kitchenId = get_kitchen_id();
 $kitchen = (new ProductController())->getBrandById($kitchenId);
-$couriers = (new CustomerController())->getCouriers();
 
 $view = ($_GET['view'] ?? 'active') === 'done' ? 'done' : 'active';
 $orders = $orderCtrl->getKitchenOrders($kitchenId, $view);
 
 // Active orders are grouped by stage, oldest first within a stage so the longest wait is on top
-$stages = ['Placed' => 'New orders', 'Preparing' => 'Preparing', 'Ready' => 'Ready for pickup', 'In Transit' => 'Out for delivery'];
+$stages = ['Placed' => 'New orders', 'Preparing' => 'Preparing', 'Ready' => 'Ready to deliver', 'In Transit' => 'Out for delivery'];
 $grouped = [];
 foreach (array_reverse($orders) as $o) {
     $grouped[$o['order_status']][] = $o;
@@ -26,7 +24,7 @@ foreach (array_reverse($orders) as $o) {
 $pageHeading = $kitchen['brand_name'] . ' orders';
 require_once __DIR__ . '/../layout/header.php';
 
-$renderOrder = function ($o) use ($orderCtrl, $couriers, $ROOT_DIR) {
+$renderOrder = function ($o) use ($orderCtrl, $ROOT_DIR) {
     // Only this kitchen's meals (orders from before the one-kitchen rule can mix kitchens)
     $items = array_filter($orderCtrl->getOrderDetails($o['order_id']), function ($it) use ($o) {
         return (int)$it['product_brand'] === (int)$o['brand_id'];
@@ -65,6 +63,17 @@ $renderOrder = function ($o) use ($orderCtrl, $couriers, $ROOT_DIR) {
         <p class="cb-ticket-total"><span>Meals total</span><b>GH₵ <?php echo number_format((float)$o['items_total'], 2); ?></b></p>
 
         <div class="cb-ticket-actions">
+            <?php $next = OrderController::NEXT_STEP[$o['order_status']] ?? null; ?>
+            <?php if ($next): ?>
+                <form action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="order_id" value="<?php echo (int)$o['order_id']; ?>">
+                    <input type="hidden" name="status" value="<?php echo htmlspecialchars($next['status']); ?>">
+                    <button type="submit" class="cb-btn"><?php echo htmlspecialchars($next['label']); ?></button>
+                </form>
+            <?php endif; ?>
+            <details class="cb-ticket-more">
+            <summary>Set another status</summary>
             <form class="cb-inline-form" action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="order_id" value="<?php echo (int)$o['order_id']; ?>">
@@ -74,24 +83,9 @@ $renderOrder = function ($o) use ($orderCtrl, $couriers, $ROOT_DIR) {
                         <option value="<?php echo htmlspecialchars($statusValue); ?>" <?php echo $o['order_status'] === $statusValue ? 'selected' : ''; ?>><?php echo htmlspecialchars($statusValue); ?></option>
                     <?php endforeach; ?>
                 </select>
-                <button type="submit" class="cb-btn">Update</button>
+                <button type="submit" class="cb-btn cb-btn-quiet">Update</button>
             </form>
-            <form class="cb-inline-form" action="<?php echo $ROOT_DIR; ?>/actions/assign_courier_action.php" method="POST">
-                <?php echo csrf_field(); ?>
-                <input type="hidden" name="order_id" value="<?php echo (int)$o['order_id']; ?>">
-                <label for="courier-<?php echo (int)$o['order_id']; ?>">Courier</label>
-                <?php if (empty($couriers)): ?>
-                    <span class="cb-muted">No couriers yet</span>
-                <?php else: ?>
-                    <select id="courier-<?php echo (int)$o['order_id']; ?>" name="courier_id">
-                        <option value="0">Unassigned</option>
-                        <?php foreach ($couriers as $courier): ?>
-                            <option value="<?php echo (int)$courier['customer_id']; ?>" <?php echo (int)$o['courier_id'] === (int)$courier['customer_id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($courier['customer_name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <button type="submit" class="cb-btn cb-btn-quiet">Assign</button>
-                <?php endif; ?>
-            </form>
+            </details>
         </div>
     </article>
     <?php
@@ -103,9 +97,7 @@ $renderOrder = function ($o) use ($orderCtrl, $couriers, $ROOT_DIR) {
     <a href="kitchen_orders.php?view=done" <?php echo $view === 'done' ? 'class="is-active" aria-current="page"' : ''; ?>>Delivered</a>
 </nav>
 
-<?php if (empty($couriers)): ?>
-    <p class="cb-empty">No couriers are set up yet. Ask the CampusBite admin to add courier accounts so you can assign deliveries.</p>
-<?php endif; ?>
+<p class="cb-field-hint">Your kitchen delivers its own orders. Press the button on each ticket to move it to the next stage, and mark it delivered once the student has it.</p>
 
 <?php if (empty($orders)): ?>
     <div class="cb-card cb-bill-empty">

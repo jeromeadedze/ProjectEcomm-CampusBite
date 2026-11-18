@@ -22,7 +22,7 @@ unset($_SESSION['settings_form']);
 <div class="cb-settings">
     <section class="cb-card">
         <h2>Your details</h2>
-        <p class="cb-card-lead"><?php echo is_kitchen() ? 'CampusBite uses your phone number to reach the kitchen.' : 'Couriers use your phone number and drop point to find you.'; ?></p>
+        <p class="cb-card-lead"><?php echo is_kitchen() ? 'CampusBite uses your phone number to reach the kitchen.' : 'Kitchens use your phone number and drop point to find you when they deliver.'; ?></p>
         <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/update_profile_action.php" method="POST">
             <?php echo csrf_field(); ?>
             <div class="cb-field cb-field-full">

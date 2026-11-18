@@ -1,21 +1,22 @@
 <?php
-// Admin: every order, newest first, with its kitchen, courier and status
+// Admin: every order, newest first, with its kitchen and status
 define('ROOT_DIR', '../..');
-require_once __DIR__ . '/../layout/header.php';
-require_once __DIR__ . '/../../controllers/OrderController.php';
-
+require_once __DIR__ . '/../../core/core.php';
 require_admin();
+
+require_once __DIR__ . '/../../controllers/OrderController.php';
 
 $allOrders = (new OrderController())->getAllOrders();
 $activeCount = count(array_filter($allOrders, function ($o) {
     return $o['order_status'] !== 'Delivered';
 }));
+require_once __DIR__ . '/../layout/header.php';
 ?>
 
 
 <p class="cb-sub"><?php echo $activeCount; ?> in progress · <?php echo count($allOrders); ?> total</p>
 
-<p class="cb-field-hint">Each kitchen moves its own orders along and assigns couriers from its kitchen portal. You can still change any order's status from Manage.</p>
+<p class="cb-field-hint">Each kitchen delivers its own orders and moves them along from its kitchen portal. You can still change any order's status from Manage.</p>
 
 <section class="cb-card">
     <div class="cb-table-wrap">
@@ -28,13 +29,12 @@ $activeCount = count(array_filter($allOrders, function ($o) {
                     <th>Drop point</th>
                     <th class="num">Total</th>
                     <th>Status</th>
-                    <th>Courier</th>
                     <th><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($allOrders)): ?>
-                    <tr><td colspan="8" class="cb-table-empty">No orders yet.</td></tr>
+                    <tr><td colspan="7" class="cb-table-empty">No orders yet.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($allOrders as $o): ?>
                     <tr>
@@ -56,7 +56,6 @@ $activeCount = count(array_filter($allOrders, function ($o) {
                             <span class="cb-table-sub"><?php echo htmlspecialchars($o['payment_mode'] ?? 'No payment recorded'); ?></span>
                         </td>
                         <td><span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $o['order_status'])); ?>"><?php echo htmlspecialchars($o['order_status']); ?></span></td>
-                        <td><?php echo htmlspecialchars($o['courier_name'] ?? 'Unassigned'); ?></td>
                         <td>
                             <div class="cb-table-actions">
                                 <a href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$o['order_id']; ?>">Manage ›</a>

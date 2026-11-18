@@ -55,7 +55,7 @@ $currentStatus = $order['order_status'];
             </div>
 
             <!-- Timeline -->
-            <h6 class="fw-bold text-uppercase text-muted small mb-3">Live Courier & Kitchen Timeline</h6>
+            <h6 class="fw-bold text-uppercase text-muted small mb-3">Kitchen Timeline</h6>
             <div class="cb-timeline">
                 <?php foreach ($tracking as $t): ?>
                     <div class="cb-timeline-step active">
@@ -92,10 +92,9 @@ $currentStatus = $order['order_status'];
             <p class="small text-muted mb-3">Recipient: <?php echo htmlspecialchars($order['customer_name']); ?> (<?php echo htmlspecialchars($order['customer_contact']); ?>)</p>
             <p class="small mb-3">
                 <i class="bi bi-bicycle me-1"></i>
-                <?php if (!empty($order['courier_name'])): ?>
-                    Courier: <strong><?php echo htmlspecialchars($order['courier_name']); ?></strong> (<?php echo htmlspecialchars($order['courier_contact']); ?>)
-                <?php else: ?>
-                    <span class="text-muted">A courier will be assigned soon.</span>
+                Delivered by <strong><?php echo htmlspecialchars($order['brand_name'] ?? 'the kitchen'); ?></strong>
+                <?php if (!empty($order['kitchen_contact'])): ?>
+                    (<?php echo htmlspecialchars($order['kitchen_contact']); ?>)
                 <?php endif; ?>
             </p>
             <?php if (can_order()): ?>
@@ -133,7 +132,7 @@ $currentStatus = $order['order_status'];
                 <span>GH₵ <?php echo number_format($totalMealCost, 2); ?></span>
             </div>
             <div class="d-flex justify-content-between small text-muted mb-2">
-                <span>Campus Courier Delivery:</span>
+                <span>Delivery by the kitchen:</span>
                 <span>GH₵ <?php echo number_format($order['delivery_fee'], 2); ?></span>
             </div>
             <div class="d-flex justify-content-between fw-bold fs-5 text-dark border-top pt-2">
