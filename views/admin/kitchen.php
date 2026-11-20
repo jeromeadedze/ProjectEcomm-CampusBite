@@ -78,13 +78,10 @@ $inProgress = array_sum(array_intersect_key($byStatus, array_flip(['Placed', 'Pr
 <?php
 $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kitchen['brand_phone'] ?: 'No phone', round($kitchen['commission_rate'] * 100) . '% commission'];
 ?>
-<div class="cb-kitchen-meta">
-    <p class="cb-sub">
-        <span class="cb-dot-status <?php echo $kitchen['is_active'] ? '' : 'off'; ?>"><?php echo $kitchen['is_active'] ? 'Active' : 'Paused: hidden from shoppers'; ?></span>
-        · <?php echo htmlspecialchars(implode(' · ', $facts)); ?>
-    </p>
-    <a class="cb-btn cb-btn-quiet cb-btn-sm" href="brand.php?edit_id=<?php echo $kitchenId; ?>#kitchen-form">Edit kitchen</a>
-</div>
+<p class="cb-sub">
+    <span class="cb-dot-status <?php echo $kitchen['is_active'] ? '' : 'off'; ?>"><?php echo $kitchen['is_active'] ? 'Active' : (!empty($kitchen['admin_paused']) ? 'Paused by you: hidden from shoppers' : 'Paused by the kitchen: hidden from shoppers'); ?></span>
+    · <?php echo htmlspecialchars(implode(' · ', $facts)); ?>
+</p>
 
 <div class="cb-chips cb-money-presets" role="group" aria-label="Date range">
     <?php foreach ($presets as $label => [$a, $b]): ?>

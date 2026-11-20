@@ -1,6 +1,6 @@
 <?php
 // One order: where it is now, what happened so far, where it's going and what was in it.
-// Open to the customer who placed it, admins, and the kitchen it's from (who can also change its status).
+// Open to the customer who placed it, admins (view only), and the kitchen it's from, the only one that changes its status.
 require_once __DIR__ . '/../core/core.php';
 require_login();
 
@@ -57,7 +57,7 @@ foreach ($items as $it) {
         <?php $i++; endforeach; ?>
     </ol>
 
-    <?php if (is_admin() || $isOrderKitchen): ?>
+    <?php if ($isOrderKitchen): ?>
         <div class="cb-track-staff">
             <?php if ($next): ?>
                 <form action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST">

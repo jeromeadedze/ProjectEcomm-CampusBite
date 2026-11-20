@@ -15,22 +15,19 @@ $brands = $controller->getBrandsForAdmin();
 
 $editBrand = isset($_GET['edit_id']) ? $controller->getBrandById((int)$_GET['edit_id']) : null;
 
-// A rejected submission comes back with what was typed; otherwise show the saved kitchen or the defaults
-$form = $_SESSION['brand_form'] ?? null;
+// A rejected submission comes back with what was typed, laid over the saved kitchen or the defaults
+$saved = $editBrand
+    ? [
+        'brand_name' => $editBrand['brand_name'],
+        'zone' => $editBrand['zone'],
+        'location_desc' => $editBrand['location_desc'] ?? '',
+        'brand_phone' => $editBrand['brand_phone'] ?? '',
+        'commission_percent' => round($editBrand['commission_rate'] * 100),
+        'is_active' => (int)$editBrand['is_active'],
+    ]
+    : ['brand_name' => '', 'zone' => 'Zone A', 'location_desc' => '', 'brand_phone' => '', 'commission_percent' => 10, 'is_active' => 1];
+$form = ($_SESSION['brand_form'] ?? []) + $saved;
 unset($_SESSION['brand_form']);
-
-if (!$form) {
-    $form = $editBrand
-        ? [
-            'brand_name' => $editBrand['brand_name'],
-            'zone' => $editBrand['zone'],
-            'location_desc' => $editBrand['location_desc'],
-            'brand_phone' => $editBrand['brand_phone'] ?? '',
-            'commission_percent' => round($editBrand['commission_rate'] * 100),
-            'is_active' => (int)$editBrand['is_active'],
-        ]
-        : ['brand_name' => '', 'zone' => 'Zone A', 'location_desc' => '', 'brand_phone' => '', 'commission_percent' => 10, 'is_active' => 1];
-}
 
 require_once __DIR__ . '/../layout/header.php';
 ?>
@@ -66,14 +63,14 @@ require_once __DIR__ . '/../layout/header.php';
                         </td>
                         <td><?php echo htmlspecialchars($brand['zone']); ?></td>
                         <td>
-                            <span class="cb-dot-status <?php echo $brand['is_active'] ? '' : 'off'; ?>"><?php echo $brand['is_active'] ? 'Active' : 'Paused'; ?></span>
+                            <span class="cb-dot-status <?php echo $brand['is_active'] ? '' : 'off'; ?>"><?php echo $brand['is_active'] ? 'Active' : (!empty($brand['admin_paused']) ? 'Paused by you' : 'Paused by kitchen'); ?></span>
                         </td>
                         <td class="num"><?php echo round($brand['commission_rate'] * 100); ?>%</td>
                         <td class="num"><?php echo (int)$brand['product_count']; ?></td>
                         <td>
                             <div class="cb-table-actions">
                                 <a href="kitchen.php?id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Open <?php echo htmlspecialchars($brand['brand_name']); ?>">Open</a>
-                                <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($brand['brand_name']); ?>">Edit</a>
+                                <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Commission and status for <?php echo htmlspecialchars($brand['brand_name']); ?>">Commission &amp; status</a>
                                 <form action="<?php echo $ROOT_DIR; ?>/actions/delete_brand_action.php" method="POST" <?php if ((int)$brand['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>? This can't be undone."<?php endif; ?>>
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="brand_id" value="<?php echo (int)$brand['brand_id']; ?>">
@@ -89,12 +86,16 @@ require_once __DIR__ . '/../layout/header.php';
 </section>
 
 <section class="cb-card" id="kitchen-form">
-    <h2><?php echo $editBrand ? 'Edit ' . htmlspecialchars($editBrand['brand_name']) : 'Add a kitchen'; ?></h2>
+    <h2><?php echo $editBrand ? 'Commission and status for ' . htmlspecialchars($editBrand['brand_name']) : 'Add a kitchen'; ?></h2>
+    <?php if ($editBrand): ?>
+        <p class="cb-card-lead">The kitchen keeps its own location, phone and menu up to date from its portal. You set CampusBite's commission and can pause it.</p>
+    <?php endif; ?>
     <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editBrand ? 'update_brand_action.php' : 'add_brand_action.php'; ?>" method="POST">
         <?php echo csrf_field(); ?>
         <?php if ($editBrand): ?>
             <input type="hidden" name="brand_id" value="<?php echo (int)$editBrand['brand_id']; ?>">
         <?php endif; ?>
+        <?php if (!$editBrand): ?>
         <div class="cb-field">
             <label for="brand_name">Kitchen name</label>
             <input type="text" id="brand_name" name="brand_name" maxlength="100" value="<?php echo htmlspecialchars($form['brand_name']); ?>" placeholder="Hallmark Cafeteria" required>
@@ -115,6 +116,7 @@ require_once __DIR__ . '/../layout/header.php';
                 <?php endforeach; ?>
             </select>
         </div>
+        <?php endif; ?>
         <div class="cb-field">
             <label for="commission_percent">Commission (%)</label>
             <input type="number" id="commission_percent" name="commission_percent" min="0" max="100" step="1" value="<?php echo htmlspecialchars((string)$form['commission_percent']); ?>" required>
@@ -125,7 +127,7 @@ require_once __DIR__ . '/../layout/header.php';
                 <option value="1" <?php echo (int)$form['is_active'] === 1 ? 'selected' : ''; ?>>Active</option>
                 <option value="0" <?php echo (int)$form['is_active'] === 0 ? 'selected' : ''; ?>>Paused</option>
             </select>
-            <p class="cb-field-hint" id="status_hint">Paused kitchens are hidden from shoppers.</p>
+            <p class="cb-field-hint" id="status_hint">Paused kitchens are hidden from shoppers. A kitchen you pause can't reopen itself until you set it Active.</p>
         </div>
         <div class="cb-admin-actions">
             <button type="submit" class="cb-btn"><?php echo $editBrand ? 'Save changes' : 'Add kitchen'; ?></button>

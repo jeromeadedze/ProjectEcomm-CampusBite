@@ -105,6 +105,68 @@ class OrderClass extends Database
         return $this->fetchAll($sql);
     }
 
+    /**
+     * WHERE clause and parameters for the admin order search. $f holds any of:
+     * q (invoice number, customer name, email or phone), brand_id, from and to (Y-m-d, order date), status.
+     * Status is applied only when $withStatus is true, so the status chips can count across the other filters.
+     */
+    private function orderSearchWhere($f, $withStatus = true)
+    {
+        $where = ['1 = 1'];
+        $params = [];
+        if (($f['q'] ?? '') !== '') {
+            $term = '%' . $f['q'] . '%';
+            $where[] = "(o.invoice_no LIKE ? OR c.customer_name LIKE ? OR c.customer_email LIKE ? OR c.customer_contact LIKE ?)";
+            array_push($params, $term, $term, $term, $term);
+        }
+        if (!empty($f['brand_id'])) {
+            $where[] = "o.brand_id = ?";
+            $params[] = (int)$f['brand_id'];
+        }
+        if (!empty($f['from'])) {
+            $where[] = "o.order_date >= ?";
+            $params[] = $f['from'] . ' 00:00:00';
+        }
+        if (!empty($f['to'])) {
+            $where[] = "o.order_date < ?";
+            $params[] = date('Y-m-d 00:00:00', strtotime($f['to'] . ' +1 day'));
+        }
+        if ($withStatus && !empty($f['status'])) {
+            $where[] = "o.order_status = ?";
+            $params[] = $f['status'];
+        }
+        return [implode(' AND ', $where), $params];
+    }
+
+    // One page of matching orders, newest first, with the first payment recorded for each
+    public function searchOrders($f, $limit, $offset)
+    {
+        [$where, $params] = $this->orderSearchWhere($f);
+        $sql = "SELECT o.*, c.customer_name, c.customer_contact, b.brand_name, pay.payment_mode, pay.amt,
+                       (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
+                        FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                        WHERE od.order_id = o.order_id) AS items_total
+                FROM orders o
+                JOIN customer c ON o.customer_id = c.customer_id
+                LEFT JOIN brands b ON o.brand_id = b.brand_id
+                LEFT JOIN payment pay ON pay.pay_id = (SELECT MIN(p2.pay_id) FROM payment p2 WHERE p2.order_id = o.order_id)
+                WHERE $where
+                ORDER BY o.order_id DESC
+                LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        return $this->fetchAll($sql, $params);
+    }
+
+    // How many matching orders each status has (ignoring the status filter itself)
+    public function countOrdersByStatusFor($f)
+    {
+        [$where, $params] = $this->orderSearchWhere($f, false);
+        $sql = "SELECT o.order_status, COUNT(*) AS total
+                FROM orders o JOIN customer c ON o.customer_id = c.customer_id
+                WHERE $where
+                GROUP BY o.order_status";
+        return array_column($this->fetchAll($sql, $params), 'total', 'order_status');
+    }
+
     public function updateOrderStatus($orderId, $status)
     {
         $sql = "UPDATE orders SET order_status = ? WHERE order_id = ?";
@@ -158,10 +220,13 @@ class OrderClass extends Database
                        (SELECT COUNT(*) FROM orders o WHERE o.brand_id = b.brand_id AND o.order_status <> 'Delivered') AS active,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0)
                         FROM orderdetails od JOIN orders o ON od.order_id = o.order_id JOIN products p ON od.product_id = p.product_id
-                        WHERE p.product_brand = b.brand_id AND o.order_date >= ?) AS sales
+                        WHERE p.product_brand = b.brand_id AND o.order_date >= ?) AS sales,
+                       (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0)
+                        FROM orderdetails od JOIN orders o ON od.order_id = o.order_id JOIN products p ON od.product_id = p.product_id
+                        WHERE p.product_brand = b.brand_id AND o.order_date >= ?) AS commission
                 FROM brands b
                 ORDER BY sales DESC, b.brand_name ASC";
-        return $this->fetchAll($sql, [$since, $since]);
+        return $this->fetchAll($sql, [$since, $since, $since]);
     }
 
     // Orders still marked Placed after $minutes: no kitchen has started them

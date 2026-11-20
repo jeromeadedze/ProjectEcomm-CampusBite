@@ -47,16 +47,17 @@ class ProductClass extends Database
         return $this->execute($sql, [$name, $zone, $location, $phone, $commission, $isActive]);
     }
 
-    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
+    // What the admin can change about a kitchen after it's added: CampusBite's commission and whether shoppers can see it
+    public function updateBrandTerms($id, $commission, $isActive)
     {
-        $sql = "UPDATE brands SET brand_name = ?, zone = ?, location_desc = ?, brand_phone = ?, commission_rate = ?, is_active = ? WHERE brand_id = ?";
-        return $this->execute($sql, [$name, $zone, $location, $phone, $commission, $isActive, $id]);
+        // An admin pause is remembered so the kitchen can't undo it; setting Active clears it
+        return $this->execute("UPDATE brands SET commission_rate = ?, is_active = ?, admin_paused = ? WHERE brand_id = ?", [$commission, $isActive, $isActive ? 0 : 1, $id]);
     }
 
-    // What a kitchen can change about itself from its portal
+    // What a kitchen can change about itself from its portal. A kitchen the admin paused stays paused.
     public function updateBrandInfo($id, $location, $isActive, $phone = null)
     {
-        return $this->execute("UPDATE brands SET location_desc = ?, is_active = ?, brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
+        return $this->execute("UPDATE brands SET location_desc = ?, is_active = IF(admin_paused = 1, 0, ?), brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
     }
 
     // Every meal a kitchen has, sold out included, with how often each was ordered

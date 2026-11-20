@@ -50,6 +50,7 @@ CREATE TABLE `brands` (
   `commission_rate` decimal(4,2) NOT NULL DEFAULT 0.10,
   `brand_image` varchar(150) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `admin_paused` tinyint(1) NOT NULL DEFAULT 0, -- 1: paused by the admin; the kitchen can't reopen itself
   PRIMARY KEY (`brand_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

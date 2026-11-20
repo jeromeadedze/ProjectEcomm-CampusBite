@@ -1,17 +1,18 @@
 <?php
 // Support inbox for admins: open messages first
 define('ROOT_DIR', '../..');
-require_once __DIR__ . '/../layout/header.php';
-require_once __DIR__ . '/../../controllers/SupportController.php';
-
+require_once __DIR__ . '/../../core/core.php';
 require_admin();
+
+require_once __DIR__ . '/../../controllers/SupportController.php';
 
 $messages = (new SupportController())->getAllMessages();
 $openCount = count(array_filter($messages, function ($msg) {
     return $msg['status'] === 'Open';
 }));
-?>
 
+require_once __DIR__ . '/../layout/header.php';
+?>
 
 <p class="cb-sub"><?php echo $openCount; ?> open · <?php echo count($messages); ?> total</p>
 

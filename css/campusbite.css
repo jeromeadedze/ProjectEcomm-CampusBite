@@ -510,9 +510,6 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-result-actions .cb-btn{width:100%;padding:14px}
 
 /* Admin: one kitchen's page */
-.cb-kitchen-meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
-.cb-kitchen-meta .cb-sub{margin:0}
-.cb-btn.cb-btn-sm{padding:6px 14px;font-size:12.5px}
 .cb-kitchen-cats{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;gap:10px}
 .cb-kitchen-cats li{background:var(--card);border:1.5px dashed var(--dash);border-radius:16px;padding:10px 16px;display:flex;flex-direction:column;gap:2px;min-width:150px}
 .cb-kitchen-cats b{font-weight:600;font-size:14px}
@@ -524,3 +521,9 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-kitchen-best li span:last-child{flex-shrink:0;white-space:nowrap;text-align:right}
 .cb-kitchen-msgs li{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .cb-kitchen-msgs .cb-dot-status{margin-right:6px}
+
+/* Admin orders: search and filters */
+.cb-order-filters{margin-bottom:4px}
+.cb-order-filters .cb-order-search{flex:1 1 240px}
+.cb-order-filters select{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink)}
+.cb-order-filters input[type=search]{width:100%}

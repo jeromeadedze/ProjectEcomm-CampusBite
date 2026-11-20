@@ -8,6 +8,7 @@ require_kitchen();
 
 $controller = new ProductController();
 $kitchen = $controller->getBrandById(get_kitchen_id());
+$adminPaused = (int)($kitchen['admin_paused'] ?? 0) === 1;
 
 $pageHeading = $kitchen['brand_name'];
 require_once __DIR__ . '/../layout/header.php';
@@ -30,10 +31,18 @@ require_once __DIR__ . '/../layout/header.php';
             </div>
             <div class="cb-field cb-field-full">
                 <label for="is_active">Taking orders</label>
-                <select id="is_active" name="is_active">
-                    <option value="1" <?php echo (int)$kitchen['is_active'] === 1 ? 'selected' : ''; ?>>Open: shoppers can order</option>
-                    <option value="0" <?php echo (int)$kitchen['is_active'] === 0 ? 'selected' : ''; ?>>Paused: hidden from shoppers</option>
-                </select>
+                <?php if ($adminPaused): ?>
+                    <input type="hidden" name="is_active" value="0">
+                    <select id="is_active" disabled aria-describedby="admin_paused_hint">
+                        <option selected>Paused by CampusBite</option>
+                    </select>
+                    <p class="cb-field-hint" id="admin_paused_hint">CampusBite paused your kitchen, so shoppers can't see it. Contact the CampusBite admin to reopen.</p>
+                <?php else: ?>
+                    <select id="is_active" name="is_active">
+                        <option value="1" <?php echo (int)$kitchen['is_active'] === 1 ? 'selected' : ''; ?>>Open: shoppers can order</option>
+                        <option value="0" <?php echo (int)$kitchen['is_active'] === 0 ? 'selected' : ''; ?>>Paused: hidden from shoppers</option>
+                    </select>
+                <?php endif; ?>
             </div>
             <div class="cb-admin-actions"><button type="submit" class="cb-btn">Save details</button></div>
         </form>

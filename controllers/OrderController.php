@@ -169,6 +169,38 @@ class OrderController
         return $this->orderModel->getAllOrders();
     }
 
+    const ORDERS_PER_PAGE = 25;
+
+    /**
+     * Admin order search. Cleans the query string into filters and returns one page of orders,
+     * the per-status counts for the chips, and paging details.
+     */
+    public function searchOrdersForAdmin($input)
+    {
+        $readDate = function ($value) {
+            $d = DateTime::createFromFormat('Y-m-d', (string)$value);
+            return ($d && $d->format('Y-m-d') === $value) ? $value : '';
+        };
+        $f = [
+            'q' => mb_substr(trim((string)($input['q'] ?? '')), 0, 100),
+            'brand_id' => max(0, (int)($input['brand'] ?? 0)),
+            'from' => $readDate($input['from'] ?? ''),
+            'to' => $readDate($input['to'] ?? ''),
+            'status' => array_key_exists($input['status'] ?? '', self::STATUSES) ? $input['status'] : '',
+        ];
+        if ($f['from'] !== '' && $f['to'] !== '' && $f['from'] > $f['to']) {
+            [$f['from'], $f['to']] = [$f['to'], $f['from']];
+        }
+
+        $counts = $this->orderModel->countOrdersByStatusFor($f);
+        $total = $f['status'] !== '' ? (int)($counts[$f['status']] ?? 0) : array_sum($counts);
+        $pages = max(1, (int)ceil($total / self::ORDERS_PER_PAGE));
+        $page = min(max(1, (int)($input['page'] ?? 1)), $pages);
+        $orders = $this->orderModel->searchOrders($f, self::ORDERS_PER_PAGE, ($page - 1) * self::ORDERS_PER_PAGE);
+
+        return ['filters' => $f, 'orders' => $orders, 'counts' => $counts, 'total' => $total, 'page' => $page, 'pages' => $pages];
+    }
+
     public function updateOrderStatus($orderId, $status)
     {
         if (!array_key_exists($status, self::STATUSES)) {

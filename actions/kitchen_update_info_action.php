@@ -20,7 +20,12 @@ if ($phone !== '' && !preg_match('/^[0-9+\-\s]{7,20}$/', $phone)) {
 } elseif (mb_strlen($location) > 255) {
     $_SESSION['error'] = "Keep the location to 255 characters or fewer.";
 } elseif ((new ProductController())->updateBrandInfo(get_kitchen_id(), $location, $isActive, $phone ?: null)) {
-    $_SESSION['success'] = $isActive ? "Saved. Your kitchen is open to shoppers." : "Saved. Your kitchen is paused and hidden from shoppers.";
+    $adminPaused = (int)((new ProductController())->getBrandById(get_kitchen_id())['admin_paused'] ?? 0) === 1;
+    if ($adminPaused) {
+        $_SESSION['success'] = "Saved. Your kitchen stays paused because CampusBite paused it. Contact the CampusBite admin to reopen.";
+    } else {
+        $_SESSION['success'] = $isActive ? "Saved. Your kitchen is open to shoppers." : "Saved. Your kitchen is paused and hidden from shoppers.";
+    }
 } else {
     $_SESSION['error'] = "Your details couldn't be saved. Try again.";
 }
