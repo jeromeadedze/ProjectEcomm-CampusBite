@@ -139,7 +139,9 @@ CREATE TABLE `payment` (
   `payment_mode` varchar(50) NOT NULL DEFAULT 'Paystack - MoMo', -- MTN MoMo, Telecel Cash, Paystack, Flutterwave, Cash/On-Delivery
   `transaction_reference` varchar(100) DEFAULT NULL,
   `payment_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `verified_at` datetime DEFAULT NULL, -- when Paystack confirmed this payment; NULL for simulated payments
   PRIMARY KEY (`pay_id`),
+  UNIQUE KEY `transaction_reference` (`transaction_reference`),
   KEY `customer_id` (`customer_id`),
   KEY `order_id` (`order_id`),
   CONSTRAINT `payment_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),

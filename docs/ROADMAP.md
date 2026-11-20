@@ -20,12 +20,12 @@ Customers can sign up, sign in, browse kitchens and categories, search, open a m
 
 | # | Task | Done when | Size | Owner |
 |---|---|---|---|---|
-| BE1 | **Real Paystack payment.** Checkout currently records a made-up transaction reference, so no money is taken. The ecomlab project has a working Paystack flow to reuse. | Checkout opens Paystack in test mode, the order is created only after Paystack confirms the payment, and failed or cancelled payments leave the bill unchanged. Keys stay out of git. | L | |
+| BE1 | ~~**Real Paystack payment.**~~ Done Nov 20 (Sprint 12): checkout opens Paystack, the order is created only after Paystack verifies the payment, and cancelled or failed payments leave the bill unchanged. Keys live in the gitignored `core/paystack_config.php`. | Done. | – | |
 | BE2 | ~~**Courier page.**~~ Resolved Nov 17: the courier role was dropped. Kitchens deliver their own orders and mark them delivered from the kitchen portal. | Done. | – | |
 | BE3 | **Kitchen merchant role.** Role 4 exists in the database, but nothing uses it. | The team decides whether to build a kitchen view of incoming orders or drop the role. If it's built, a merchant sees and updates their own kitchen's orders. | M | |
 | BE4 | **CampusBite Pass.** It's turned off with `PASS_ENABLED = false` in `core/core.php`. | The team decides whether to finish it (paid through Paystack, giving free Zone A delivery) or remove its pages. | M | |
 | BE5 | **Delivery fee rule.** The site charges one fee per order (GH₵ 5 Zone A, GH₵ 10 Zone B), while the theme charged per kitchen. | The team picks one rule, and the cart, checkout, order panel and README all agree. | S | |
-| BE7 | **Paystack reconciliation.** Pairs with BE1. The admin Money page (`views/admin/money.php`) checks each order's total against the payment recorded at checkout. | Each payment is verified with Paystack's verify endpoint, the amount Paystack received is stored, and the Money page's payment check compares against that amount. | S | |
+| BE7 | ~~**Paystack reconciliation.**~~ Done Nov 20 (Sprint 12): each payment stores the amount Paystack verified and `verified_at`, and the Money page flags payments Paystack didn't confirm. | Done. | – | |
 | BE6 | **Admin overview data.** The theme's admin page showed counts: active and paused kitchens, meals on sale and sold-out meals. Order counts would be a useful addition. | A controller method returns those counts for FE4. | S | |
 
 ## `feature/frontend`: pages and polish
@@ -36,7 +36,7 @@ Customers can sign up, sign in, browse kitchens and categories, search, open a m
 | FE2 | **Phone layout pass.** | Every page works at 375px wide without sideways scrolling, and buttons are easy to tap. | M | |
 | FE3 | **Accessibility pass.** | Every form field has a label, everything works with the keyboard alone, and text contrast passes WCAG AA. | M | |
 | FE4 | **Admin overview page.** Uses BE6's data. | Admins land on an overview with the counts and quick links to each admin page. | S | |
-| FE5 | **Payment pages.** Pairs with BE1. | Payment success and failure pages match the theme and tell the customer what to do next. | S | |
+| FE5 | ~~**Payment pages.**~~ Done Nov 20 (Sprint 12): `views/payment_success.php` and `views/payment_failed.php`. | Done. | – | |
 
 ## `feature/integration`: testing, release and documents
 

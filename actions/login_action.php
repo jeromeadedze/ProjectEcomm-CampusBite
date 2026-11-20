@@ -18,7 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user) {
             log_in_customer($user);
             $_SESSION['success'] = "Welcome back, " . $user['customer_name'] . "!";
-            if (!can_order()) {
+            // Came back from Paystack after the session ran out: finish checking that payment first
+            $pendingRef = $_SESSION['pending_payment_ref'] ?? '';
+            unset($_SESSION['pending_payment_ref']);
+            if (can_order() && preg_match('/^CB-[A-F0-9]{16}$/', $pendingRef)) {
+                header('Location: paystack_callback_action.php?reference=' . $pendingRef);
+            } elseif (!can_order()) {
                 header("Location: .." . home_path_for_role());
             } else {
                 header("Location: " . ($toCheckout ? '../views/checkout.php' : '../index.php'));

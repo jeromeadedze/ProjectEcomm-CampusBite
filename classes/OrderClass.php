@@ -31,11 +31,20 @@ class OrderClass extends Database
         return $this->execute($sql, [$orderId, $productId, $qty, $price, $notes]);
     }
 
-    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref)
+    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false)
     {
-        $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference)
-                VALUES (?, ?, ?, 'GHS', ?, ?)";
+        $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, verified_at)
+                VALUES (?, ?, ?, 'GHS', ?, ?, " . ($verified ? "NOW()" : "NULL") . ")";
         return $this->execute($sql, [$amt, $customerId, $orderId, $paymentMode, $ref]);
+    }
+
+    /**
+     * The order a payment reference already paid for, or null. Stops one Paystack payment creating two orders.
+     */
+    public function getOrderIdByReference($ref)
+    {
+        $row = $this->fetchOne("SELECT order_id FROM payment WHERE transaction_reference = ?", [$ref]);
+        return $row ? (int)$row['order_id'] : null;
     }
 
     public function getOrderById($orderId)
@@ -43,10 +52,12 @@ class OrderClass extends Database
         $sql = "SELECT o.*, c.customer_name, c.customer_email, c.customer_contact,
                        b.brand_name, b.brand_phone, COALESCE(o.commission_rate, b.commission_rate) AS commission_rate,
                        COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM customer ks
-                        WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1)) AS kitchen_contact
+                        WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1)) AS kitchen_contact,
+                       pay.amt, pay.payment_mode, pay.transaction_reference, pay.verified_at
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
                 LEFT JOIN brands b ON o.brand_id = b.brand_id
+                LEFT JOIN payment pay ON pay.pay_id = (SELECT MIN(p2.pay_id) FROM payment p2 WHERE p2.order_id = o.order_id)
                 WHERE o.order_id = ?";
         return $this->fetchOne($sql, [$orderId]);
     }
@@ -211,7 +222,8 @@ class OrderClass extends Database
                         WHERE od.order_id = o.order_id) + o.delivery_fee AS expected,
                        (SELECT SUM(pay.amt) FROM payment pay WHERE pay.order_id = o.order_id) AS paid,
                        (SELECT COUNT(*) FROM payment pay WHERE pay.order_id = o.order_id) AS payments,
-                       (SELECT GROUP_CONCAT(pay.transaction_reference SEPARATOR ', ') FROM payment pay WHERE pay.order_id = o.order_id) AS refs
+                       (SELECT GROUP_CONCAT(pay.transaction_reference SEPARATOR ', ') FROM payment pay WHERE pay.order_id = o.order_id) AS refs,
+                       (SELECT COUNT(*) FROM payment pay WHERE pay.order_id = o.order_id AND pay.verified_at IS NOT NULL) AS verified
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
                 LEFT JOIN brands b ON o.brand_id = b.brand_id

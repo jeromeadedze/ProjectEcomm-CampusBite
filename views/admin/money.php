@@ -166,11 +166,12 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
         <div><dt>Orders placed in this range</dt><dd><?php echo (int)$pay['orders']; ?></dd></div>
         <div><dt>Customers should have paid</dt><dd><?php echo $money($pay['expected']); ?></dd></div>
         <div><dt>Payments recorded</dt><dd><?php echo $money($pay['paid']); ?></dd></div>
+        <div><dt>Confirmed by Paystack</dt><dd><?php echo $money($pay['verified']); ?></dd></div>
         <div class="is-total"><dt>Difference</dt><dd><?php echo $money($pay['paid'] - $pay['expected']); ?></dd></div>
     </dl>
 
     <?php if (empty($pay['problems'])): ?>
-        <p class="cb-money-ok"><i class="bi bi-check-circle" aria-hidden="true"></i> Every order has exactly one payment that matches its total.</p>
+        <p class="cb-money-ok"><i class="bi bi-check-circle" aria-hidden="true"></i> Every order has exactly one Paystack-confirmed payment that matches its total.</p>
     <?php else: ?>
         <div class="cb-table-wrap">
             <table class="cb-table">
@@ -197,6 +198,6 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
         </div>
     <?php endif; ?>
 </section>
-<p class="cb-field-hint">Payments are simulated for now, so this compares orders with the payments CampusBite recorded at checkout. Once Paystack is connected, each payment will be verified with Paystack and this check will use the amounts Paystack actually received.</p>
+<p class="cb-field-hint">Each payment is checked with Paystack's verify API before its order is created, and the amount stored is the amount Paystack reports it received. Orders from before Paystack was connected show as "Not confirmed by Paystack" because their payments were simulated.</p>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

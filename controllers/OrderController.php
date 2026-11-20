@@ -139,9 +139,14 @@ class OrderController
         return $this->orderModel->rollBack();
     }
 
-    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref)
+    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false)
     {
-        return $this->orderModel->recordPayment($amt, $customerId, $orderId, $paymentMode, $ref);
+        return $this->orderModel->recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified);
+    }
+
+    public function getOrderIdByReference($ref)
+    {
+        return $this->orderModel->getOrderIdByReference($ref);
     }
 
     public function getOrderById($orderId)
@@ -232,19 +237,25 @@ class OrderController
         });
 
         // Payment check: each order's expected total against what was recorded as paid
-        $check = ['orders' => 0, 'expected' => 0.0, 'paid' => 0.0, 'problems' => []];
+        $check = ['orders' => 0, 'expected' => 0.0, 'paid' => 0.0, 'verified' => 0.0, 'problems' => []];
         foreach ($this->orderModel->getPaymentCheck($start, $end) as $p) {
             $expected = round((float)$p['expected'], 2);
             $paid = $p['paid'] === null ? null : round((float)$p['paid'], 2);
             $check['orders']++;
             $check['expected'] += $expected;
             $check['paid'] += (float)$paid;
+            if ((int)$p['verified'] > 0) {
+                $check['verified'] += (float)$paid;
+            }
             if ($paid === null) {
                 $p['problem'] = 'No payment recorded';
             } elseif ((int)$p['payments'] > 1) {
                 $p['problem'] = 'Paid more than once';
             } elseif (abs($paid - $expected) >= 0.01) {
                 $p['problem'] = $paid < $expected ? 'Paid less than the order total' : 'Paid more than the order total';
+            } elseif ((int)$p['verified'] === 0) {
+                // Recorded before Paystack was connected (or by hand): no money was confirmed for it
+                $p['problem'] = 'Not confirmed by Paystack';
             } else {
                 continue;
             }

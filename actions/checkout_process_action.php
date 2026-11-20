@@ -1,9 +1,8 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
-require_once __DIR__ . '/../controllers/OrderController.php';
-
 require_once __DIR__ . '/../controllers/CustomerController.php';
+require_once __DIR__ . '/../core/paystack.php';
 
 require_login();
 
@@ -23,7 +22,6 @@ $userId = get_user_id();
 $cartIp = get_cart_token();
 
 $cartCtrl = new CartController();
-$orderCtrl = new OrderController();
 
 $cartItems = $cartCtrl->getCartItems($cartIp, $userId);
 
@@ -38,15 +36,11 @@ $user = (new CustomerController())->getCustomerById($userId);
 $deliveryZone = $cartCtrl->deliveryZoneFor($cartItems);
 $deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, has_active_pass($user));
 
-$paymentModes = ['Paystack - MTN MoMo', 'Paystack - Telecel Cash', 'Paystack - Bank Card'];
-$paymentMode = $_POST['payment_mode'] ?? '';
 $dropLocation = trim($_POST['drop_location'] ?? '');
 $notes = trim($_POST['notes'] ?? '');
 
 $formError = null;
-if (!in_array($paymentMode, $paymentModes, true)) {
-    $formError = "Choose a payment method from the list.";
-} elseif ($dropLocation === '' || mb_strlen($dropLocation) > 150) {
+if ($dropLocation === '' || mb_strlen($dropLocation) > 150) {
     $formError = "Enter a drop point of up to 150 characters.";
 } elseif (mb_strlen($notes) > 255) {
     $formError = "Keep delivery instructions to 255 characters or fewer.";
@@ -75,33 +69,50 @@ if ($unavailable) {
 
 $subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
 $grandTotal = $subtotal + $deliveryFee;
-$invoiceNo = mt_rand(100000, 999999);
-$txnRef = "CB-" . strtoupper(bin2hex(random_bytes(5)));
 
-// The order, its items, the payment and emptying the cart all succeed together or not at all
-try {
-    $orderCtrl->beginTransaction();
-
-    $orderId = $orderCtrl->createOrder($userId, $kitchenIds[0], $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes);
-    if (!$orderId) {
-        throw new RuntimeException('Order row was not created');
-    }
-    foreach ($cartItems as $item) {
-        $orderCtrl->addOrderDetail($orderId, $item['p_id'], $item['qty'], $item['product_price'], $item['notes']);
-    }
-    $orderCtrl->recordPayment($grandTotal, $userId, $orderId, $paymentMode, $txnRef);
-    $cartCtrl->clearCart($cartIp, $userId);
-
-    $orderCtrl->commit();
-} catch (Exception $e) {
-    $orderCtrl->rollBack();
-    error_log('Checkout failed: ' . $e->getMessage());
-    $_SESSION['error'] = "Failed to place your order. Your bag is unchanged, so please try again.";
+if (!paystack_configured()) {
+    error_log('Checkout: core/paystack_config.php is missing or has no secret key');
+    $_SESSION['error'] = "Payments aren't set up on this site yet. Please try again later.";
     header("Location: ../views/checkout.php");
     exit;
 }
 
-$_SESSION['success'] = "Order placed successfully! Track your meal progress below.";
-header("Location: ../views/order_tracking.php?order_id=" . $orderId);
+// What is being bought travels with the payment as Paystack metadata. After paying, the callback reads it back
+// from Paystack (not from the browser) and creates the order from it, so a cart changed in another tab can't
+// alter an order that's already paid for.
+$reference = 'CB-' . strtoupper(bin2hex(random_bytes(8)));
+$metadata = [
+    'customer_id' => $userId,
+    'brand_id' => (int)$kitchenIds[0],
+    'delivery_zone' => $deliveryZone,
+    'delivery_fee' => (float)$deliveryFee,
+    'drop_location' => $dropLocation,
+    'notes' => $notes,
+    'items' => array_map(function ($item) {
+        return ['p_id' => (int)$item['p_id'], 'qty' => (int)$item['qty'], 'price' => (float)$item['product_price'], 'notes' => $item['notes']];
+    }, $cartItems),
+    // Shown on the transaction in the Paystack dashboard
+    'custom_fields' => [
+        ['display_name' => 'Kitchen', 'variable_name' => 'kitchen', 'value' => $cartItems[0]['brand_name']],
+        ['display_name' => 'Drop point', 'variable_name' => 'drop_point', 'value' => $dropLocation],
+    ],
+];
+
+$init = paystack_request('POST', '/transaction/initialize', [
+    'email' => $user['customer_email'],
+    'amount' => to_pesewas($grandTotal),
+    'currency' => 'GHS',
+    'reference' => $reference,
+    'callback_url' => site_url('actions/paystack_callback_action.php'),
+    'metadata' => $metadata,
+]);
+
+if (empty($init['status']) || empty($init['data']['authorization_url'])) {
+    error_log('Paystack initialize failed: ' . json_encode($init['message'] ?? $init));
+    $_SESSION['error'] = "We couldn't open the payment page. Your bag is unchanged, so please try again.";
+    header("Location: ../views/checkout.php");
+    exit;
+}
+
+header("Location: " . $init['data']['authorization_url']);
 exit;
-?>

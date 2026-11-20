@@ -59,7 +59,8 @@ Every page includes `views/layout/header.php` and `views/layout/footer.php`. The
 | 8 | Favorites, Settings and Messages | Done, commit `bcf3c87` |
 | 9 | Kitchen portal | Done, commit `a0794d0` |
 | 10 | Kitchens deliver (courier role dropped) and admin Money report | Done, commit `9406bac` |
-| 11 | UI revamp (top pill nav, dashed cards, round plates, phone tab bar), checkout/orders without Bootstrap, and kitchen direct messaging | Done |
+| 11 | UI revamp (top pill nav, dashed cards, round plates, phone tab bar), checkout/orders without Bootstrap, and kitchen direct messaging | Done, commit `dce5c8b` |
+| 12 | Paystack payment, payment result pages and verified-payment check on the Money page | Done |
 
 ### What's done
 
@@ -77,11 +78,13 @@ Every page includes `views/layout/header.php` and `views/layout/footer.php`. The
 
 **Cart (Bills).** `views/cart.php` translated from `cb-cart.liquid`, synchronized with `panel.php`. Quantity adjustments, empty cart states, and item removal.
 
-**Checkout and Order History.** `views/checkout.php`: drop point (a list of popular spots fills the text field), instructions, payment as pill cards (simulated), and the order summary beside it. The phone number is shown read-only with a link to Settings, because checkout doesn't save it. `views/my_orders.php` shows each order as a dashed card. `views/order_tracking.php` has a five-step tracker (`Placed`, `Preparing`, `Ready`, `In Transit`, `Delivered`; vertical on phones), the timeline, delivery details and what was ordered; admins and the order's kitchen also get the next-step button. Only `views/pass.php` still uses Bootstrap markup, and the Pass is switched off. Admins see every order on `views/admin/orders.php`.
+**Checkout and Order History.** `views/checkout.php`: drop point (a list of popular spots fills the text field), instructions, a Paystack payment step, and the order summary beside it. The phone number is shown read-only with a link to Settings, because checkout doesn't save it. `views/my_orders.php` shows each order as a dashed card. `views/order_tracking.php` has a five-step tracker (`Placed`, `Preparing`, `Ready`, `In Transit`, `Delivered`; vertical on phones), the timeline, delivery details and what was ordered; admins and the order's kitchen also get the next-step button. Only `views/pass.php` still uses Bootstrap markup, and the Pass is switched off. Admins see every order on `views/admin/orders.php`.
 
 **Kitchens deliver their own orders.** The courier role (3) was dropped. In the kitchen portal (`views/kitchen/kitchen_orders.php`) each ticket has one button for its next stage (`OrderController::NEXT_STEP`): Start preparing, Mark ready, Out for delivery, Mark delivered. Kitchens keep the delivery fee.
 
-**Money report.** `views/admin/money.php` (admin only) takes a date range (`?from=&to=`, Y-m-d, default this month) and shows, per kitchen: delivered orders, meal sales, CampusBite's commission, delivery fees and what the kitchen is owed (sales − commission + delivery fees), plus orders still in progress, which aren't owed yet. `?export=csv` downloads the same table. Each order stores the kitchen's commission rate when it's placed (`orders.commission_rate`), so changing a rate doesn't change past payouts. A payment check lists orders with no payment, more than one payment, or a payment that doesn't match the order total. Payments are simulated; once Paystack is in, the check should compare against the amounts Paystack verifies.
+**Money report.** `views/admin/money.php` (admin only) takes a date range (`?from=&to=`, Y-m-d, default this month) and shows, per kitchen: delivered orders, meal sales, CampusBite's commission, delivery fees and what the kitchen is owed (sales − commission + delivery fees), plus orders still in progress, which aren't owed yet. `?export=csv` downloads the same table. Each order stores the kitchen's commission rate when it's placed (`orders.commission_rate`), so changing a rate doesn't change past payouts. A payment check lists orders with no payment, more than one payment, or a payment that doesn't match the order total. The check also shows how much Paystack confirmed and flags payments it didn't (orders from before Sprint 12 were simulated).
+
+**Paystack payment (Sprint 12).** `actions/checkout_process_action.php` checks the bill, then calls Paystack's `/transaction/initialize` (amount in pesewas, GHS, a `CB-` + 16 hex reference, and the cart snapshot in `metadata`) and sends the shopper to Paystack. Paystack returns them to `actions/paystack_callback_action.php`, which calls `/transaction/verify` and only creates the order when the payment succeeded, belongs to the signed-in customer, is in GHS and matches the snapshot total exactly. Order, payment (verified amount, channel such as "Paystack - Mobile Money", `verified_at`) and emptying the bill happen in one database transaction. `payment.transaction_reference` is unique, so reloading the callback can't create a second order. Cancelled, declined, pending or mismatched payments go to `views/payment_failed.php` and leave the bill as it was; success goes to `views/payment_success.php`. If the session ran out while on Paystack, the reference is kept and checked straight after sign-in. Helpers are in `core/paystack.php`. Keys go in `core/paystack_config.php` (gitignored; copy `core/paystack_config.example.php` and use test keys). Paystack rejects reserved email domains such as `.test`, so test customers need an address like `name@example.com`.
 
 **Favorites, Settings, Messages, and Security.** Favorites heart toggle (`views/favorites.php`), customer account settings and password updates (`views/settings.php`), customer contact and admin messages (`views/contact.php`, `views/admin/messages.php`), an accounts list (`views/customers.php`), and sitewide CSRF token protection.
 
@@ -89,11 +92,11 @@ Every page includes `views/layout/header.php` and `views/layout/footer.php`. The
 
 ### Database migrations
 
-Existing databases must run each file in `database/migrations/` once, in date order: `2026-11-08_phase1_phase2.sql`, `2026-11-09_kitchen_portal.sql`, `2026-11-17_kitchen_delivery.sql`, then `2026-11-18_kitchen_support.sql` (adds `brands.brand_phone`, routes `support_messages` to `brand_id`). Fresh databases imported from `database/campusbite.sql` already include all tables.
+Existing databases must run each file in `database/migrations/` once, in date order: `2026-11-08_phase1_phase2.sql`, `2026-11-09_kitchen_portal.sql`, `2026-11-17_kitchen_delivery.sql`, `2026-11-18_kitchen_support.sql` (adds `brands.brand_phone`, routes `support_messages` to `brand_id`), then `2026-11-20_paystack.sql` (adds `payment.verified_at` and makes `transaction_reference` unique). Fresh databases imported from `database/campusbite.sql` already include all tables.
 
 ### Open items & next steps
 
-- **Payment Gateway Integration:** Payments at checkout are currently simulated. Integrate real payment verification (e.g. Paystack or MoMo API) to record authentic payment transactions.
+- **Refunds:** cancelled or rejected orders aren't refunded through Paystack yet (next sprint).
 - **Delivery fee policy:** The theme charges per kitchen (GH₵ 4 on campus, GH₵ 7 Berekuso), while `CartController::calculateDeliveryFee()` currently applies one flat fee per order. The team needs to settle on the final fee rule.
 - **Order receipts & notifications:** Email receipts (or SMS notifications) for placed orders and status updates.
 - **Store credit & coupons:** The original Shopify theme's order panel displayed coupon code input and store credit balance, but the database currently does not model them.
