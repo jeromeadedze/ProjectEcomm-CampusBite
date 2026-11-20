@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS `brands`; -- Acts as Kitchens/Vendors (Hallmark, Akonnor, M
 DROP TABLE IF EXISTS `categories`; -- Food Categories (Rice & Bowls, Local Dishes, Grills & Fast Food, Drinks, Snacks, Healthy)
 DROP TABLE IF EXISTS `customer`;
 
--- ── 1. customer (Students, Faculty, Couriers, Admins) ───────────────
+-- ── 1. customer (Students, Faculty, Kitchen staff, Admins) ──────────
 CREATE TABLE `customer` (
   `customer_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_name` varchar(100) NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE `customer` (
   `customer_contact` varchar(20) NOT NULL,
   `campus_hostel` varchar(100) DEFAULT NULL, -- e.g. 'Walter Sisulu Hall', 'Wangari Maathai', 'Charlotte Court', etc.
   `customer_image` varchar(150) DEFAULT NULL,
-  `user_role` int(11) NOT NULL DEFAULT 2, -- 1: Admin, 2: Customer (Student/Faculty), 3: Student Courier, 4: Kitchen Merchant
+  `user_role` int(11) NOT NULL DEFAULT 2, -- 1: Admin, 2: Customer (Student/Faculty), 4: Kitchen (role 3, courier, was retired: kitchens deliver their own orders)
   `brand_id` int(11) DEFAULT NULL, -- for kitchen accounts (role 4): the kitchen they run
   `has_pass` tinyint(1) NOT NULL DEFAULT 0, -- 1 if customer subscribed to GH₵ 35 CampusBite Pass
   `pass_expiry` date DEFAULT NULL,
@@ -46,6 +46,7 @@ CREATE TABLE `brands` (
   `brand_name` varchar(100) NOT NULL,
   `zone` enum('Zone A', 'Zone B') NOT NULL DEFAULT 'Zone A', -- Zone A: On-campus, Zone B: Berekuso corridor
   `location_desc` varchar(255) DEFAULT NULL,
+  `brand_phone` varchar(20) DEFAULT NULL,
   `commission_rate` decimal(4,2) NOT NULL DEFAULT 0.10,
   `brand_image` varchar(150) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
@@ -107,14 +108,12 @@ CREATE TABLE `orders` (
   `delivery_fee` double NOT NULL DEFAULT 5.00,
   `drop_location` varchar(150) NOT NULL, -- e.g. 'Walter Sisulu Hall - Room 204', 'FabLab Courtyard'
   `special_instructions` varchar(255) DEFAULT NULL,
-  `courier_id` int(11) DEFAULT NULL,
+  `commission_rate` decimal(4,2) DEFAULT NULL, -- the kitchen's commission when the order was placed, so later rate changes don't alter past payouts
   PRIMARY KEY (`order_id`),
   KEY `customer_id` (`customer_id`),
-  KEY `courier_id` (`courier_id`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `orders_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`),
-  CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
-  CONSTRAINT `orders_courier_fk` FOREIGN KEY (`courier_id`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
+  CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 7. orderdetails ────────────────────────────────────────────────
@@ -175,6 +174,7 @@ CREATE TABLE `support_messages` (
   `message_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_id` int(11) NOT NULL,
   `order_id` int(11) DEFAULT NULL,
+  `brand_id` int(11) DEFAULT NULL,
   `topic` varchar(50) NOT NULL,
   `message` text NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'Open', -- Open, Resolved
@@ -182,8 +182,10 @@ CREATE TABLE `support_messages` (
   PRIMARY KEY (`message_id`),
   KEY `customer_id` (`customer_id`),
   KEY `order_id` (`order_id`),
+  KEY `brand_id` (`brand_id`),
   CONSTRAINT `support_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE,
-  CONSTRAINT `support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL
+  CONSTRAINT `support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL,
+  CONSTRAINT `support_b_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
@@ -198,13 +200,13 @@ INSERT INTO `categories` (`cat_id`, `cat_name`, `cat_icon`) VALUES
 (5, 'Pastries & Quick Bites', 'bi-cup-hot'),
 (6, 'Drinks & Fresh Smoothies', 'bi-cup-straw');
 
-INSERT INTO `brands` (`brand_id`, `brand_name`, `zone`, `location_desc`, `commission_rate`, `brand_image`) VALUES
-(1, 'Hallmark Cafeteria', 'Zone A', 'Ashesi Campus Ground Floor Court', 0.08, 'hallmark.jpg'),
-(2, 'Akonnor Cafeteria', 'Zone A', 'Akonnor Canteen Hub (Upper Floor)', 0.08, 'akonnor.jpg'),
-(3, 'Munchees Grills', 'Zone A', 'Student Center Pavilion', 0.10, 'munchees.jpg'),
-(4, 'Peckish Berekuso', 'Zone B', 'Berekuso Town Junction', 0.10, 'peckish.jpg'),
-(5, 'Eat Healthy Spot', 'Zone B', 'Off-Campus Valley View Road', 0.09, 'eathealthy.jpg'),
-(6, 'Hi5 Lounge & Kitchen', 'Zone B', 'Berekuso Main Street', 0.10, 'hi5.jpg');
+INSERT INTO `brands` (`brand_id`, `brand_name`, `zone`, `location_desc`, `brand_phone`, `commission_rate`, `brand_image`) VALUES
+(1, 'Hallmark Cafeteria', 'Zone A', 'Ashesi Campus Ground Floor Court', '0241002001', 0.08, 'hallmark.jpg'),
+(2, 'Akonnor Cafeteria', 'Zone A', 'Akonnor Canteen Hub (Upper Floor)', '0241002002', 0.08, 'akonnor.jpg'),
+(3, 'Munchees Grills', 'Zone A', 'Student Center Pavilion', '0241002003', 0.10, 'munchees.jpg'),
+(4, 'Peckish Berekuso', 'Zone B', 'Berekuso Town Junction', '0241002004', 0.10, 'peckish.jpg'),
+(5, 'Eat Healthy Spot', 'Zone B', 'Off-Campus Valley View Road', '0241002005', 0.09, 'eathealthy.jpg'),
+(6, 'Hi5 Lounge & Kitchen', 'Zone B', 'Berekuso Main Street', '0241002006', 0.10, 'hi5.jpg');
 
 INSERT INTO `products` (`product_id`, `product_cat`, `product_brand`, `product_title`, `product_price`, `product_desc`, `product_image`, `product_keywords`, `is_available`, `prep_time_minutes`) VALUES
 (1, 1, 1, 'Hallmark Special Jollof + Grilled Chicken', 35.00, 'Smoky Ghana jollof rice served with seasoned crispy grilled chicken quarter, shito and fresh coleslaw.', 'jollof_chicken.jpg', 'jollof, chicken, hallmark, lunch, rice', 1, 15),

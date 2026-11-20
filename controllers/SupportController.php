@@ -29,6 +29,7 @@ class SupportController
         $values = [
             'topic' => trim($input['topic'] ?? ''),
             'order_id' => (int)($input['order_id'] ?? 0),
+            'brand_id' => (int)($input['brand_id'] ?? 0),
             'message' => trim($input['message'] ?? ''),
         ];
 
@@ -44,10 +45,13 @@ class SupportController
             $order = (new OrderClass())->getOrderById($values['order_id']);
             if (!$order || (int)$order['customer_id'] !== (int)$customerId) {
                 $error = "Choose one of your orders from the list.";
+            } else {
+                // When tied to an order, automatically route to the order's kitchen
+                $values['brand_id'] = (int)($order['brand_id'] ?? 0);
             }
         }
 
-        if ($error === null && !$this->supportModel->createMessage($customerId, $values['order_id'] ?: null, $values['topic'], $values['message'])) {
+        if ($error === null && !$this->supportModel->createMessage($customerId, $values['order_id'] ?: null, $values['brand_id'] ?: null, $values['topic'], $values['message'])) {
             $error = "Your message couldn't be sent. Try again.";
         }
 
@@ -57,6 +61,11 @@ class SupportController
     public function getMessagesByCustomer($customerId)
     {
         return $this->supportModel->getMessagesByCustomer($customerId);
+    }
+
+    public function getMessagesByKitchen($brandId)
+    {
+        return $this->supportModel->getMessagesByKitchen($brandId);
     }
 
     public function getAllMessages()

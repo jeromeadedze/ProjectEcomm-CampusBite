@@ -1,5 +1,6 @@
         </main>
         <?php require __DIR__ . '/panel.php'; ?>
+        </div>
     </div>
 
     <!-- Bootstrap Bundle JS -->

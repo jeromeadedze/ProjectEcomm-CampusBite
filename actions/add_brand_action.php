@@ -17,7 +17,7 @@ $values = $checked['values'];
 if ($checked['error']) {
     $_SESSION['error'] = $checked['error'];
     $_SESSION['brand_form'] = $values;
-} elseif ($controller->addBrand($values['brand_name'], $values['zone'], $values['location_desc'], (int)$values['commission_percent'] / 100, $values['is_active'])) {
+} elseif ($controller->addBrand($values['brand_name'], $values['zone'], $values['location_desc'], (int)$values['commission_percent'] / 100, $values['is_active'], $values['brand_phone'] ?: null)) {
     $_SESSION['success'] = "{$values['brand_name']} was added.";
 } else {
     $_SESSION['error'] = "The kitchen couldn't be saved. Try again.";
