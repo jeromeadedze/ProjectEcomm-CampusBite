@@ -1,26 +1,26 @@
 /* Admin pages: tabs, form and list cards, translated from the theme's campusbite-admin.css */
 
 .cb-admin-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:20px;padding-bottom:2px}
-.cb-admin-tabs a{flex:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:500;color:var(--ink);text-decoration:none}
+.cb-admin-tabs a{flex:none;background:var(--card);border:1px solid var(--card);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:500;color:var(--ink);text-decoration:none}
 .cb-admin-tabs a:hover{border-color:var(--ink);color:var(--ink)}
 .cb-admin-tabs a.is-active{background:var(--ink);border-color:var(--ink);color:#fff}
 
-.cb-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:20px}
+.cb-card{background:var(--card);border:1px solid var(--card);border-radius:22px;padding:24px;margin-bottom:20px}
 .cb .cb-card h2{margin-bottom:14px}
 .cb-card-lead{font-size:12.5px;color:var(--muted);line-height:1.6;margin:-8px 0 16px}
 
 .cb-admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 .cb-admin-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.cb-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s}
+.cb-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:999px;padding:11px 22px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s}
 .cb-btn:hover{background:var(--ember);border-color:var(--ember);color:#fff}
-.cb-btn-quiet{background:transparent;color:var(--ink);border-color:var(--line)}
-.cb-btn-quiet:hover{background:transparent;border-color:var(--ink);color:var(--ink)}
+.cb-btn-quiet{background:var(--card);color:var(--ink);border-color:var(--dash)}
+.cb-btn-quiet:hover{background:var(--card);border-color:var(--ink);color:var(--ink)}
 
-.cb-field textarea{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;color:var(--ink);resize:vertical}
+.cb-field textarea{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--ink);resize:vertical}
 .cb-field textarea:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
 .cb-field input[type=file]{font-size:13px}
 
-.cb-table-wrap{overflow-x:auto;margin:0 -6px}
+.cb-table-wrap{overflow-x:auto;margin:0 -6px;position:relative}
 .cb-table{width:100%;border-collapse:collapse;font-size:13px}
 .cb-table th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:0 6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 .cb-table td{padding:11px 6px;border-bottom:1px solid var(--line);vertical-align:middle}

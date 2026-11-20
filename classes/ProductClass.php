@@ -41,22 +41,22 @@ class ProductClass extends Database
         return $this->fetchOne($sql, [$id]);
     }
 
-    public function addBrand($name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1)
+    public function addBrand($name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
     {
-        $sql = "INSERT INTO brands (brand_name, zone, location_desc, commission_rate, is_active) VALUES (?, ?, ?, ?, ?)";
-        return $this->execute($sql, [$name, $zone, $location, $commission, $isActive]);
+        $sql = "INSERT INTO brands (brand_name, zone, location_desc, brand_phone, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?)";
+        return $this->execute($sql, [$name, $zone, $location, $phone, $commission, $isActive]);
     }
 
-    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1)
+    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
     {
-        $sql = "UPDATE brands SET brand_name = ?, zone = ?, location_desc = ?, commission_rate = ?, is_active = ? WHERE brand_id = ?";
-        return $this->execute($sql, [$name, $zone, $location, $commission, $isActive, $id]);
+        $sql = "UPDATE brands SET brand_name = ?, zone = ?, location_desc = ?, brand_phone = ?, commission_rate = ?, is_active = ? WHERE brand_id = ?";
+        return $this->execute($sql, [$name, $zone, $location, $phone, $commission, $isActive, $id]);
     }
 
     // What a kitchen can change about itself from its portal
-    public function updateBrandInfo($id, $location, $isActive)
+    public function updateBrandInfo($id, $location, $isActive, $phone = null)
     {
-        return $this->execute("UPDATE brands SET location_desc = ?, is_active = ? WHERE brand_id = ?", [$location, $isActive, $id]);
+        return $this->execute("UPDATE brands SET location_desc = ?, is_active = ?, brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
     }
 
     // Every meal a kitchen has, sold out included, with how often each was ordered

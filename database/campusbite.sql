@@ -46,6 +46,7 @@ CREATE TABLE `brands` (
   `brand_name` varchar(100) NOT NULL,
   `zone` enum('Zone A', 'Zone B') NOT NULL DEFAULT 'Zone A', -- Zone A: On-campus, Zone B: Berekuso corridor
   `location_desc` varchar(255) DEFAULT NULL,
+  `brand_phone` varchar(20) DEFAULT NULL,
   `commission_rate` decimal(4,2) NOT NULL DEFAULT 0.10,
   `brand_image` varchar(150) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
@@ -173,6 +174,7 @@ CREATE TABLE `support_messages` (
   `message_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_id` int(11) NOT NULL,
   `order_id` int(11) DEFAULT NULL,
+  `brand_id` int(11) DEFAULT NULL,
   `topic` varchar(50) NOT NULL,
   `message` text NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'Open', -- Open, Resolved
@@ -180,8 +182,10 @@ CREATE TABLE `support_messages` (
   PRIMARY KEY (`message_id`),
   KEY `customer_id` (`customer_id`),
   KEY `order_id` (`order_id`),
+  KEY `brand_id` (`brand_id`),
   CONSTRAINT `support_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE,
-  CONSTRAINT `support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL
+  CONSTRAINT `support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL,
+  CONSTRAINT `support_b_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
@@ -196,13 +200,13 @@ INSERT INTO `categories` (`cat_id`, `cat_name`, `cat_icon`) VALUES
 (5, 'Pastries & Quick Bites', 'bi-cup-hot'),
 (6, 'Drinks & Fresh Smoothies', 'bi-cup-straw');
 
-INSERT INTO `brands` (`brand_id`, `brand_name`, `zone`, `location_desc`, `commission_rate`, `brand_image`) VALUES
-(1, 'Hallmark Cafeteria', 'Zone A', 'Ashesi Campus Ground Floor Court', 0.08, 'hallmark.jpg'),
-(2, 'Akonnor Cafeteria', 'Zone A', 'Akonnor Canteen Hub (Upper Floor)', 0.08, 'akonnor.jpg'),
-(3, 'Munchees Grills', 'Zone A', 'Student Center Pavilion', 0.10, 'munchees.jpg'),
-(4, 'Peckish Berekuso', 'Zone B', 'Berekuso Town Junction', 0.10, 'peckish.jpg'),
-(5, 'Eat Healthy Spot', 'Zone B', 'Off-Campus Valley View Road', 0.09, 'eathealthy.jpg'),
-(6, 'Hi5 Lounge & Kitchen', 'Zone B', 'Berekuso Main Street', 0.10, 'hi5.jpg');
+INSERT INTO `brands` (`brand_id`, `brand_name`, `zone`, `location_desc`, `brand_phone`, `commission_rate`, `brand_image`) VALUES
+(1, 'Hallmark Cafeteria', 'Zone A', 'Ashesi Campus Ground Floor Court', '0241002001', 0.08, 'hallmark.jpg'),
+(2, 'Akonnor Cafeteria', 'Zone A', 'Akonnor Canteen Hub (Upper Floor)', '0241002002', 0.08, 'akonnor.jpg'),
+(3, 'Munchees Grills', 'Zone A', 'Student Center Pavilion', '0241002003', 0.10, 'munchees.jpg'),
+(4, 'Peckish Berekuso', 'Zone B', 'Berekuso Town Junction', '0241002004', 0.10, 'peckish.jpg'),
+(5, 'Eat Healthy Spot', 'Zone B', 'Off-Campus Valley View Road', '0241002005', 0.09, 'eathealthy.jpg'),
+(6, 'Hi5 Lounge & Kitchen', 'Zone B', 'Berekuso Main Street', '0241002006', 0.10, 'hi5.jpg');
 
 INSERT INTO `products` (`product_id`, `product_cat`, `product_brand`, `product_title`, `product_price`, `product_desc`, `product_image`, `product_keywords`, `is_available`, `prep_time_minutes`) VALUES
 (1, 1, 1, 'Hallmark Special Jollof + Grilled Chicken', 35.00, 'Smoky Ghana jollof rice served with seasoned crispy grilled chicken quarter, shito and fresh coleslaw.', 'jollof_chicken.jpg', 'jollof, chicken, hallmark, lunch, rice', 1, 15),

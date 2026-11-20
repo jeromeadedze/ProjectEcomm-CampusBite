@@ -25,6 +25,11 @@ $openCount = count(array_filter($messages, function ($msg) {
                     <div class="cb-messages-head">
                         <b>
                             <?php echo htmlspecialchars($msg['topic']); ?>
+                            <?php if (!empty($msg['brand_name'])): ?>
+                                <span class="cb-muted">to</span> <?php echo htmlspecialchars($msg['brand_name']); ?>
+                            <?php else: ?>
+                                <span class="cb-muted">(Platform)</span>
+                            <?php endif; ?>
                             <?php if ($msg['order_id']): ?>
                                 · <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$msg['order_id']; ?>">order #<?php echo htmlspecialchars($msg['invoice_no']); ?></a>
                             <?php endif; ?>

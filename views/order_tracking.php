@@ -1,16 +1,16 @@
 <?php
-$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
-require_once __DIR__ . '/layout/header.php';
-require_once __DIR__ . '/../controllers/OrderController.php';
-
+// One order: where it is now, what happened so far, where it's going and what was in it.
+// Open to the customer who placed it, admins, and the kitchen it's from (who can also change its status).
+require_once __DIR__ . '/../core/core.php';
 require_login();
+
+require_once __DIR__ . '/../controllers/OrderController.php';
+$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 
 $orderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
 $orderCtrl = new OrderController();
-
 $order = $orderCtrl->getOrderById($orderId);
 
-// The customer, admins, and the kitchen the order is from can see it
 $isOrderKitchen = get_kitchen_id() !== null && get_kitchen_id() === (int)($order['brand_id'] ?? 0);
 if (!$order || ($order['customer_id'] != get_user_id() && !is_admin() && !$isOrderKitchen)) {
     $_SESSION['error'] = "Order not found or access restricted.";
@@ -20,127 +20,134 @@ if (!$order || ($order['customer_id'] != get_user_id() && !is_admin() && !$isOrd
 
 $items = $orderCtrl->getOrderDetails($orderId);
 $tracking = $orderCtrl->getTrackingHistory($orderId);
-
 $steps = OrderController::STATUSES;
-
 $currentStatus = $order['order_status'];
+$currentIndex = array_search($currentStatus, array_keys($steps), true);
+$stepIcons = ['Placed' => 'bi-receipt', 'Preparing' => 'bi-fire', 'Ready' => 'bi-bag-check', 'In Transit' => 'bi-bicycle', 'Delivered' => 'bi-house-check'];
+$next = OrderController::NEXT_STEP[$currentStatus] ?? null;
+
+$pageHeading = 'Order #' . $order['invoice_no'];
+require_once __DIR__ . '/layout/header.php';
+
+$mealTotal = 0;
+foreach ($items as $it) {
+    $mealTotal += (float)$it['unit_price'] * (int)$it['qty'];
+}
 ?>
 
-<div class="row g-4 my-3 justify-content-center">
-    <div class="col-lg-8">
-        <!-- Live Status Banner -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                <div>
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mb-1">
-                        Invoice #<?php echo htmlspecialchars($order['invoice_no']); ?>
-                    </span>
-                    <h3 class="fw-bold mb-0">Order Status: <span class="text-warning-emphasis"><?php echo htmlspecialchars($currentStatus); ?></span></h3>
-                    <small class="text-muted">Placed on <?php echo date('M d, Y - h:i A', strtotime($order['order_date'])); ?></small>
-                </div>
-                <div>
-                    <span class="badge <?php echo ($order['delivery_zone'] === 'Zone B') ? 'bg-warning text-dark' : 'bg-success text-white'; ?> rounded-pill px-3 py-2">
-                        <?php echo htmlspecialchars($order['delivery_zone']); ?>
-                    </span>
-                </div>
-            </div>
+<p class="cb-sub">
+    Placed <?php echo date('M d, Y · h:i A', strtotime($order['order_date'])); ?> ·
+    <?php echo htmlspecialchars($order['brand_name'] ?? 'Kitchen'); ?> ·
+    <span class="cb-zone <?php echo $order['delivery_zone'] === 'Zone B' ? 'cb-zone-b' : 'cb-zone-a'; ?>"><?php echo htmlspecialchars($order['delivery_zone']); ?></span>
+</p>
 
-            <!-- Progress Bar -->
-            <?php
-                $statusOrder = ['Placed' => 20, 'Preparing' => 45, 'Ready' => 70, 'In Transit' => 90, 'Delivered' => 100];
-                $percent = $statusOrder[$currentStatus] ?? 20;
-            ?>
-            <div class="progress mb-4" style="height: 10px; border-radius: 999px;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: <?php echo $percent; ?>%"></div>
-            </div>
+<section class="cb-card cb-track">
+    <div class="cb-track-now">
+        <span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $currentStatus)); ?>"><?php echo htmlspecialchars($currentStatus); ?></span>
+        <h2><?php echo htmlspecialchars($steps[$currentStatus] ?? $currentStatus); ?></h2>
+    </div>
 
-            <!-- Timeline -->
-            <h6 class="fw-bold text-uppercase text-muted small mb-3">Kitchen Timeline</h6>
-            <div class="cb-timeline">
-                <?php foreach ($tracking as $t): ?>
-                    <div class="cb-timeline-step active">
-                        <div class="cb-timeline-node"></div>
-                        <div class="cb-timeline-time"><?php echo date('h:i A', strtotime($t['updated_at'])); ?></div>
-                        <div class="cb-timeline-title"><?php echo htmlspecialchars($t['status']); ?></div>
-                        <p class="text-muted small mb-0"><?php echo htmlspecialchars($t['status_message']); ?></p>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+    <ol class="cb-track-steps">
+        <?php $i = 0; foreach ($steps as $key => $label): ?>
+            <?php $state = $i < $currentIndex ? 'is-done' : ($i === $currentIndex ? 'is-now' : ''); ?>
+            <li class="<?php echo $state; ?>" <?php echo $i === $currentIndex ? 'aria-current="step"' : ''; ?>>
+                <span class="cb-track-dot" aria-hidden="true"><i class="bi <?php echo $stepIcons[$key] ?? 'bi-circle'; ?>"></i></span>
+                <span class="cb-track-label"><?php echo htmlspecialchars($key); ?></span>
+            </li>
+        <?php $i++; endforeach; ?>
+    </ol>
 
-            <?php if (is_admin() || $isOrderKitchen): ?>
-                <!-- Status update for admins and the order's own kitchen -->
-                <div class="mt-4 p-3 bg-light rounded-4 border">
-                    <form action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST" class="d-flex align-items-center gap-2 m-0">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
-                        <label class="small fw-bold text-nowrap">Update status:</label>
-                        <select name="status" class="form-select form-select-sm rounded-pill">
-                            <?php foreach ($steps as $key => $label): ?>
-                                <option value="<?php echo htmlspecialchars($key); ?>" <?php echo ($currentStatus === $key) ? 'selected' : ''; ?>><?php echo htmlspecialchars($key); ?> — <?php echo htmlspecialchars($label); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-dark rounded-pill px-3">Update</button>
-                    </form>
-                </div>
+    <?php if (is_admin() || $isOrderKitchen): ?>
+        <div class="cb-track-staff">
+            <?php if ($next): ?>
+                <form action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
+                    <input type="hidden" name="status" value="<?php echo htmlspecialchars($next['status']); ?>">
+                    <button type="submit" class="cb-btn"><?php echo htmlspecialchars($next['label']); ?></button>
+                </form>
             <?php endif; ?>
+            <form class="cb-inline-form" action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
+                <label for="track-status" class="cb-muted">Or set</label>
+                <select id="track-status" name="status">
+                    <?php foreach ($steps as $key => $label): ?>
+                        <option value="<?php echo htmlspecialchars($key); ?>" <?php echo $currentStatus === $key ? 'selected' : ''; ?>><?php echo htmlspecialchars($key); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="cb-btn cb-btn-quiet">Update</button>
+            </form>
         </div>
+    <?php endif; ?>
+</section>
 
-        <!-- Drop location & Items ordered -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Drop Point & Contact</h5>
-            <p class="mb-1 fw-semibold text-dark"><?php echo htmlspecialchars($order['drop_location']); ?></p>
-            <p class="small text-muted mb-3">Recipient: <?php echo htmlspecialchars($order['customer_name']); ?> (<?php echo htmlspecialchars($order['customer_contact']); ?>)</p>
-            <p class="small mb-3">
-                <i class="bi bi-bicycle me-1"></i>
-                Delivered by <strong><?php echo htmlspecialchars($order['brand_name'] ?? 'the kitchen'); ?></strong>
-                <?php if (!empty($order['kitchen_contact'])): ?>
-                    (<?php echo htmlspecialchars($order['kitchen_contact']); ?>)
-                <?php endif; ?>
-            </p>
-            <?php if (can_order()): ?>
-                <p class="small mb-3"><a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/contact.php?order_id=<?php echo (int)$order['order_id']; ?>">Get help with this order ›</a></p>
-            <?php endif; ?>
-            <?php if (!empty($order['special_instructions'])): ?>
-                <div class="alert alert-light border small rounded-3 p-2 mb-3">
-                    <strong>Note:</strong> <?php echo htmlspecialchars($order['special_instructions']); ?>
-                </div>
-            <?php endif; ?>
-
-            <h6 class="fw-bold text-uppercase text-muted small mt-2 mb-3">Items in This Order</h6>
-            <ul class="list-group list-group-flush mb-3">
-                <?php 
-                    $totalMealCost = 0;
-                    foreach ($items as $it): 
-                        $itemSub = (float)$it['unit_price'] * (int)$it['qty'];
-                        $totalMealCost += $itemSub;
-                ?>
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
-                        <div>
-                            <span class="fw-semibold"><?php echo htmlspecialchars($it['product_title']); ?></span>
-                            <span class="text-muted small ms-2">x <?php echo (int)$it['qty']; ?> (<?php echo htmlspecialchars($it['brand_name']); ?>)</span>
-                            <?php if (!empty($it['notes'])): ?>
-                                <div class="small text-muted"><i class="bi bi-chat-left-text me-1"></i><?php echo htmlspecialchars($it['notes']); ?></div>
-                            <?php endif; ?>
-                        </div>
-                        <span class="fw-bold">GH₵ <?php echo number_format($itemSub, 2); ?></span>
+<div class="cb-bill">
+    <div>
+        <section class="cb-card">
+            <h2>Timeline</h2>
+            <ol class="cb-timeline">
+                <?php foreach (array_reverse($tracking) as $t): ?>
+                    <li>
+                        <time datetime="<?php echo htmlspecialchars(date('c', strtotime($t['updated_at']))); ?>"><?php echo date('M d · h:i A', strtotime($t['updated_at'])); ?></time>
+                        <b><?php echo htmlspecialchars($t['status']); ?></b>
+                        <?php if (!empty($t['status_message'])): ?><p><?php echo htmlspecialchars($t['status_message']); ?></p><?php endif; ?>
                     </li>
                 <?php endforeach; ?>
-            </ul>
+            </ol>
+        </section>
 
-            <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>Food Items:</span>
-                <span>GH₵ <?php echo number_format($totalMealCost, 2); ?></span>
-            </div>
-            <div class="d-flex justify-content-between small text-muted mb-2">
-                <span>Delivery by the kitchen:</span>
-                <span>GH₵ <?php echo number_format($order['delivery_fee'], 2); ?></span>
-            </div>
-            <div class="d-flex justify-content-between fw-bold fs-5 text-dark border-top pt-2">
-                <span>Total Paid:</span>
-                <span class="text-danger">GH₵ <?php echo number_format($totalMealCost + (float)$order['delivery_fee'], 2); ?></span>
-            </div>
-        </div>
+        <section class="cb-card">
+            <h2>Delivery</h2>
+            <dl class="cb-facts">
+                <div><dt>Drop point</dt><dd><?php echo htmlspecialchars($order['drop_location']); ?></dd></div>
+                <div><dt>For</dt><dd><?php echo htmlspecialchars($order['customer_name']); ?> · <?php echo htmlspecialchars($order['customer_contact']); ?></dd></div>
+                <div>
+                    <dt>Delivered by</dt>
+                    <dd>
+                        <b><?php echo htmlspecialchars($order['brand_name'] ?? 'the kitchen'); ?></b>
+                        <?php if (!empty($order['kitchen_contact'])): ?>
+                            <div class="cb-contact-pills">
+                                <a href="<?php echo phone_tel_url($order['kitchen_contact']); ?>" class="cb-btn cb-btn-quiet">
+                                    <i class="bi bi-telephone-fill" aria-hidden="true"></i> Call <?php echo htmlspecialchars($order['kitchen_contact']); ?>
+                                </a>
+                                <a href="<?php echo phone_wa_url($order['kitchen_contact'], 'Hi ' . ($order['brand_name'] ?? 'kitchen') . ', I am checking on my order #' . $order['invoice_no']); ?>" target="_blank" rel="noopener" class="cb-btn cb-btn-quiet">
+                                    <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </dd>
+                </div>
+                <?php if (!empty($order['special_instructions'])): ?>
+                    <div><dt>Note</dt><dd><?php echo htmlspecialchars($order['special_instructions']); ?></dd></div>
+                <?php endif; ?>
+            </dl>
+            <?php if (can_order()): ?>
+                <p class="cb-track-help"><a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/contact.php?order_id=<?php echo (int)$order['order_id']; ?>">Send a message to <?php echo htmlspecialchars($order['brand_name'] ?? 'the kitchen'); ?> ›</a></p>
+            <?php endif; ?>
+        </section>
     </div>
+
+    <aside class="cb-card cb-bill-summary" aria-label="What was ordered">
+        <h2>What you ordered</h2>
+        <ul class="cb-checkout-items">
+            <?php foreach ($items as $it): ?>
+                <li>
+                    <span class="cb-ticket-qty"><?php echo (int)$it['qty']; ?>×</span>
+                    <span>
+                        <?php echo htmlspecialchars($it['product_title']); ?>
+                        <?php if (!empty($it['notes'])): ?><small><i class="bi bi-chat-left-text" aria-hidden="true"></i> <?php echo htmlspecialchars($it['notes']); ?></small><?php endif; ?>
+                    </span>
+                    <span class="cb-tray-price">GH₵ <?php echo number_format((float)$it['unit_price'] * (int)$it['qty'], 2); ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <div class="cb-totals">
+            <div><span>Meals</span><span>GH₵ <?php echo number_format($mealTotal, 2); ?></span></div>
+            <div><span>Delivery</span><span>GH₵ <?php echo number_format((float)$order['delivery_fee'], 2); ?></span></div>
+            <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($mealTotal + (float)$order['delivery_fee'], 2); ?></span></div>
+        </div>
+    </aside>
 </div>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

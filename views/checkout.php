@@ -1,19 +1,18 @@
 <?php
-$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
-require_once __DIR__ . '/layout/header.php';
-require_once __DIR__ . '/../controllers/CartController.php';
-require_once __DIR__ . '/../controllers/CustomerController.php';
-
+// Checkout: where to deliver, how to pay, and the order summary beside it
+require_once __DIR__ . '/../core/core.php';
 require_login();
 
+$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 if (!can_order()) {
     header("Location: " . $ROOT_DIR . staff_orders_path());
     exit;
 }
 
-$cartCtrl = new CartController();
-$custCtrl = new CustomerController();
+require_once __DIR__ . '/../controllers/CartController.php';
+require_once __DIR__ . '/../controllers/CustomerController.php';
 
+$cartCtrl = new CartController();
 $cartIp = get_cart_token();
 $userId = get_user_id();
 $cartItems = $cartCtrl->getCartItems($cartIp, $userId);
@@ -23,102 +22,90 @@ if (empty($cartItems)) {
     exit;
 }
 
-$user = $custCtrl->getCustomerById($userId);
+$user = (new CustomerController())->getCustomerById($userId);
 $subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
 $deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, has_active_pass($user));
 $grandTotal = $subtotal + $deliveryFee;
 $zone = $cartCtrl->deliveryZoneFor($cartItems);
+$kitchenName = $cartItems[0]['brand_name'] ?? '';
+
+$dropPoints = [
+    'Walter Sisulu Hall (Hostel 1)', 'Wangari Maathai Hall (Hostel 2)', 'Charlotte Court (Off-Campus)', 'Masere Hostel (Berekuso)',
+    'FabLab / Engineering Building Courtyard', 'Library Courtyard / Upper Quad', 'Faculty Office Lounge', 'Student Center Hive',
+];
+// Must match the list checkout_process_action.php accepts
+$payments = [
+    'Paystack - MTN MoMo' => ['MTN MoMo', 'A prompt on your phone', 'bi-phone-fill'],
+    'Paystack - Telecel Cash' => ['Telecel Cash', 'USSD or push prompt', 'bi-phone'],
+    'Paystack - Bank Card' => ['Visa / Mastercard', 'Pay online by card', 'bi-credit-card-2-front'],
+];
+
+require_once __DIR__ . '/layout/header.php';
 ?>
 
-<div class="row g-4 my-3 justify-content-center">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm rounded-4 p-4">
-            <h3 class="fw-bold mb-1"><i class="bi bi-shield-check text-warning me-2"></i>Campus Delivery & Checkout</h3>
-            <p class="text-muted small mb-4">Complete your drop location details and select your Mobile Money or Card payment option.</p>
+<form class="cb-bill" action="<?php echo $ROOT_DIR; ?>/actions/checkout_process_action.php" method="POST">
+    <?php echo csrf_field(); ?>
+    <div>
+        <section class="cb-card">
+            <h2><span class="cb-step-num">1</span> Where should <?php echo htmlspecialchars($kitchenName ?: 'the kitchen'); ?> deliver?</h2>
+            <div class="cb-field">
+                <label for="drop-preset">Popular drop points</label>
+                <select id="drop-preset" data-fill="drop-location">
+                    <option value="">Choose a drop point, or type your own below</option>
+                    <?php foreach ($dropPoints as $point): ?>
+                        <option value="<?php echo htmlspecialchars($point); ?>"><?php echo htmlspecialchars($point); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="cb-field">
+                <label for="drop-location">Drop point, room or building</label>
+                <input type="text" id="drop-location" name="drop_location" maxlength="150" required placeholder="e.g. Sisulu Room 208, or Lab 2" value="<?php echo htmlspecialchars($user['campus_hostel'] ?? ''); ?>">
+            </div>
+            <div class="cb-field">
+                <label for="drop-notes">Instructions for the kitchen <span class="cb-muted">(optional)</span></label>
+                <input type="text" id="drop-notes" name="notes" maxlength="255" placeholder="e.g. Call when you're outside the courtyard">
+            </div>
+            <p class="cb-checkout-contact">
+                <i class="bi bi-telephone" aria-hidden="true"></i>
+                The kitchen will call <b><?php echo htmlspecialchars($user['customer_contact'] ?? ''); ?></b> if it can't find you.
+                <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/settings.php">Change number</a>
+            </p>
+        </section>
 
-            <form action="<?php echo $ROOT_DIR; ?>/actions/checkout_process_action.php" method="POST">
-                <?php echo csrf_field(); ?>
-
-                <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>1. Delivery Drop Point (Ashesi Campus)</h5>
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label small fw-semibold text-muted">Customer Name</label>
-                        <input type="text" class="form-control rounded-pill bg-light" value="<?php echo htmlspecialchars($user['customer_name'] ?? ''); ?>" readonly>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-semibold text-muted">Contact Phone (MoMo / WhatsApp)</label>
-                        <input type="tel" name="contact" class="form-control rounded-pill" value="<?php echo htmlspecialchars($user['customer_contact'] ?? ''); ?>" required>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-semibold text-muted">Campus Drop Point / Room / Building</label>
-                        <select name="drop_location_preset" class="form-select rounded-pill mb-2" id="presetSelect" onchange="document.getElementById('customLocation').value = this.value;">
-                            <option value="">Select popular Ashesi drop point...</option>
-                            <option value="Walter Sisulu Hall (Hostel 1)">Walter Sisulu Hall (Hostel 1)</option>
-                            <option value="Wangari Maathai Hall (Hostel 2)">Wangari Maathai Hall (Hostel 2)</option>
-                            <option value="Charlotte Court (Off-Campus)">Charlotte Court (Off-Campus)</option>
-                            <option value="Masere Hostel (Berekuso)">Masere Hostel (Berekuso)</option>
-                            <option value="FabLab / Engineering Building Courtyard">FabLab / Engineering Building Courtyard</option>
-                            <option value="Library Courtyard / Upper Quad">Library Courtyard / Upper Quad</option>
-                            <option value="Faculty Office Lounge">Faculty Office Lounge</option>
-                            <option value="Student Center Hive">Student Center Hive</option>
-                        </select>
-                        <input type="text" name="drop_location" id="customLocation" class="form-control rounded-pill" placeholder="Or enter exact room e.g. Sisulu Room 208, or Lab 2" value="<?php echo htmlspecialchars($user['campus_hostel'] ?? ''); ?>" required>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-semibold text-muted">Delivery instructions for the kitchen</label>
-                        <input type="text" name="notes" class="form-control rounded-pill" placeholder="e.g. Call when outside the courtyard / Leave with security desk">
-                    </div>
-                </div>
-
-                <hr class="my-4">
-
-                <h5 class="fw-bold mb-3"><i class="bi bi-wallet2 text-primary me-2"></i>2. Payment Method</h5>
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <label class="card p-3 border rounded-4 text-center cursor-pointer h-100" style="cursor: pointer;">
-                            <input type="radio" name="payment_mode" value="Paystack - MTN MoMo" checked class="form-check-input mb-2 mx-auto">
-                            <span class="fw-bold d-block"><i class="bi bi-phone-fill text-warning me-1"></i> MTN MoMo</span>
-                            <small class="text-muted" style="font-size: 0.78rem;">Instant prompt on your phone</small>
-                        </label>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="card p-3 border rounded-4 text-center cursor-pointer h-100" style="cursor: pointer;">
-                            <input type="radio" name="payment_mode" value="Paystack - Telecel Cash" class="form-check-input mb-2 mx-auto">
-                            <span class="fw-bold d-block"><i class="bi bi-phone text-danger me-1"></i> Telecel Cash</span>
-                            <small class="text-muted" style="font-size: 0.78rem;">USSD / Push token</small>
-                        </label>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="card p-3 border rounded-4 text-center cursor-pointer h-100" style="cursor: pointer;">
-                            <input type="radio" name="payment_mode" value="Paystack - Bank Card" class="form-check-input mb-2 mx-auto">
-                            <span class="fw-bold d-block"><i class="bi bi-credit-card-2-front text-primary me-1"></i> Visa / Mastercard</span>
-                            <small class="text-muted" style="font-size: 0.78rem;">Online card payment</small>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="bg-light p-3 rounded-4 mb-4">
-                    <div class="d-flex justify-content-between mb-1 small">
-                        <span>Items Subtotal:</span>
-                        <span class="fw-semibold">GH₵ <?php echo number_format($subtotal, 2); ?></span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1 small">
-                        <span><?php echo $zone; ?> Delivery:</span>
-                        <span class="fw-semibold text-success">GH₵ <?php echo number_format($deliveryFee, 2); ?></span>
-                    </div>
-                    <hr class="my-2">
-                    <div class="d-flex justify-content-between fw-bold fs-5">
-                        <span>Total Payable:</span>
-                        <span class="text-danger">GH₵ <?php echo number_format($grandTotal, 2); ?></span>
-                    </div>
-                </div>
-
-                <button type="submit" class="cb-btn-primary btn btn-lg w-100 py-3">
-                    <i class="bi bi-lock-fill me-2"></i> Pay GH₵ <?php echo number_format($grandTotal, 2); ?> & Place Order
-                </button>
-            </form>
-        </div>
+        <section class="cb-card">
+            <h2><span class="cb-step-num">2</span> How would you like to pay?</h2>
+            <div class="cb-pay-options">
+                <?php $first = true; foreach ($payments as $value => [$label, $hint, $iconClass]): ?>
+                    <label class="cb-pay-option">
+                        <input type="radio" name="payment_mode" value="<?php echo htmlspecialchars($value); ?>" <?php echo $first ? 'checked' : ''; ?>>
+                        <span class="cb-pay-icon" aria-hidden="true"><i class="bi <?php echo $iconClass; ?>"></i></span>
+                        <span><b><?php echo $label; ?></b><small><?php echo $hint; ?></small></span>
+                    </label>
+                <?php $first = false; endforeach; ?>
+            </div>
+            <p class="cb-field-hint">Payment is simulated for now. No money is taken until Paystack is connected.</p>
+        </section>
     </div>
-</div>
+
+    <aside class="cb-card cb-bill-summary" aria-label="Order summary">
+        <h2>My order</h2>
+        <ul class="cb-checkout-items">
+            <?php foreach ($cartItems as $item): ?>
+                <li>
+                    <span class="cb-ticket-qty"><?php echo (int)$item['qty']; ?>×</span>
+                    <span><?php echo htmlspecialchars($item['product_title']); ?></span>
+                    <span class="cb-tray-price">GH₵ <?php echo number_format((float)$item['product_price'] * (int)$item['qty'], 2); ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <div class="cb-totals">
+            <div><span>Meals</span><span>GH₵ <?php echo number_format($subtotal, 2); ?></span></div>
+            <div><span>Delivery (<?php echo htmlspecialchars($zone); ?>)</span><span>GH₵ <?php echo number_format($deliveryFee, 2); ?></span></div>
+            <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
+        </div>
+        <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> Pay GH₵ <?php echo number_format($grandTotal, 2); ?> and place order</button>
+        <a class="cb-panel-bills" href="<?php echo $ROOT_DIR; ?>/views/cart.php">‹ Back to bill</a>
+    </aside>
+</form>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

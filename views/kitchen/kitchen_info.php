@@ -24,6 +24,11 @@ require_once __DIR__ . '/../layout/header.php';
                 <input type="text" id="location_desc" name="location_desc" maxlength="255" value="<?php echo htmlspecialchars($kitchen['location_desc'] ?? ''); ?>" placeholder="Student Center Pavilion">
             </div>
             <div class="cb-field cb-field-full">
+                <label for="brand_phone">Phone (orders & customer support)</label>
+                <input type="tel" id="brand_phone" name="brand_phone" maxlength="20" value="<?php echo htmlspecialchars($kitchen['brand_phone'] ?? ''); ?>" placeholder="0241234567">
+                <p class="cb-field-hint">Shoppers can call or WhatsApp this number when they have questions about their food or delivery.</p>
+            </div>
+            <div class="cb-field cb-field-full">
                 <label for="is_active">Taking orders</label>
                 <select id="is_active" name="is_active">
                     <option value="1" <?php echo (int)$kitchen['is_active'] === 1 ? 'selected' : ''; ?>>Open: shoppers can order</option>

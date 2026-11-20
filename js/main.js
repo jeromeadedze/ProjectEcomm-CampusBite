@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.remove(), 4500);
     });
 
+    // Escape closes the newest message
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        const toasts = document.querySelectorAll('.cb-toast');
+        if (toasts.length) toasts[toasts.length - 1].remove();
+    });
+
     // Close the order panel; it stays closed until the cart changes
     const panelClose = document.getElementById('cb-panel-close');
     if (panelClose) {
@@ -20,13 +27,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Quantity steppers on the product page: the − and + buttons nudge the number input within its min and max
     document.querySelectorAll('[data-stepper]').forEach(stepper => {
         const input = stepper.querySelector('input');
+        // The "price | Add to order" button in the same form shows the total for the chosen quantity
+        const form = stepper.closest('form');
+        const cta = form ? form.querySelector('[data-unit-price]') : null;
+        const showTotal = () => {
+            if (!cta) return;
+            const total = Number(cta.dataset.unitPrice) * (Number(input.value) || 1);
+            cta.querySelector('[data-cta-price]').textContent = 'GH₵ ' + total.toFixed(2);
+        };
         stepper.querySelectorAll('[data-step]').forEach(button => {
             button.addEventListener('click', () => {
                 const min = Number(input.min) || 1;
                 const max = Number(input.max) || 99;
                 const next = (Number(input.value) || min) + Number(button.dataset.step);
                 input.value = Math.min(max, Math.max(min, next));
+                showTotal();
             });
+        });
+        input.addEventListener('input', showTotal);
+    });
+
+    // A list of suggestions that fills a text field (checkout's popular drop points)
+    document.querySelectorAll('select[data-fill]').forEach(select => {
+        const target = document.getElementById(select.dataset.fill);
+        if (!target) return;
+        select.addEventListener('change', () => {
+            if (select.value) target.value = select.value;
         });
     });
 

@@ -17,6 +17,7 @@ if (!$product || (!$prodCtrl->isOrderable($product) && !is_admin() && !$isOwnKit
 }
 
 $pageHeading = $product['product_title'];
+$hidePageTitle = true; // the meal's name is drawn large beside its photo instead
 require_once __DIR__ . '/layout/header.php';
 
 $mealImage = !empty($product['product_image']) && file_exists(__DIR__ . '/../images/products/' . $product['product_image'])
@@ -44,7 +45,10 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
             <?php echo htmlspecialchars($product['brand_name']); ?>
             <i<?php echo $inZoneB ? ' class="b"' : ''; ?>><?php echo $inZoneB ? 'Off-campus' : 'On campus'; ?></i>
         </a>
-        <p class="cb-meal-price">GH₵ <?php echo number_format($product['product_price'], 2); ?></p>
+        <h1 class="cb-meal-title"><?php echo htmlspecialchars($product['product_title']); ?></h1>
+        <?php if (!empty($product['product_desc'])): ?>
+            <p class="cb-meal-desc"><?php echo nl2br(htmlspecialchars($product['product_desc'])); ?></p>
+        <?php endif; ?>
 
         <div class="cb-meal-tags">
             <span><i class="bi bi-clock" aria-hidden="true"></i> About <?php echo (int)($product['prep_time_minutes'] ?? 15); ?> min to prepare</span>
@@ -55,11 +59,8 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
             <?php endif; ?>
         </div>
 
-        <?php if (!empty($product['product_desc'])): ?>
-            <p class="cb-meal-desc"><?php echo nl2br(htmlspecialchars($product['product_desc'])); ?></p>
-        <?php endif; ?>
-
         <?php if (!can_order()): ?>
+            <p class="cb-meal-price">GH₵ <?php echo number_format($product['product_price'], 2); ?></p>
             <p class="cb-empty cb-meal-note">
                 <?php echo is_admin() ? 'Admin preview' : 'Kitchen preview'; ?><?php echo $prodCtrl->isOrderable($product) ? '' : ': shoppers can\'t see this meal because it is sold out or its kitchen is paused'; ?>.
                 <?php if (is_admin()): ?>
@@ -73,18 +74,20 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="product_id" value="<?php echo (int)$product['product_id']; ?>">
                 <div class="cb-field">
-                    <label for="meal-qty">Quantity</label>
-                    <div class="cb-stepper" data-stepper>
-                        <button type="button" data-step="-1" aria-label="One less">−</button>
-                        <input type="number" id="meal-qty" name="qty" value="1" min="1" max="<?php echo CartClass::MAX_QTY; ?>" inputmode="numeric" required>
-                        <button type="button" data-step="1" aria-label="One more">+</button>
-                    </div>
-                </div>
-                <div class="cb-field">
                     <label for="meal-notes">Special request <span class="cb-muted">(optional)</span></label>
                     <input type="text" id="meal-notes" name="notes" maxlength="255" placeholder="e.g. extra shito, less pepper, no onions">
                 </div>
-                <button type="submit" class="cb-checkout">Add to order</button>
+                <div class="cb-meal-buy">
+                    <div class="cb-qty cb-qty-lg" data-stepper>
+                        <button type="button" data-step="-1" aria-label="One less">−</button>
+                        <input type="number" id="meal-qty" name="qty" value="1" min="1" max="<?php echo CartClass::MAX_QTY; ?>" inputmode="numeric" required aria-label="Quantity">
+                        <button type="button" data-step="1" aria-label="One more">+</button>
+                    </div>
+                    <button type="submit" class="cb-cta" data-unit-price="<?php echo htmlspecialchars((string)(float)$product['product_price']); ?>">
+                        <span class="cb-cta-price" data-cta-price>GH₵ <?php echo number_format($product['product_price'], 2); ?></span>
+                        <span>Add to order</span>
+                    </button>
+                </div>
             </form>
             <?php if (is_logged_in()): ?>
                 <form action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST" class="cb-meal-save">
@@ -101,11 +104,11 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
 </div>
 
 <?php if (!empty($moreFromKitchen)): ?>
-    <div class="cb-row">
+    <div class="cb-row cb-row-label">
         <h2>More from <?php echo htmlspecialchars($product['brand_name']); ?></h2>
         <a class="cb-viewall" href="<?php echo $ROOT_DIR; ?>/views/menu.php?brand=<?php echo (int)$product['product_brand']; ?>">Full menu ›</a>
     </div>
-    <div class="cb-grid">
+    <div class="cb-grid cb-pairings">
         <?php $showKitchen = false; ?>
         <?php foreach ($moreFromKitchen as $dish): ?>
             <?php require __DIR__ . '/layout/dish_card.php'; ?>

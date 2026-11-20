@@ -1,12 +1,11 @@
 <?php
 // The shopper's past orders, newest first, with what each one cost
-$ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
-require_once __DIR__ . '/layout/header.php';
-require_once __DIR__ . '/../controllers/OrderController.php';
-
+require_once __DIR__ . '/../core/core.php';
 require_login();
 
+require_once __DIR__ . '/../controllers/OrderController.php';
 $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
+require_once __DIR__ . '/layout/header.php';
 ?>
 
 <?php if (empty($myOrders)): ?>
@@ -18,45 +17,23 @@ $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
     </div>
 <?php else: ?>
     <p class="cb-sub"><?php echo count($myOrders); ?> order<?php echo count($myOrders) === 1 ? '' : 's'; ?></p>
-    <section class="cb-card">
-        <div class="cb-table-wrap">
-            <table class="cb-table">
-                <thead>
-                    <tr>
-                        <th>Invoice</th>
-                        <th>Placed</th>
-                        <th>Kitchen</th>
-                        <th>Drop point</th>
-                        <th class="num">Meals</th>
-                        <th class="num">Total</th>
-                        <th>Status</th>
-                        <th><span class="visually-hidden">Actions</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($myOrders as $ord): ?>
-                        <tr>
-                            <td class="cb-table-name">#<?php echo htmlspecialchars($ord['invoice_no']); ?></td>
-                            <td><?php echo date('M d, Y · h:i A', strtotime($ord['order_date'])); ?></td>
-                            <td><?php echo htmlspecialchars($ord['brand_name'] ?? '–'); ?></td>
-                            <td>
-                                <?php echo htmlspecialchars($ord['drop_location']); ?>
-                                <span class="cb-table-sub"><?php echo htmlspecialchars($ord['delivery_zone']); ?> delivery</span>
-                            </td>
-                            <td class="num"><?php echo (int)$ord['item_count']; ?></td>
-                            <td class="num"><strong>GH₵ <?php echo number_format((float)$ord['order_total'], 2); ?></strong></td>
-                            <td><span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $ord['order_status'])); ?>"><?php echo htmlspecialchars($ord['order_status']); ?></span></td>
-                            <td>
-                                <div class="cb-table-actions">
-                                    <a href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$ord['order_id']; ?>">Track ›</a>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </section>
+    <div class="cb-order-cards">
+        <?php foreach ($myOrders as $ord): ?>
+            <a class="cb-order-card" href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$ord['order_id']; ?>">
+                <div class="cb-order-card-head">
+                    <b>#<?php echo htmlspecialchars($ord['invoice_no']); ?></b>
+                    <span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $ord['order_status'])); ?>"><?php echo htmlspecialchars($ord['order_status']); ?></span>
+                </div>
+                <p class="cb-order-card-kitchen"><?php echo htmlspecialchars($ord['brand_name'] ?? 'Kitchen'); ?></p>
+                <p class="cb-muted"><?php echo date('M d, Y · h:i A', strtotime($ord['order_date'])); ?></p>
+                <p class="cb-muted"><i class="bi bi-geo-alt" aria-hidden="true"></i> <?php echo htmlspecialchars($ord['drop_location']); ?></p>
+                <div class="cb-order-card-foot">
+                    <span><?php echo (int)$ord['item_count']; ?> meal<?php echo (int)$ord['item_count'] === 1 ? '' : 's'; ?> · <b class="cb-price">GH₵ <?php echo number_format((float)$ord['order_total'], 2); ?></b></span>
+                    <span class="cb-order-card-go">Track ›</span>
+                </div>
+            </a>
+        <?php endforeach; ?>
+    </div>
 <?php endif; ?>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

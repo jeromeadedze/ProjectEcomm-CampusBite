@@ -41,9 +41,9 @@ class OrderClass extends Database
     public function getOrderById($orderId)
     {
         $sql = "SELECT o.*, c.customer_name, c.customer_email, c.customer_contact,
-                       b.brand_name, COALESCE(o.commission_rate, b.commission_rate) AS commission_rate,
-                       (SELECT ks.customer_contact FROM customer ks
-                        WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1) AS kitchen_contact
+                       b.brand_name, b.brand_phone, COALESCE(o.commission_rate, b.commission_rate) AS commission_rate,
+                       COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM customer ks
+                        WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1)) AS kitchen_contact
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
                 LEFT JOIN brands b ON o.brand_id = b.brand_id
@@ -70,7 +70,9 @@ class OrderClass extends Database
                                 (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
                                  FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
                                  WHERE od.order_id = o.order_id) + o.delivery_fee) AS order_total,
-                       b.brand_name
+                       b.brand_name, b.brand_phone,
+                       COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM customer ks
+                        WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1)) AS kitchen_contact
                 FROM orders o
                 LEFT JOIN brands b ON o.brand_id = b.brand_id
                 WHERE o.customer_id = ?

@@ -208,4 +208,23 @@ function require_csrf() {
         exit;
     }
 }
+
+/**
+ * Direct communication helpers for contacting kitchens or customers via call or WhatsApp
+ */
+function phone_tel_url($phone) {
+    return 'tel:' . preg_replace('/[^0-9+]/', '', (string)$phone);
+}
+
+function phone_wa_url($phone, $text = '') {
+    $clean = preg_replace('/[^0-9]/', '', (string)$phone);
+    if (str_starts_with($clean, '0') && strlen($clean) === 10) {
+        $clean = '233' . substr($clean, 1);
+    }
+    $url = 'https://wa.me/' . $clean;
+    if ($text !== '') {
+        $url .= '?text=' . rawurlencode($text);
+    }
+    return $url;
+}
 ?>

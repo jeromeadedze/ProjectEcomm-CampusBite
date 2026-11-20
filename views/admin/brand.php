@@ -25,10 +25,11 @@ if (!$form) {
             'brand_name' => $editBrand['brand_name'],
             'zone' => $editBrand['zone'],
             'location_desc' => $editBrand['location_desc'],
+            'brand_phone' => $editBrand['brand_phone'] ?? '',
             'commission_percent' => round($editBrand['commission_rate'] * 100),
             'is_active' => (int)$editBrand['is_active'],
         ]
-        : ['brand_name' => '', 'zone' => 'Zone A', 'location_desc' => '', 'commission_percent' => 10, 'is_active' => 1];
+        : ['brand_name' => '', 'zone' => 'Zone A', 'location_desc' => '', 'brand_phone' => '', 'commission_percent' => 10, 'is_active' => 1];
 }
 
 require_once __DIR__ . '/../layout/header.php';
@@ -48,6 +49,10 @@ require_once __DIR__ . '/../layout/header.php';
         <div class="cb-field">
             <label for="location_desc">Location</label>
             <input type="text" id="location_desc" name="location_desc" maxlength="255" value="<?php echo htmlspecialchars($form['location_desc'] ?? ''); ?>" placeholder="Student Center Pavilion">
+        </div>
+        <div class="cb-field">
+            <label for="brand_phone">Phone (orders & support)</label>
+            <input type="tel" id="brand_phone" name="brand_phone" maxlength="20" value="<?php echo htmlspecialchars($form['brand_phone'] ?? ''); ?>" placeholder="0241234567">
         </div>
         <div class="cb-field cb-field-full">
             <label for="zone">Delivery zone</label>
@@ -101,9 +106,10 @@ require_once __DIR__ . '/../layout/header.php';
                     <tr <?php echo $isEditing ? 'class="is-editing"' : ''; ?>>
                         <td class="cb-table-name">
                             <?php echo htmlspecialchars($brand['brand_name']); ?>
-                            <?php if (!empty($brand['location_desc'])): ?>
-                                <span class="cb-table-sub"><?php echo htmlspecialchars($brand['location_desc']); ?></span>
-                            <?php endif; ?>
+                            <span class="cb-table-sub">
+                                <?php echo htmlspecialchars($brand['location_desc'] ?? ''); ?>
+                                <?php echo !empty($brand['brand_phone']) ? (!empty($brand['location_desc']) ? ' · ' : '') . htmlspecialchars($brand['brand_phone']) : ''; ?>
+                            </span>
                         </td>
                         <td><?php echo htmlspecialchars($brand['zone']); ?></td>
                         <td>

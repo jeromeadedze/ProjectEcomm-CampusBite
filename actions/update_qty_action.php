@@ -16,6 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-header("Location: ../views/cart.php");
-exit;
+// Back to the page the shopper was on: the bill, or any page showing the order panel
+redirect_back('../views/cart.php');
 ?>

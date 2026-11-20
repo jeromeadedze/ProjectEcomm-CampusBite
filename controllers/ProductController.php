@@ -73,6 +73,7 @@ class ProductController
             'brand_name' => trim($input['brand_name'] ?? ''),
             'zone' => trim($input['zone'] ?? ''),
             'location_desc' => trim($input['location_desc'] ?? ''),
+            'brand_phone' => trim($input['brand_phone'] ?? ''),
             'commission_percent' => trim($input['commission_percent'] ?? ''),
             'is_active' => ($input['is_active'] ?? '1') === '0' ? 0 : 1,
         ];
@@ -86,6 +87,8 @@ class ProductController
             $error = "Choose a delivery zone from the list.";
         } elseif (mb_strlen($values['location_desc']) > 255) {
             $error = "Keep the location to 255 characters or fewer.";
+        } elseif ($values['brand_phone'] !== '' && !preg_match('/^[0-9+\-\s]{7,20}$/', $values['brand_phone'])) {
+            $error = "Enter a valid phone number for the kitchen.";
         } elseif (!ctype_digit($values['commission_percent']) || (int)$values['commission_percent'] > 100) {
             $error = "Commission must be a whole number from 0 to 100.";
         } elseif ($this->productModel->brandNameExists($values['brand_name'], $excludeId)) {
@@ -95,19 +98,19 @@ class ProductController
         return ['values' => $values, 'error' => $error];
     }
 
-    public function addBrand($name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1)
+    public function addBrand($name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
     {
-        return $this->productModel->addBrand($name, $zone, $location, $commission, $isActive);
+        return $this->productModel->addBrand($name, $zone, $location, $commission, $isActive, $phone);
     }
 
-    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1)
+    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
     {
-        return $this->productModel->updateBrand($id, $name, $zone, $location, $commission, $isActive);
+        return $this->productModel->updateBrand($id, $name, $zone, $location, $commission, $isActive, $phone);
     }
 
-    public function updateBrandInfo($id, $location, $isActive)
+    public function updateBrandInfo($id, $location, $isActive, $phone = null)
     {
-        return $this->productModel->updateBrandInfo($id, $location, $isActive);
+        return $this->productModel->updateBrandInfo($id, $location, $isActive, $phone);
     }
 
     public function getProductsForKitchen($brandId)

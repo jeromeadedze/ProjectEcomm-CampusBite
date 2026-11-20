@@ -26,6 +26,7 @@ $flashMessages = [
                     <button type="button" class="cb-btn cb-btn-quiet" onclick="this.closest('.cb-toast').remove();">Keep current bill</button>
                 </div>
             </div>
+            <button type="button" aria-label="Dismiss message" onclick="this.closest('.cb-toast').remove();"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
     <?php endif; ?>
     <?php foreach ($flashMessages as $flashType => $flashStyle): ?>

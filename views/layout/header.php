@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../controllers/FavoriteController.php';
 
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 
-// The script being served decides the page title and the active sidebar link
+// The script being served decides the page title and the active nav link
 $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php', '.php');
 $pageTitles = [
     'index' => 'Home',
@@ -33,6 +33,7 @@ $pageTitles = [
     'admin_dashboard' => 'Admin Dashboard',
     'kitchen_orders' => 'Kitchen Orders',
     'kitchen_menu' => 'Kitchen Menu',
+    'kitchen_messages' => 'Customer Messages',
     'kitchen_info' => 'Kitchen Info',
     'money' => 'Money',
 ];
@@ -68,7 +69,7 @@ $cssVersion = function ($file) {
     <link rel="icon" href="data:,">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Pages not yet translated from the theme still use Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
@@ -90,34 +91,11 @@ $cssVersion = function ($file) {
         </script>
         <?php endif; ?>
         <?php require __DIR__ . '/flash.php'; ?>
-        <?php require __DIR__ . '/sidebar.php'; ?>
+        <?php require __DIR__ . '/nav.php'; ?>
+        <div class="cb-body">
         <main class="cb-main" id="MainContent">
-            <div class="cb-top cb-page-title">
+            <?php if (empty($hidePageTitle)): // a page that draws its own big heading sets $hidePageTitle ?>
+            <div class="cb-page-title">
                 <h1><?php echo htmlspecialchars($pageHeadingText); ?></h1>
-                <div class="cb-top-actions">
-                    <?php if (can_order()): ?>
-                    <form class="cb-search" action="<?php echo $ROOT_DIR; ?>/views/search_results.php" method="GET" role="search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                        <input type="search" name="q" placeholder="Search meals or kitchens" aria-label="Search meals or kitchens" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">
-                    </form>
-                    <?php endif; ?>
-                    <div class="cb-icons">
-                        <?php if (is_logged_in()): ?>
-                            <a href="<?php echo $ROOT_DIR . (can_order() ? '/views/my_orders.php' : staff_orders_path()); ?>" aria-label="Order updates" title="Order updates">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg>
-                            </a>
-                        <?php endif; ?>
-                        <?php if (can_order()): ?>
-                            <a href="<?php echo $ROOT_DIR; ?>/views/cart.php" aria-label="Cart, <?php echo $panelCount; ?> items" title="Cart">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2 12h11l2-8H6"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
-                                <?php if ($panelCount > 0): ?><span class="cb-dot"><?php echo $panelCount; ?></span><?php endif; ?>
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (is_logged_in()): ?>
-                        <a class="cb-avatar" href="<?php echo $ROOT_DIR; ?>/views/settings.php" aria-label="Account settings" title="Account settings"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['customer_name'] ?? 'C', 0, 1))); ?></a>
-                    <?php else: ?>
-                        <a class="cb-signin" href="<?php echo $ROOT_DIR; ?>/views/login.php">Sign in</a>
-                    <?php endif; ?>
-                </div>
             </div>
+            <?php endif; ?>
