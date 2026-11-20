@@ -29,6 +29,8 @@ if (!empty($form['cat_icon']) && !isset($iconOptions[$form['cat_icon']])) {
 require_once __DIR__ . '/../layout/header.php';
 ?>
 
+<p class="cb-sub"><a class="cb-link" href="brand.php">‹ Kitchens</a> · Categories are shared by every kitchen. Kitchens pick from this list when they add a meal.</p>
+
 <section class="cb-card">
     <h2><?php echo $editCategory ? 'Edit ' . htmlspecialchars($editCategory['cat_name']) : 'Add a category'; ?></h2>
     <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editCategory ? 'update_category_action.php' : 'add_category_action.php'; ?>" method="POST">

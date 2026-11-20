@@ -182,7 +182,7 @@ class OrderController
      * Per kitchen: delivered orders, meal sales, CampusBite's commission, delivery fees and what the kitchen
      * is owed (sales - commission + delivery fees), plus orders still in progress, which aren't owed yet.
      */
-    public function getMoneyReport($from, $to, $kitchens)
+    public function getMoneyReport($from, $to, $kitchens, $withPaymentCheck = true)
     {
         $start = $from . ' 00:00:00';
         $end = date('Y-m-d 00:00:00', strtotime($to . ' +1 day'));
@@ -236,9 +236,9 @@ class OrderController
             return [$b['owed'], $b['pending_value'], $a['brand_name']] <=> [$a['owed'], $a['pending_value'], $b['brand_name']];
         });
 
-        // Payment check: each order's expected total against what was recorded as paid
+        // Payment check: each order's expected total against what was recorded as paid (skipped by pages that don't show it)
         $check = ['orders' => 0, 'expected' => 0.0, 'paid' => 0.0, 'verified' => 0.0, 'problems' => []];
-        foreach ($this->orderModel->getPaymentCheck($start, $end) as $p) {
+        foreach ($withPaymentCheck ? $this->orderModel->getPaymentCheck($start, $end) : [] as $p) {
             $expected = round((float)$p['expected'], 2);
             $paid = $p['paid'] === null ? null : round((float)$p['paid'], 2);
             $check['orders']++;

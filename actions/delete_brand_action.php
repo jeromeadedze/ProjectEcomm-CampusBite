@@ -23,8 +23,8 @@ if (!$brand) {
 // The database would delete the kitchen's whole menu along with it, so refuse instead
 $itemCount = $controller->countProductsByBrand($id);
 if ($itemCount > 0) {
-    $items = $itemCount === 1 ? '1 menu item. Remove it' : "$itemCount menu items. Remove them";
-    $_SESSION['error'] = "{$brand['brand_name']} still has $items first, or set the kitchen to Paused to hide it.";
+    $items = $itemCount === 1 ? '1 meal' : "$itemCount meals";
+    $_SESSION['error'] = "{$brand['brand_name']} still has $items on its menu, so it can't be deleted. Set it to Paused to hide it from shoppers.";
     header("Location: ../views/admin/brand.php");
     exit;
 }

@@ -64,7 +64,7 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
             <p class="cb-empty cb-meal-note">
                 <?php echo is_admin() ? 'Admin preview' : 'Kitchen preview'; ?><?php echo $prodCtrl->isOrderable($product) ? '' : ': shoppers can\'t see this meal because it is sold out or its kitchen is paused'; ?>.
                 <?php if (is_admin()): ?>
-                    <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/admin/product.php?edit_id=<?php echo (int)$product['product_id']; ?>">Edit meal</a>
+                    <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/admin/kitchen.php?id=<?php echo (int)$product['product_brand']; ?>">View kitchen</a>
                 <?php elseif ($isOwnKitchen): ?>
                     <a class="cb-link" href="<?php echo $ROOT_DIR; ?>/views/kitchen/kitchen_menu.php?edit_id=<?php echo (int)$product['product_id']; ?>">Edit meal</a>
                 <?php endif; ?>

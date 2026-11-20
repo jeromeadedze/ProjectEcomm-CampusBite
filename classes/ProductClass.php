@@ -203,18 +203,6 @@ class ProductClass extends Database
         return $this->fetchAll($sql, [$term, $term, $term, $term]);
     }
 
-    // Includes sold-out meals and paused kitchens, with how many past orders contain each meal
-    public function getProductsForAdmin()
-    {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone, b.is_active AS brand_active,
-                       (SELECT COUNT(*) FROM orderdetails od WHERE od.product_id = p.product_id) AS order_count
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
-                ORDER BY b.brand_name ASC, p.product_title ASC";
-        return $this->fetchAll($sql);
-    }
-
     public function productTitleExists($title, $brand, $excludeId = 0)
     {
         $sql = "SELECT product_id FROM products WHERE LOWER(product_title) = LOWER(?) AND product_brand = ? AND product_id != ?";

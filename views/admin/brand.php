@@ -35,7 +35,60 @@ if (!$form) {
 require_once __DIR__ . '/../layout/header.php';
 ?>
 
+<p class="cb-sub">Open a kitchen to see its money, menu, categories and orders. Kitchens manage their own meals from the kitchen portal.</p>
 <section class="cb-card">
+    <h2>All kitchens</h2>
+    <div class="cb-table-wrap">
+        <table class="cb-table">
+            <thead>
+                <tr>
+                    <th>Kitchen</th>
+                    <th>Zone</th>
+                    <th>Status</th>
+                    <th class="num">Commission</th>
+                    <th class="num">Meals</th>
+                    <th><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($brands)): ?>
+                    <tr><td colspan="6" class="cb-table-empty">No kitchens yet. Add the first one above.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($brands as $brand): ?>
+                    <?php $isEditing = $editBrand && (int)$editBrand['brand_id'] === (int)$brand['brand_id']; ?>
+                    <tr <?php echo $isEditing ? 'class="is-editing"' : ''; ?>>
+                        <td class="cb-table-name">
+                            <a href="kitchen.php?id=<?php echo (int)$brand['brand_id']; ?>"><?php echo htmlspecialchars($brand['brand_name']); ?></a>
+                            <span class="cb-table-sub">
+                                <?php echo htmlspecialchars($brand['location_desc'] ?? ''); ?>
+                                <?php echo !empty($brand['brand_phone']) ? (!empty($brand['location_desc']) ? ' · ' : '') . htmlspecialchars($brand['brand_phone']) : ''; ?>
+                            </span>
+                        </td>
+                        <td><?php echo htmlspecialchars($brand['zone']); ?></td>
+                        <td>
+                            <span class="cb-dot-status <?php echo $brand['is_active'] ? '' : 'off'; ?>"><?php echo $brand['is_active'] ? 'Active' : 'Paused'; ?></span>
+                        </td>
+                        <td class="num"><?php echo round($brand['commission_rate'] * 100); ?>%</td>
+                        <td class="num"><?php echo (int)$brand['product_count']; ?></td>
+                        <td>
+                            <div class="cb-table-actions">
+                                <a href="kitchen.php?id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Open <?php echo htmlspecialchars($brand['brand_name']); ?>">Open</a>
+                                <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($brand['brand_name']); ?>">Edit</a>
+                                <form action="<?php echo $ROOT_DIR; ?>/actions/delete_brand_action.php" method="POST" <?php if ((int)$brand['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>? This can't be undone."<?php endif; ?>>
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="brand_id" value="<?php echo (int)$brand['brand_id']; ?>">
+                                    <button type="submit" aria-label="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="cb-card" id="kitchen-form">
     <h2><?php echo $editBrand ? 'Edit ' . htmlspecialchars($editBrand['brand_name']) : 'Add a kitchen'; ?></h2>
     <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/<?php echo $editBrand ? 'update_brand_action.php' : 'add_brand_action.php'; ?>" method="POST">
         <?php echo csrf_field(); ?>
@@ -81,57 +134,6 @@ require_once __DIR__ . '/../layout/header.php';
             <?php endif; ?>
         </div>
     </form>
-</section>
-
-<section class="cb-card">
-    <h2>All kitchens</h2>
-    <div class="cb-table-wrap">
-        <table class="cb-table">
-            <thead>
-                <tr>
-                    <th>Kitchen</th>
-                    <th>Zone</th>
-                    <th>Status</th>
-                    <th class="num">Commission</th>
-                    <th class="num">Menu items</th>
-                    <th><span class="visually-hidden">Actions</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($brands)): ?>
-                    <tr><td colspan="6" class="cb-table-empty">No kitchens yet. Add the first one above.</td></tr>
-                <?php endif; ?>
-                <?php foreach ($brands as $brand): ?>
-                    <?php $isEditing = $editBrand && (int)$editBrand['brand_id'] === (int)$brand['brand_id']; ?>
-                    <tr <?php echo $isEditing ? 'class="is-editing"' : ''; ?>>
-                        <td class="cb-table-name">
-                            <?php echo htmlspecialchars($brand['brand_name']); ?>
-                            <span class="cb-table-sub">
-                                <?php echo htmlspecialchars($brand['location_desc'] ?? ''); ?>
-                                <?php echo !empty($brand['brand_phone']) ? (!empty($brand['location_desc']) ? ' · ' : '') . htmlspecialchars($brand['brand_phone']) : ''; ?>
-                            </span>
-                        </td>
-                        <td><?php echo htmlspecialchars($brand['zone']); ?></td>
-                        <td>
-                            <span class="cb-dot-status <?php echo $brand['is_active'] ? '' : 'off'; ?>"><?php echo $brand['is_active'] ? 'Active' : 'Paused'; ?></span>
-                        </td>
-                        <td class="num"><?php echo round($brand['commission_rate'] * 100); ?>%</td>
-                        <td class="num"><?php echo (int)$brand['product_count']; ?></td>
-                        <td>
-                            <div class="cb-table-actions">
-                                <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($brand['brand_name']); ?>">Edit</a>
-                                <form action="<?php echo $ROOT_DIR; ?>/actions/delete_brand_action.php" method="POST" <?php if ((int)$brand['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>? This can't be undone."<?php endif; ?>>
-                                    <?php echo csrf_field(); ?>
-                                    <input type="hidden" name="brand_id" value="<?php echo (int)$brand['brand_id']; ?>">
-                                    <button type="submit" aria-label="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>">Delete</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
 </section>
 
 <section class="cb-card" id="kitchen-logins">

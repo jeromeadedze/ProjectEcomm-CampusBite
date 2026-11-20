@@ -222,11 +222,6 @@ class ProductController
         return $this->productModel->searchProducts($query);
     }
 
-    public function getProductsForAdmin()
-    {
-        return $this->productModel->getProductsForAdmin();
-    }
-
     public function countOrdersForProduct($id)
     {
         return $this->productModel->countOrdersForProduct($id);
