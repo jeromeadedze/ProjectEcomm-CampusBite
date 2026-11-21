@@ -64,7 +64,8 @@ class ProductClass extends Database
     public function getProductsForKitchen($brandId)
     {
         $sql = "SELECT p.*, c.cat_name,
-                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od WHERE od.product_id = p.product_id) AS meals_sold
+                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od JOIN orders o ON o.order_id = od.order_id
+                        WHERE od.product_id = p.product_id AND o.order_status <> 'Cancelled') AS meals_sold
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 WHERE p.product_brand = ?

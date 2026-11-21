@@ -30,7 +30,7 @@ $filterUrl = function ($changes) use ($f) {
 };
 $filtering = $f['q'] !== '' || $f['brand_id'] || $f['from'] !== '' || $f['to'] !== '';
 $allCount = array_sum($counts);
-$activeCount = $allCount - (int)($counts['Delivered'] ?? 0);
+$activeCount = $allCount - (int)($counts['Delivered'] ?? 0) - (int)($counts['Cancelled'] ?? 0);
 
 require_once __DIR__ . '/../layout/header.php';
 ?>
@@ -67,7 +67,7 @@ require_once __DIR__ . '/../layout/header.php';
 
 <div class="cb-chips" role="group" aria-label="Filter by status">
     <a class="cb-chip <?php echo $f['status'] === '' ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['status' => '', 'page' => '']); ?>" <?php echo $f['status'] === '' ? 'aria-current="page"' : ''; ?>>All · <?php echo $allCount; ?></a>
-    <?php foreach (array_keys(OrderController::STATUSES) as $st): ?>
+    <?php foreach (array_merge(array_keys(OrderController::STATUSES), ['Cancelled']) as $st): ?>
         <a class="cb-chip <?php echo $f['status'] === $st ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['status' => $st, 'page' => '']); ?>" <?php echo $f['status'] === $st ? 'aria-current="page"' : ''; ?>><?php echo htmlspecialchars($st); ?> · <?php echo (int)($counts[$st] ?? 0); ?></a>
     <?php endforeach; ?>
 </div>

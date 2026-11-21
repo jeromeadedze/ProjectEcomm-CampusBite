@@ -50,3 +50,37 @@ function paystack_channel_label($channel) {
     $labels = ['mobile_money' => 'Mobile Money', 'card' => 'Card', 'bank' => 'Bank', 'bank_transfer' => 'Bank transfer', 'ussd' => 'USSD', 'qr' => 'QR'];
     return 'Paystack - ' . ($labels[$channel] ?? ucfirst((string)$channel));
 }
+
+/**
+ * Starts a full refund of a verified payment. Returns ['ok' => bool, 'status' => Paystack's refund status,
+ * 'id' => Paystack's refund id, 'message' => Paystack's message].
+ */
+function paystack_refund($reference, $amountPesewas, $note = '') {
+    $result = paystack_request('POST', '/refund', [
+        'transaction' => $reference,
+        'amount' => (int)$amountPesewas,
+        'currency' => 'GHS',
+        'customer_note' => mb_substr($note, 0, 250),
+        'merchant_note' => mb_substr($note, 0, 250),
+    ]);
+    if (!$result) {
+        return ['ok' => false, 'status' => null, 'id' => null, 'message' => "Paystack couldn't be reached."];
+    }
+    $data = $result['data'] ?? [];
+    $ok = !empty($result['status']);
+    if (!$ok) {
+        error_log('Paystack refund for ' . $reference . ' failed: ' . json_encode($result['message'] ?? $result));
+    }
+    return [
+        'ok' => $ok,
+        'status' => $ok ? (string)($data['status'] ?? 'pending') : null,
+        'id' => isset($data['id']) ? (string)$data['id'] : null,
+        'message' => (string)($result['message'] ?? ''),
+    ];
+}
+
+/** Paystack's current status for a refund it's still working on, or null if it couldn't be fetched */
+function paystack_refund_status($refundId) {
+    $result = paystack_request('GET', '/refund/' . rawurlencode($refundId));
+    return !empty($result['status']) ? (string)($result['data']['status'] ?? '') : null;
+}

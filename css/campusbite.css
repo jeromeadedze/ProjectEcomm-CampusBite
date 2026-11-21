@@ -527,3 +527,22 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-order-filters .cb-order-search{flex:1 1 240px}
 .cb-order-filters select{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink)}
 .cb-order-filters input[type=search]{width:100%}
+
+/* Cancelled orders and refunds */
+.cb-status-cancelled{background:#F1F1F3;border-color:#DCDCE0;color:#55555E}
+.cb-cancelled p{margin:10px 0 0;font-size:14px}
+.cb-refund{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:baseline;background:var(--paper);border-radius:12px;padding:10px 14px}
+.cb-refund-failed,.cb-refund-needs-attention{background:var(--ember-soft);color:var(--ember-d)}
+.cb-refund-processed b{color:#16774A}
+.cb-cancel{margin-top:18px;border-top:1px dashed var(--dash);padding-top:14px}
+.cb-cancel summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ember-d);list-style:none;display:inline-flex;align-items:center;gap:6px}
+.cb-cancel summary::-webkit-details-marker{display:none}
+.cb-cancel summary::after{content:'›';transition:transform .15s}
+.cb-cancel[open] summary::after{transform:rotate(90deg)}
+.cb-cancel form{margin-top:12px;display:grid;gap:10px;max-width:520px}
+.cb-btn.cb-btn-danger{background:var(--ember);border-color:var(--ember);justify-self:start}
+.cb-btn.cb-btn-danger:hover{background:var(--ember-d);border-color:var(--ember-d)}
+.cb-refund-row{color:#16774A}
+@media (prefers-reduced-motion:reduce){.cb-cancel summary::after{transition:none}}
+.cb-ticket-reject{display:block;margin-top:10px;font-size:12.5px}
+.cb-ticket-cancelled{margin:12px 0 0;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}

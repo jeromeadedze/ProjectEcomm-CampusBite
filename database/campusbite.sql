@@ -8,9 +8,13 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 SET NAMES utf8mb4;
 
+-- Customer and brands point at each other, so the drops and creates run with foreign key checks off
+SET FOREIGN_KEY_CHECKS = 0;
+
 DROP TABLE IF EXISTS `support_messages`;
 DROP TABLE IF EXISTS `favorites`;
 DROP TABLE IF EXISTS `order_tracking`;
+DROP TABLE IF EXISTS `refunds`;
 DROP TABLE IF EXISTS `payment`;
 DROP TABLE IF EXISTS `orderdetails`;
 DROP TABLE IF EXISTS `orders`;
@@ -110,6 +114,9 @@ CREATE TABLE `orders` (
   `drop_location` varchar(150) NOT NULL, -- e.g. 'Walter Sisulu Hall - Room 204', 'FabLab Courtyard'
   `special_instructions` varchar(255) DEFAULT NULL,
   `commission_rate` decimal(4,2) DEFAULT NULL, -- the kitchen's commission when the order was placed, so later rate changes don't alter past payouts
+  `cancelled_at` datetime DEFAULT NULL,
+  `cancelled_by` varchar(20) DEFAULT NULL, -- customer, kitchen or admin
+  `cancel_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
   KEY `customer_id` (`customer_id`),
   KEY `brand_id` (`brand_id`),
@@ -147,6 +154,23 @@ CREATE TABLE `payment` (
   KEY `order_id` (`order_id`),
   CONSTRAINT `payment_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
   CONSTRAINT `payment_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Refunds for cancelled orders (one per order, the full amount paid, through Paystack)
+CREATE TABLE `refunds` (
+  `refund_id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_id` int(11) NOT NULL,
+  `pay_id` int(11) DEFAULT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'pending', -- pending, processing, processed, failed, not_needed (the payment was simulated)
+  `paystack_refund_id` varchar(50) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`refund_id`),
+  UNIQUE KEY `refund_order` (`order_id`),
+  KEY `pay_id` (`pay_id`),
+  CONSTRAINT `refunds_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
+  CONSTRAINT `refunds_p_fk` FOREIGN KEY (`pay_id`) REFERENCES `payment` (`pay_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 9. order_tracking (Live timeline tracking) ─────────────────────
@@ -222,3 +246,5 @@ INSERT INTO `products` (`product_id`, `product_cat`, `product_brand`, `product_t
 (8, 6, 5, 'Fresh Pineapple Ginger Juice (500ml)', 15.00, 'Cold-pressed natural sweet pineapple juice infused with fresh spicy ginger root. No added sugar.', 'juice.jpg', 'juice, drink, ginger, healthy', 1, 5);
 
 COMMIT;
+
+SET FOREIGN_KEY_CHECKS = 1;

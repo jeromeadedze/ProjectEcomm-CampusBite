@@ -56,6 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Arriving from a "Reject" or "Cancel" link (#cancel) opens the folded cancel form
+    if (location.hash === '#cancel') {
+        const cancel = document.getElementById('cancel');
+        if (cancel && cancel.tagName === 'DETAILS') {
+            cancel.open = true;
+            cancel.scrollIntoView({ block: 'center' });
+        }
+    }
+
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {
         form.addEventListener('submit', event => {

@@ -18,6 +18,27 @@ if (!$order || ($order['customer_id'] != get_user_id() && !is_admin() && !$isOrd
     exit;
 }
 
+$isCancelled = $order['order_status'] === 'Cancelled';
+if ($isCancelled && !empty($order['refund_id'])) {
+    $order['refund_status'] = $orderCtrl->refreshRefund($order);
+}
+// Which cancel form this person gets, if any
+$cancelAs = null;
+if (!$isCancelled) {
+    if (is_admin()) {
+        $cancelAs = 'admin';
+    } elseif ($isOrderKitchen) {
+        $cancelAs = 'kitchen';
+    } elseif (can_order() && (int)$order['customer_id'] === (int)get_user_id()) {
+        $cancelAs = 'customer';
+    }
+}
+$canCancel = $cancelAs && $orderCtrl->canCancel($order, $cancelAs);
+$cancelledBy = ['customer' => 'the customer', 'kitchen' => $order['brand_name'] ?? 'the kitchen', 'admin' => 'CampusBite'][$order['cancelled_by'] ?? ''] ?? 'CampusBite';
+if (can_order() && $order['cancelled_by'] === 'customer') {
+    $cancelledBy = 'you';
+}
+
 $items = $orderCtrl->getOrderDetails($orderId);
 $tracking = $orderCtrl->getTrackingHistory($orderId);
 $steps = OrderController::STATUSES;
@@ -41,6 +62,29 @@ foreach ($items as $it) {
     <span class="cb-zone <?php echo $order['delivery_zone'] === 'Zone B' ? 'cb-zone-b' : 'cb-zone-a'; ?>"><?php echo htmlspecialchars($order['delivery_zone']); ?></span>
 </p>
 
+<?php if ($isCancelled): ?>
+<section class="cb-card cb-track cb-cancelled">
+    <div class="cb-track-now">
+        <span class="cb-status cb-status-cancelled">Cancelled</span>
+        <h2>This order was cancelled</h2>
+    </div>
+    <p>
+        Cancelled by <?php echo htmlspecialchars($cancelledBy); ?>
+        <?php if (!empty($order['cancelled_at'])): ?>on <?php echo date('M d · h:i A', strtotime($order['cancelled_at'])); ?><?php endif; ?><?php echo !empty($order['cancel_reason']) ? ': ' . htmlspecialchars($order['cancel_reason']) : '.'; ?>
+    </p>
+    <?php if (!empty($order['refund_id']) && $order['refund_status'] !== 'not_needed'): ?>
+        <p class="cb-refund cb-refund-<?php echo htmlspecialchars($order['refund_status']); ?>">
+            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+            <b><?php echo htmlspecialchars(OrderController::REFUND_LABELS[$order['refund_status']] ?? ucfirst($order['refund_status'])); ?></b>
+            · GH₵ <?php echo number_format((float)$order['refund_amount'], 2); ?> back to the <?php echo htmlspecialchars(str_replace('Paystack - ', '', $order['payment_mode'] ?? 'Paystack')); ?> account that paid.
+            <?php if (in_array($order['refund_status'], ['pending', 'processing'], true)): ?>Mobile Money refunds usually arrive within a day; cards can take a few days.<?php endif; ?>
+            <?php if (in_array($order['refund_status'], ['failed', 'needs-attention'], true)): ?>CampusBite will sort this out<?php echo is_admin() ? ': check it in the Paystack dashboard' : ''; ?>.<?php endif; ?>
+        </p>
+    <?php else: ?>
+        <p class="cb-muted">No payment was taken through Paystack for this order, so there's nothing to refund.</p>
+    <?php endif; ?>
+</section>
+<?php else: ?>
 <section class="cb-card cb-track">
     <div class="cb-track-now">
         <span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $currentStatus)); ?>"><?php echo htmlspecialchars($currentStatus); ?></span>
@@ -80,7 +124,49 @@ foreach ($items as $it) {
             </form>
         </div>
     <?php endif; ?>
+
+    <?php if ($canCancel): ?>
+        <details class="cb-cancel" id="cancel">
+            <summary><?php echo $cancelAs === 'kitchen' ? 'Reject this order' : 'Cancel this order'; ?></summary>
+            <form action="<?php echo $ROOT_DIR; ?>/actions/cancel_order_action.php" method="POST" data-confirm="<?php echo $cancelAs === 'kitchen' ? 'Reject' : 'Cancel'; ?> order #<?php echo htmlspecialchars($order['invoice_no']); ?>?<?php echo !empty($order['verified_at']) ? ' GH₵ ' . number_format((float)$order['amt'], 2) . ' will be refunded to the customer.' : ''; ?> This can't be undone.">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
+                <?php if ($cancelAs === 'kitchen'): ?>
+                    <div class="cb-field">
+                        <label for="cancel-reason">Why can't you make it?</label>
+                        <select id="cancel-reason" name="reason" required>
+                            <option value="" disabled selected>Choose a reason</option>
+                            <?php foreach (OrderController::KITCHEN_REJECT_REASONS as $r): ?>
+                                <option value="<?php echo htmlspecialchars($r); ?>"><?php echo htmlspecialchars($r); ?></option>
+                            <?php endforeach; ?>
+                            <option value="other">Something else</option>
+                        </select>
+                    </div>
+                    <div class="cb-field">
+                        <label for="cancel-other">Details <span class="cb-muted">(needed for "Something else")</span></label>
+                        <input type="text" id="cancel-other" name="reason_other" maxlength="255">
+                    </div>
+                <?php else: ?>
+                    <div class="cb-field">
+                        <label for="cancel-reason"><?php echo $cancelAs === 'admin' ? 'Reason (the customer and kitchen will see it)' : 'Reason'; ?> <?php echo $cancelAs === 'customer' ? '<span class="cb-muted">(optional)</span>' : ''; ?></label>
+                        <input type="text" id="cancel-reason" name="reason" maxlength="255" <?php echo $cancelAs === 'admin' ? 'required' : ''; ?> placeholder="<?php echo $cancelAs === 'admin' ? 'e.g. Kitchen closed unexpectedly' : 'e.g. Ordered by mistake'; ?>">
+                    </div>
+                <?php endif; ?>
+                <p class="cb-field-hint">
+                    <?php if (!empty($order['verified_at'])): ?>
+                        The full GH₵ <?php echo number_format((float)$order['amt'], 2); ?> goes back to the <?php echo htmlspecialchars(str_replace('Paystack - ', '', $order['payment_mode'] ?? 'Paystack')); ?> account that paid, through Paystack.
+                    <?php else: ?>
+                        This order's payment wasn't taken through Paystack, so there's nothing to refund.
+                    <?php endif; ?>
+                </p>
+                <button type="submit" class="cb-btn cb-btn-danger"><?php echo ($cancelAs === 'kitchen' ? 'Reject order' : 'Cancel order') . (!empty($order['verified_at']) ? ' and refund' : ''); ?></button>
+            </form>
+        </details>
+    <?php elseif ($cancelAs === 'customer' && $currentStatus !== 'Delivered'): ?>
+        <p class="cb-track-help cb-muted">The kitchen has started your order, so it can't be cancelled here. Message or call the kitchen below if something's wrong.</p>
+    <?php endif; ?>
 </section>
+<?php endif; ?>
 
 <div class="cb-bill">
     <div>
@@ -146,6 +232,9 @@ foreach ($items as $it) {
             <div><span>Meals</span><span>GH₵ <?php echo number_format($mealTotal, 2); ?></span></div>
             <div><span>Delivery</span><span>GH₵ <?php echo number_format((float)$order['delivery_fee'], 2); ?></span></div>
             <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($mealTotal + (float)$order['delivery_fee'], 2); ?></span></div>
+            <?php if ($isCancelled && !empty($order['refund_amount']) && (float)$order['refund_amount'] > 0): ?>
+                <div class="cb-refund-row"><span>Refunded</span><span>− GH₵ <?php echo number_format((float)$order['refund_amount'], 2); ?></span></div>
+            <?php endif; ?>
         </div>
     </aside>
 </div>

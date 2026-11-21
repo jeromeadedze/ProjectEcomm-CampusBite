@@ -62,6 +62,9 @@ $renderOrder = function ($o) use ($orderCtrl, $ROOT_DIR) {
         </ul>
         <p class="cb-ticket-total"><span>Meals total</span><b>GH₵ <?php echo number_format((float)$o['items_total'], 2); ?></b></p>
 
+        <?php if ($o['order_status'] === 'Cancelled'): ?>
+        <p class="cb-ticket-cancelled"><span class="cb-status cb-status-cancelled">Cancelled</span> <?php echo htmlspecialchars($o['cancel_reason'] ?? ''); ?></p>
+        <?php else: ?>
         <div class="cb-ticket-actions">
             <?php $next = OrderController::NEXT_STEP[$o['order_status']] ?? null; ?>
             <?php if ($next): ?>
@@ -86,7 +89,11 @@ $renderOrder = function ($o) use ($orderCtrl, $ROOT_DIR) {
                 <button type="submit" class="cb-btn cb-btn-quiet">Update</button>
             </form>
             </details>
+            <?php if ($orderCtrl->canCancel($o, 'kitchen')): ?>
+                <a class="cb-link cb-ticket-reject" href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$o['order_id']; ?>#cancel">Can't make it? Reject and refund ›</a>
+            <?php endif; ?>
         </div>
+        <?php endif; ?>
     </article>
     <?php
 };
@@ -94,7 +101,7 @@ $renderOrder = function ($o) use ($orderCtrl, $ROOT_DIR) {
 
 <nav class="cb-admin-tabs" aria-label="Order views">
     <a href="kitchen_orders.php" <?php echo $view === 'active' ? 'class="is-active" aria-current="page"' : ''; ?>>In progress</a>
-    <a href="kitchen_orders.php?view=done" <?php echo $view === 'done' ? 'class="is-active" aria-current="page"' : ''; ?>>Delivered</a>
+    <a href="kitchen_orders.php?view=done" <?php echo $view === 'done' ? 'class="is-active" aria-current="page"' : ''; ?>>Finished</a>
 </nav>
 
 <p class="cb-field-hint">Your kitchen delivers its own orders. Press the button on each ticket to move it to the next stage, and mark it delivered once the student has it.</p>
@@ -102,8 +109,8 @@ $renderOrder = function ($o) use ($orderCtrl, $ROOT_DIR) {
 <?php if (empty($orders)): ?>
     <div class="cb-card cb-bill-empty">
         <span class="cb-bill-empty-icon" aria-hidden="true"><i class="bi bi-receipt"></i></span>
-        <h2><?php echo $view === 'active' ? 'No orders in progress' : 'No delivered orders yet'; ?></h2>
-        <p><?php echo $view === 'active' ? 'New orders for your kitchen appear here as soon as a student checks out.' : 'Orders you mark as Delivered move here.'; ?></p>
+        <h2><?php echo $view === 'active' ? 'No orders in progress' : 'No finished orders yet'; ?></h2>
+        <p><?php echo $view === 'active' ? 'New orders for your kitchen appear here as soon as a student checks out.' : 'Orders you deliver, and orders that were cancelled, move here.'; ?></p>
     </div>
 <?php elseif ($view === 'active'): ?>
     <?php foreach ($stages as $status => $label): ?>

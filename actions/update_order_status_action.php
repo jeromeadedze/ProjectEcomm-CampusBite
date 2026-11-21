@@ -18,6 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['error'] = "That order no longer exists.";
     } elseif ((int)$order['brand_id'] !== get_kitchen_id()) {
         $_SESSION['error'] = "That order isn't from your kitchen.";
+    } elseif ($order['order_status'] === 'Cancelled') {
+        $_SESSION['error'] = "Order #{$order['invoice_no']} was cancelled, so its status can't change.";
     } elseif (!array_key_exists($status, OrderController::STATUSES)) {
         $_SESSION['error'] = "Choose a status from the list.";
     } elseif ($status === $order['order_status']) {
