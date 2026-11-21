@@ -156,7 +156,7 @@ Shared theme parts live in `snippets/`, for example `cb-sidebar`, `cb-panel`, `c
 - **This database is CampusBite's alone.** Locally, it uses `ecommerce_2026A_jerome_adedze` on XAMPP MariaDB (port 3306). The `ecomlab` project used to share it but now uses its own `shoppn` database.
 - **Test against a throwaway database.** Start a separate MySQL on another port (3307 was used), import the SQL there, and point PHP at it with `-d auto_prepend_file` defining the `DB_*` constants. Check `SELECT @@port` before writing anything.
 - **Run the site** with `php -S localhost:8000` from the repo root.
-- **Demo accounts:**
+- **Demo accounts** (seeded by `database/campusbite.sql` since Sprint 22, so a fresh import has them):
   - **Admin:** `admin@campusbite.com` / `Admin123!` (role 1)
   - **Kitchen:** `kitchen@campusbite.com` / `Kitchen123!` (role 4, Munchees Grills `brand_id = 3`)
 - **Making an admin:** a new account has `user_role` 2 (customer). Roles: 1 admin, 2 customer, 4 kitchen (linked to a kitchen through `brand_id`). Role 3, courier, was retired. Promote it with `UPDATE customer SET user_role = 1 WHERE customer_email = '...';`, then sign out and back in.

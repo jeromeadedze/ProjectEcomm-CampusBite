@@ -289,6 +289,12 @@ INSERT INTO `products` (`product_id`, `product_cat`, `product_brand`, `product_t
 (7, 3, 3, 'Munchees Late-Night Suya Platter', 35.00, 'Sliced tender beef suya dusted in spicy yaji pepper blend, served with sliced onions and fresh tomatoes.', 'suya.jpg', 'suya, beef, munchees, late night', 1, 10),
 (8, 6, 5, 'Fresh Pineapple Ginger Juice (500ml)', 15.00, 'Cold-pressed natural sweet pineapple juice infused with fresh spicy ginger root. No added sugar.', 'juice.jpg', 'juice, drink, ginger, healthy', 1, 5);
 
+
+-- Demo accounts, so a fresh import can be signed into straight away (passwords are in README.md: demo only, change
+-- or delete these on any real server). The kitchen login runs Munchees Grills. New sign-ups are customers (role 2).
+INSERT INTO `customer` (`customer_id`, `customer_name`, `customer_email`, `customer_pass`, `customer_contact`, `user_role`, `brand_id`) VALUES
+(1, 'CampusBite Admin', 'admin@campusbite.com', '$2y$12$4n3JILZhgVDkN34KVB90huBwquGjeUQk5Z8e3mFYGJhtKVp.qoe6i', '0241000001', 1, NULL),
+(2, 'Munchees Kitchen', 'kitchen@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002003', 4, 3);
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;
