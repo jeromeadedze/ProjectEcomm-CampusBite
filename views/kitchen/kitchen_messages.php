@@ -71,7 +71,7 @@ require_once __DIR__ . '/../layout/header.php';
                         </small>
                         <div class="cb-messages-actions">
                             <a href="<?php echo phone_tel_url($msg['customer_contact']); ?>" class="cb-btn cb-btn-quiet">
-                                <i class="bi bi-telephone-fill" aria-hidden="true"></i> Call customer
+                                <i class="bi bi-telephone" aria-hidden="true"></i> Call customer
                             </a>
                             <a href="<?php echo phone_wa_url($msg['customer_contact'], 'Hi ' . $msg['customer_name'] . ', this is ' . $kitchen['brand_name'] . ' regarding your message' . (!empty($msg['invoice_no']) ? ' on order #' . $msg['invoice_no'] : '')); ?>" target="_blank" rel="noopener" class="cb-btn cb-btn-quiet">
                                 <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp

@@ -9,7 +9,8 @@ $dishImage = !empty($dish['product_image']) && file_exists(__DIR__ . '/../../ima
     ? $ROOT_DIR . '/images/products/' . htmlspecialchars($dish['product_image'])
     : null;
 $dishSaved = in_array((int)$dish['product_id'], $favoriteIds ?? [], true);
-$heartIcon = '<svg viewBox="0 0 24 24" fill="' . ($dishSaved ? 'currentColor' : 'none') . '" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
+// Same icon set as the rest of the card: outline heart, filled once saved
+$heartIcon = '<i class="bi ' . ($dishSaved ? 'bi-heart-fill' : 'bi-heart') . '" aria-hidden="true"></i>';
 ?>
 <article class="cb-dish">
     <?php if (is_logged_in() && can_order()): ?>
