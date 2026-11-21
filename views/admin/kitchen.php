@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
 require_once __DIR__ . '/../../controllers/SupportController.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
+require_once __DIR__ . '/../../controllers/PayoutController.php';
 
 $productCtrl = new ProductController();
 $orderCtrl = new OrderController();
@@ -44,6 +45,10 @@ foreach ($report['kitchens'] as $row) {
         $figures = $row;
     }
 }
+
+$payoutCtrl = new PayoutController();
+$balance = $payoutCtrl->getBalance($kitchen);
+$payouts = $payoutCtrl->getPayouts($kitchenId, 5);
 
 $meals = $productCtrl->getProductsForKitchen($kitchenId);
 $categories = [];
@@ -112,6 +117,30 @@ $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kit
     </section>
 </div>
 <p class="cb-field-hint">Orders placed <?php echo date('M j, Y', strtotime($from)); ?> – <?php echo date('M j, Y', strtotime($to)); ?>. The same figures as this kitchen's row on the <a class="cb-link" href="money.php?from=<?php echo urlencode($from); ?>&amp;to=<?php echo urlencode($to); ?>">Money</a> page.</p>
+
+<div class="cb-row">
+    <h2>Payouts</h2>
+    <?php if ($balance['balance'] > 0): ?><a class="cb-viewall" href="money.php?pay=<?php echo $kitchenId; ?>#record-payout">Record payout ›</a><?php endif; ?>
+</div>
+<section class="cb-card">
+    <dl class="cb-kpi-split cb-money-check">
+        <div><dt>Earned on delivered orders, all time</dt><dd><?php echo $money($balance['earned']); ?></dd></div>
+        <div><dt>Paid out by CampusBite</dt><dd>− <?php echo $money($balance['paid']); ?></dd></div>
+        <div class="is-total"><dt>Balance owed</dt><dd><?php echo $money($balance['balance']); ?></dd></div>
+    </dl>
+    <?php if (empty($payouts)): ?>
+        <p class="cb-muted">Nothing paid out yet.</p>
+    <?php else: ?>
+        <ul class="cb-kitchen-best cb-payout-list">
+            <?php foreach ($payouts as $p): ?>
+                <li>
+                    <span><?php echo date('M j, Y', strtotime($p['paid_on'])); ?> · <?php echo htmlspecialchars($p['method']); ?><?php echo $p['reference'] ? ' · ' . htmlspecialchars($p['reference']) : ''; ?></span>
+                    <b><?php echo $money($p['amount']); ?></b>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+</section>
 
 <div class="cb-row"><h2>Categories</h2></div>
 <?php if (empty($categories)): ?>
@@ -233,7 +262,7 @@ $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kit
         <div class="cb-row"><h2>Staff logins</h2></div>
         <section class="cb-card">
             <?php if (empty($staff)): ?>
-                <p class="cb-muted">No staff login yet. <a class="cb-link" href="brand.php#kitchen-logins">Create one</a> so the kitchen can manage its menu and orders.</p>
+                <p class="cb-muted">No staff login yet. <a class="cb-link" href="users.php?kitchen=<?php echo $kitchenId; ?>#new-login">Create one</a> so the kitchen can manage its menu and orders.</p>
             <?php else: ?>
                 <ul class="cb-kitchen-best">
                     <?php foreach ($staff as $s): ?>

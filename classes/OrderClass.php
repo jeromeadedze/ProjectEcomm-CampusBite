@@ -125,6 +125,10 @@ class OrderClass extends Database
             $where[] = "o.brand_id = ?";
             $params[] = (int)$f['brand_id'];
         }
+        if (!empty($f['customer_id'])) {
+            $where[] = "o.customer_id = ?";
+            $params[] = (int)$f['customer_id'];
+        }
         if (!empty($f['from'])) {
             $where[] = "o.order_date >= ?";
             $params[] = $f['from'] . ' 00:00:00';
@@ -138,6 +142,65 @@ class OrderClass extends Database
             $params[] = $f['status'];
         }
         return [implode(' AND ', $where), $params];
+    }
+
+    // ---------- Kitchen portal: the customers who order from one kitchen ----------
+
+    // WHERE clause: this kitchen's orders, optionally narrowed to customers matching a name, email or phone
+    private function kitchenCustomerWhere($brandId, $q)
+    {
+        $where = "o.brand_id = ?";
+        $params = [(int)$brandId];
+        if ($q !== '') {
+            $term = '%' . $q . '%';
+            $where .= " AND (c.customer_name LIKE ? OR c.customer_email LIKE ? OR c.customer_contact LIKE ?)";
+            array_push($params, $term, $term, $term);
+        }
+        return [$where, $params];
+    }
+
+    /**
+     * Customers of one kitchen, most recent first: their orders with this kitchen (cancelled ones counted apart),
+     * what they've paid it, first and last order, and the drop point they use most. $customerId picks one customer.
+     */
+    public function getKitchenCustomers($brandId, $q, $limit, $offset, $customerId = 0)
+    {
+        [$where, $params] = $this->kitchenCustomerWhere($brandId, $q);
+        if ($customerId > 0) {
+            $where .= " AND c.customer_id = ?";
+            $params[] = (int)$customerId;
+        }
+        $sql = "SELECT c.customer_id, c.customer_name, c.customer_email, c.customer_contact,
+                       COALESCE(SUM(o.order_status <> 'Cancelled'), 0) AS orders,
+                       COALESCE(SUM(o.order_status = 'Cancelled'), 0) AS cancelled,
+                       MIN(o.order_date) AS first_order, MAX(o.order_date) AS last_order,
+                       (SELECT COALESCE(SUM(p.amt), 0) FROM payment p JOIN orders o2 ON o2.order_id = p.order_id
+                        WHERE o2.customer_id = c.customer_id AND o2.brand_id = ? AND o2.order_status <> 'Cancelled') AS spent,
+                       (SELECT o3.drop_location FROM orders o3 WHERE o3.customer_id = c.customer_id AND o3.brand_id = ?
+                        GROUP BY o3.drop_location ORDER BY COUNT(*) DESC, MAX(o3.order_date) DESC LIMIT 1) AS usual_drop
+                FROM orders o
+                JOIN customer c ON c.customer_id = o.customer_id
+                WHERE $where
+                GROUP BY c.customer_id, c.customer_name, c.customer_email, c.customer_contact
+                ORDER BY last_order DESC
+                LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        return $this->fetchAll($sql, array_merge([(int)$brandId, (int)$brandId], $params));
+    }
+
+    public function countKitchenCustomers($brandId, $q)
+    {
+        [$where, $params] = $this->kitchenCustomerWhere($brandId, $q);
+        return (int)$this->fetchOne("SELECT COUNT(DISTINCT o.customer_id) AS n FROM orders o
+                                     JOIN customer c ON c.customer_id = o.customer_id WHERE $where", $params)['n'];
+    }
+
+    // Headline numbers: customers, how many came back for a second order, and how many first ordered since $since
+    public function getKitchenCustomerStats($brandId, $since)
+    {
+        $row = $this->fetchOne("SELECT COUNT(*) AS customers, COALESCE(SUM(n >= 2), 0) AS returners, COALESCE(SUM(first_order >= ?), 0) AS new_recently
+                                FROM (SELECT customer_id, SUM(order_status <> 'Cancelled') AS n, MIN(order_date) AS first_order
+                                      FROM orders WHERE brand_id = ? GROUP BY customer_id) t", [$since, (int)$brandId]);
+        return array_map('intval', $row);
     }
 
     // One page of matching orders, newest first, with the first payment recorded for each

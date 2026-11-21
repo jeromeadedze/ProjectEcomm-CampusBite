@@ -1,17 +1,25 @@
 <?php
 // Help & support: send a message to a kitchen or the CampusBite team, or contact the kitchen directly
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
-require_once __DIR__ . '/layout/header.php';
+require_once __DIR__ . '/../core/core.php';
+require_login();
+// Customers write in here; kitchens and admins answer from their own inboxes
+if (!can_order()) {
+    header("Location: .." . (is_kitchen() ? '/views/kitchen/kitchen_messages.php' : '/views/admin/messages.php'));
+    exit;
+}
+
 require_once __DIR__ . '/../controllers/SupportController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
-require_login();
-
 $supportCtrl = new SupportController();
 $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
-$kitchens = (new ProductController())->getActiveBrands();
+// Active kitchens only (paused ones can't take messages)
+$kitchens = (new ProductController())->getAllBrands();
 $myMessages = $supportCtrl->getMessagesByCustomer(get_user_id());
+$replies = $supportCtrl->getRepliesFor($myMessages);
+$viewerRole = 'customer';
 
 // A "Get help" link on an order page arrives with ?order_id=
 $form = $_SESSION['contact_form'] ?? [
@@ -21,6 +29,8 @@ $form = $_SESSION['contact_form'] ?? [
     'message' => '',
 ];
 unset($_SESSION['contact_form']);
+
+require_once __DIR__ . '/layout/header.php';
 ?>
 
 <p class="cb-sub">Have a question about your food, delivery, or account? Reach the kitchen directly or send a message.</p>
@@ -105,7 +115,8 @@ unset($_SESSION['contact_form']);
             <h2>Your messages</h2>
             <ul class="cb-messages">
                 <?php foreach ($myMessages as $msg): ?>
-                    <li>
+                    <?php $msg['customer_name'] = $_SESSION['customer_name'] ?? ''; ?>
+                    <li id="message-<?php echo (int)$msg['message_id']; ?>">
                         <div class="cb-messages-head">
                             <b>
                                 <?php echo htmlspecialchars($msg['topic']); ?>
@@ -113,11 +124,13 @@ unset($_SESSION['contact_form']);
                                     · <span class="cb-muted">to</span> <?php echo htmlspecialchars($msg['brand_name']); ?>
                                 <?php endif; ?>
                                 <?php echo !empty($msg['invoice_no']) ? ' · order #' . htmlspecialchars($msg['invoice_no']) : ''; ?>
+                                <?php if (SupportController::waitingOn($msg) === 'customer'): ?><span class="cb-wait-chip is-you">New reply</span><?php endif; ?>
                             </b>
                             <span class="cb-dot-status<?php echo $msg['status'] === 'Resolved' ? ' off' : ''; ?>"><?php echo htmlspecialchars($msg['status']); ?></span>
                         </div>
                         <p><?php echo nl2br(htmlspecialchars($msg['message'])); ?></p>
                         <small><?php echo date('M d, Y · h:i A', strtotime($msg['created_at'])); ?></small>
+                        <?php $threadReplies = $replies[(int)$msg['message_id']] ?? []; include __DIR__ . '/layout/support_thread.php'; ?>
                     </li>
                 <?php endforeach; ?>
             </ul>

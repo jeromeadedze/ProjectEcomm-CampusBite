@@ -30,6 +30,7 @@ if (is_kitchen()) {
         ['/views/kitchen/kitchen_dashboard.php', ['kitchen_dashboard'], 'Dashboard', 'grid'],
         ['/views/kitchen/kitchen_orders.php', ['kitchen_orders', 'order_tracking'], 'Orders', 'orders'],
         ['/views/kitchen/kitchen_menu.php', ['kitchen_menu'], 'Menu', 'food'],
+        ['/views/kitchen/kitchen_customers.php', ['kitchen_customers'], 'Customers', 'people'],
         ['/views/kitchen/kitchen_messages.php', ['kitchen_messages'], 'Messages', 'help'],
         ['/views/kitchen/kitchen_info.php', ['kitchen_info'], 'Kitchen info', 'shop'],
     ];
@@ -40,7 +41,7 @@ if (is_kitchen()) {
         ['/views/admin/orders.php', ['orders', 'order_tracking'], 'Orders', 'orders'],
         ['/views/admin/brand.php', ['brand', 'kitchen', 'category'], 'Kitchens', 'shop'],
         ['/views/admin/money.php', ['money'], 'Money', 'money'],
-        ['/views/customers.php', ['customers'], 'Customers', 'people'],
+        ['/views/admin/users.php', ['users'], 'Users', 'people'],
         ['/views/admin/messages.php', ['messages'], 'Support', 'help'],
         ['/views/menu.php', ['menu', 'single_product', 'search_results'], 'View shop', 'home'],
     ];

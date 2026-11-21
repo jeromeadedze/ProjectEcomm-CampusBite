@@ -2,6 +2,12 @@
  * CampusBite Client-Side JavaScript
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // On phones the nav row scrolls sideways; bring the current page's link into view
+    const activeNav = document.querySelector('.cb-nav a.is-active');
+    if (activeNav && activeNav.parentElement.scrollWidth > activeNav.parentElement.clientWidth) {
+        activeNav.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
+
     // Success messages clear themselves; errors stay until dismissed
     document.querySelectorAll('.cb-toast-success').forEach(toast => {
         setTimeout(() => toast.remove(), 4500);
@@ -64,6 +70,25 @@ document.addEventListener('DOMContentLoaded', () => {
             cancel.scrollIntoView({ block: 'center' });
         }
     }
+
+    // A link to a form or conversation further down (#record-payout, #message-12): the browser jumps there before the page has finished
+    // laying out, so jump again once it has loaded, and put the cursor in the first field
+    const jumpTarget = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
+    if (jumpTarget && jumpTarget.querySelector('form')) {
+        window.addEventListener('load', () => {
+            jumpTarget.scrollIntoView({ block: 'start' });
+            if (jumpTarget.tagName !== 'SECTION') return;
+            const field = jumpTarget.querySelector('input:not([type=hidden]), select');
+            if (field) field.focus({ preventScroll: true });
+        });
+    }
+
+    // Opening a "Reply" puts the cursor in its text box
+    document.querySelectorAll('details.cb-reply-form').forEach(details => {
+        details.addEventListener('toggle', () => {
+            if (details.open) details.querySelector('textarea').focus();
+        });
+    });
 
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {

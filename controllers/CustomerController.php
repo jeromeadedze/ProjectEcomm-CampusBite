@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . "/../classes/CustomerClass.php";
+require_once __DIR__ . "/../core/mailer.php";
 
 class CustomerController
 {
@@ -104,6 +105,90 @@ class CustomerController
             return 'Choose a password different from your current one.';
         }
         return $this->customerModel->updatePassword($id, $new) ? null : "Your password couldn't be changed. Try again.";
+    }
+
+    // How long a reset link works, and how many can be asked for per hour
+    const RESET_MINUTES = 60;
+    const RESETS_PER_ACCOUNT_HOUR = 3;
+    const RESETS_PER_IP_HOUR = 10;
+
+    /**
+     * Emails a password reset link if the address belongs to an account. Returns the link (only shown on screen
+     * in local test mode) or null. The page says the same thing either way, so nobody can use it to find out
+     * which emails have accounts.
+     */
+    public function requestPasswordReset($email, $ip)
+    {
+        $user = filter_var($email, FILTER_VALIDATE_EMAIL) ? $this->customerModel->getCustomerByEmail($email) : null;
+        if (!$user
+            || $this->customerModel->countRecentResets('customer_id', $user['customer_id'], 60) >= self::RESETS_PER_ACCOUNT_HOUR
+            || $this->customerModel->countRecentResets('request_ip', $ip, 60) >= self::RESETS_PER_IP_HOUR) {
+            return null;
+        }
+
+        // Only the newest link works
+        $this->customerModel->closeResets($user['customer_id']);
+        $token = bin2hex(random_bytes(32));
+        if (!$this->customerModel->addPasswordReset($user['customer_id'], hash('sha256', $token), self::RESET_MINUTES, $ip)) {
+            return null;
+        }
+        $link = app_url('views/reset_password.php?token=' . $token);
+        $first = explode(' ', trim($user['customer_name']))[0];
+        $lines = ["Hi $first,", "Someone asked to reset the password for your CampusBite account. Choose a new password with the button below. The link works once, for the next " . self::RESET_MINUTES . " minutes."];
+        $foot = "If you didn't ask for this, ignore this email. Your password stays the same.";
+        send_email($user['customer_email'], $user['customer_name'], 'Reset your CampusBite password',
+            email_html('Reset your password', $lines, 'Choose a new password', $link, $foot),
+            email_text('Reset your password', $lines, 'Choose a new password', $link, $foot));
+        return $link;
+    }
+
+    // The account behind a reset link's token, or null if the link is wrong, used or expired
+    public function findPasswordReset($token)
+    {
+        if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/', $token)) {
+            return null;
+        }
+        return $this->customerModel->getValidReset(hash('sha256', $token)) ?: null;
+    }
+
+    /**
+     * Sets a new password from a reset link. Returns an error message, or null on success.
+     * The link is claimed first, so it can't be used twice, and every other link for the account stops working.
+     */
+    public function resetPassword($token, $new, $confirm)
+    {
+        $reset = $this->findPasswordReset($token);
+        if (!$reset) {
+            return 'This reset link has expired or was already used. Ask for a new one.';
+        }
+        if (!preg_match(self::PASSWORD_RULE, $new)) {
+            return 'Use at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.';
+        }
+        if ($new !== $confirm) {
+            return "The passwords don't match.";
+        }
+        try {
+            $this->customerModel->beginTransaction();
+            if (!$this->customerModel->claimReset($reset['reset_id'])) {
+                $this->customerModel->rollBack();
+                return 'This reset link has expired or was already used. Ask for a new one.';
+            }
+            $this->customerModel->updatePassword($reset['customer_id'], $new);
+            $this->customerModel->closeResets($reset['customer_id']);
+            $this->customerModel->commit();
+        } catch (PDOException $e) {
+            $this->customerModel->rollBack();
+            error_log('Password reset failed: ' . $e->getMessage());
+            return "Your password couldn't be changed. Try again.";
+        }
+
+        $first = explode(' ', trim($reset['customer_name']))[0];
+        $lines = ["Hi $first,", 'The password for your CampusBite account was just changed with a reset link.'];
+        $foot = "If you didn't do this, reset your password again straight away and contact CampusBite support.";
+        send_email($reset['customer_email'], $reset['customer_name'], 'Your CampusBite password was changed',
+            email_html('Your password was changed', $lines, 'Sign in', app_url('views/login.php'), $foot),
+            email_text('Your password was changed', $lines, 'Sign in', app_url('views/login.php'), $foot));
+        return null;
     }
 
     /**

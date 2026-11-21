@@ -109,5 +109,9 @@ try {
     payment_failed('not_saved', $reference);
 }
 
+// Receipt for the customer and a new-order alert for the kitchen (a failed email doesn't affect the order)
+require_once __DIR__ . '/../controllers/OrderEmails.php';
+(new OrderEmails())->placed($orderId);
+
 header('Location: ../views/payment_success.php?order_id=' . $orderId);
 exit;

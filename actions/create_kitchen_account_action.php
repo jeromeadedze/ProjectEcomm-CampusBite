@@ -7,7 +7,7 @@ require_once __DIR__ . '/../controllers/ProductController.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: ../views/admin/brand.php#kitchen-logins");
+    header("Location: ../views/admin/users.php");
     exit;
 }
 require_csrf();
@@ -25,6 +25,6 @@ if ($result['error']) {
     $_SESSION['success'] = "{$result['values']['customer_name']} can now sign in to the {$kitchen['brand_name']} kitchen portal with {$result['values']['customer_email']}.";
 }
 
-header("Location: ../views/admin/brand.php#kitchen-logins");
+header("Location: ../views/admin/users.php" . ($result['error'] ? '#new-login' : ''));
 exit;
 ?>

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . "/../classes/SupportClass.php";
 require_once __DIR__ . "/../classes/OrderClass.php";
+require_once __DIR__ . "/../core/mailer.php";
 
 class SupportController
 {
@@ -81,6 +82,81 @@ class SupportController
     public function setStatus($id, $status)
     {
         return in_array($status, self::STATUSES, true) ? $this->supportModel->setStatus($id, $status) : false;
+    }
+
+    /**
+     * How the signed-in person takes part in a conversation: 'admin' (any message), 'kitchen' (messages sent to
+     * its kitchen or about its orders), 'customer' (their own messages), or null if they can't see it.
+     */
+    public function roleFor($msg)
+    {
+        if (!$msg) {
+            return null;
+        }
+        if (is_admin()) {
+            return 'admin';
+        }
+        $kitchenId = get_kitchen_id();
+        if ($kitchenId) {
+            $handles = (int)$msg['brand_id'] === $kitchenId || (int)($msg['order_brand_id'] ?? 0) === $kitchenId;
+            return $handles ? 'kitchen' : null;
+        }
+        return (int)$msg['customer_id'] === (int)get_user_id() ? 'customer' : null;
+    }
+
+    // Who an open conversation is waiting on: 'staff' (no answer yet, or the customer wrote last) or 'customer'
+    public static function waitingOn($msg)
+    {
+        if ($msg['status'] !== 'Open') {
+            return null;
+        }
+        return in_array($msg['last_role'] ?? null, ['kitchen', 'admin'], true) ? 'customer' : 'staff';
+    }
+
+    // Replies for a list of messages: [message_id => [reply, ...]]
+    public function getRepliesFor(array $messages)
+    {
+        return $this->supportModel->getRepliesFor(array_column($messages, 'message_id'));
+    }
+
+    /**
+     * Adds a reply. A customer's reply reopens a resolved conversation; staff can resolve it as they reply.
+     * When a kitchen or admin replies, the customer gets an email. Returns an error message, or null.
+     */
+    public function reply($messageId, $body, $resolve = false)
+    {
+        $msg = $this->supportModel->getMessageById($messageId);
+        $role = $this->roleFor($msg);
+        $body = trim((string)$body);
+        if (!$role) {
+            return "You can't reply to that message.";
+        }
+        if (mb_strlen($body) < 2) {
+            return 'Write a reply first.';
+        }
+        if (mb_strlen($body) > self::MAX_MESSAGE) {
+            return 'Keep your reply to ' . self::MAX_MESSAGE . ' characters or fewer.';
+        }
+        if (!$this->supportModel->addReply($messageId, get_user_id(), $role, $body)) {
+            return "Your reply couldn't be sent. Try again.";
+        }
+
+        if ($role === 'customer') {
+            $this->supportModel->setStatus($messageId, 'Open');
+            return null;
+        }
+        $this->supportModel->setStatus($messageId, $resolve ? 'Resolved' : 'Open');
+
+        $from = $role === 'kitchen' ? ($msg['brand_name'] ?: 'The kitchen') : 'CampusBite support';
+        $first = explode(' ', trim($msg['customer_name']))[0];
+        $about = $msg['topic'] . (!empty($msg['invoice_no']) ? ' (order #' . $msg['invoice_no'] . ')' : '');
+        $lines = ["Hi $first,", "$from replied to your message about $about:", $body];
+        $link = app_url('views/contact.php#message-' . (int)$messageId);
+        $foot = $resolve ? 'They marked your message resolved. Reply on CampusBite if you still need help, and it opens again.' : 'Reply on CampusBite, not to this email.';
+        send_email($msg['customer_email'], $msg['customer_name'], "$from replied to your message",
+            email_html("$from replied", $lines, 'View and reply', $link, $foot),
+            email_text("$from replied", $lines, 'View and reply', $link, $foot));
+        return null;
     }
 }
 ?>

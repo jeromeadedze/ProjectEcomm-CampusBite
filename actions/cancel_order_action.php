@@ -55,5 +55,9 @@ if (mb_strlen($reason) > 255) {
 
 $result = $orderCtrl->cancelOrder($order, $by, $reason);
 $_SESSION[$result['ok'] ? 'success' : 'error'] = $result['message'];
+if ($result['ok']) {
+    require_once __DIR__ . '/../controllers/OrderEmails.php';
+    (new OrderEmails())->cancelled($orderId);
+}
 header("Location: $back");
 exit;

@@ -45,8 +45,8 @@ require_once __DIR__ . '/../layout/header.php';
 </p>
 
 <form class="cb-card cb-money-range cb-order-filters" method="GET" action="orders.php" role="search">
-    <label class="cb-order-search">Search
-        <input type="search" name="q" value="<?php echo htmlspecialchars($f['q']); ?>" maxlength="100" placeholder="Invoice, customer name, email or phone">
+    <label class="cb-order-search">Search by invoice, name, email or phone
+        <input type="search" name="q" value="<?php echo htmlspecialchars($f['q']); ?>" maxlength="100" placeholder="e.g. 900101 or Ama Mensah">
     </label>
     <label>Kitchen
         <select name="brand">
