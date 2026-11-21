@@ -11,16 +11,21 @@ $kitchenId = get_kitchen_id();
 $kitchen = (new ProductController())->getBrandById($kitchenId);
 $supportCtrl = new SupportController();
 $messages = $supportCtrl->getMessagesByKitchen($kitchenId);
+$replies = $supportCtrl->getRepliesFor($messages);
+$viewerRole = 'kitchen';
 
 $openCount = count(array_filter($messages, function ($msg) {
     return $msg['status'] === 'Open';
+}));
+$needReply = count(array_filter($messages, function ($msg) {
+    return SupportController::waitingOn($msg) === 'staff';
 }));
 
 $pageHeading = $kitchen['brand_name'] . ' messages';
 require_once __DIR__ . '/../layout/header.php';
 ?>
 
-<p class="cb-sub"><?php echo $openCount; ?> open · <?php echo count($messages); ?> total</p>
+<p class="cb-sub"><?php echo $needReply; ?> need a reply · <?php echo $openCount; ?> open · <?php echo count($messages); ?> total</p>
 
 <section class="cb-card">
     <?php if (empty($messages)): ?>
@@ -28,7 +33,8 @@ require_once __DIR__ . '/../layout/header.php';
     <?php else: ?>
         <ul class="cb-messages">
             <?php foreach ($messages as $msg): ?>
-                <li class="<?php echo $msg['status'] === 'Resolved' ? 'is-resolved' : ''; ?>">
+                <?php $msg['brand_name'] = $kitchen['brand_name']; $waiting = SupportController::waitingOn($msg); ?>
+                <li id="message-<?php echo (int)$msg['message_id']; ?>" class="<?php echo $msg['status'] === 'Resolved' ? 'is-resolved' : ''; ?>">
                     <div class="cb-messages-head">
                         <b>
                             <?php echo htmlspecialchars($msg['topic']); ?>
@@ -38,6 +44,7 @@ require_once __DIR__ . '/../layout/header.php';
                                     <span class="cb-muted">(to <?php echo htmlspecialchars($msg['drop_location']); ?>)</span>
                                 <?php endif; ?>
                             <?php endif; ?>
+                            <?php if ($waiting): ?><span class="cb-wait-chip <?php echo $waiting === 'staff' ? 'is-you' : ''; ?>"><?php echo $waiting === 'staff' ? 'Needs a reply' : 'Waiting for customer'; ?></span><?php endif; ?>
                         </b>
                         <form action="<?php echo $ROOT_DIR; ?>/actions/update_message_status_action.php" method="POST">
                             <?php echo csrf_field(); ?>
@@ -53,6 +60,7 @@ require_once __DIR__ . '/../layout/header.php';
                     </div>
 
                     <p><?php echo nl2br(htmlspecialchars($msg['message'])); ?></p>
+                    <?php $threadReplies = $replies[(int)$msg['message_id']] ?? []; include __DIR__ . '/../layout/support_thread.php'; ?>
 
                     <div class="cb-messages-foot">
                         <small>

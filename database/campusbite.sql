@@ -11,6 +11,7 @@ SET NAMES utf8mb4;
 -- Customer and brands point at each other, so the drops and creates run with foreign key checks off
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `support_replies`;
 DROP TABLE IF EXISTS `support_messages`;
 DROP TABLE IF EXISTS `favorites`;
 DROP TABLE IF EXISTS `order_tracking`;
@@ -249,6 +250,21 @@ CREATE TABLE `support_messages` (
   CONSTRAINT `support_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE,
   CONSTRAINT `support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL,
   CONSTRAINT `support_b_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Replies in a support conversation, from the customer, the kitchen or a CampusBite admin
+CREATE TABLE `support_replies` (
+  `reply_id` int(11) NOT NULL AUTO_INCREMENT,
+  `message_id` int(11) NOT NULL,
+  `author_id` int(11) DEFAULT NULL,
+  `author_role` varchar(10) NOT NULL,       -- customer, kitchen, admin
+  `body` text NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`reply_id`),
+  KEY `message_id` (`message_id`),
+  KEY `author_id` (`author_id`),
+  CONSTRAINT `support_replies_m_fk` FOREIGN KEY (`message_id`) REFERENCES `support_messages` (`message_id`) ON DELETE CASCADE,
+  CONSTRAINT `support_replies_a_fk` FOREIGN KEY (`author_id`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================

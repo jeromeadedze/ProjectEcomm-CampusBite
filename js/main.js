@@ -65,16 +65,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // A link to a form further down (#record-payout): the browser jumps there before the page has finished
+    // A link to a form or conversation further down (#record-payout, #message-12): the browser jumps there before the page has finished
     // laying out, so jump again once it has loaded, and put the cursor in the first field
     const jumpTarget = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
-    if (jumpTarget && jumpTarget.tagName === 'SECTION' && jumpTarget.querySelector('form')) {
+    if (jumpTarget && jumpTarget.querySelector('form')) {
         window.addEventListener('load', () => {
             jumpTarget.scrollIntoView({ block: 'start' });
+            if (jumpTarget.tagName !== 'SECTION') return;
             const field = jumpTarget.querySelector('input:not([type=hidden]), select');
             if (field) field.focus({ preventScroll: true });
         });
     }
+
+    // Opening a "Reply" puts the cursor in its text box
+    document.querySelectorAll('details.cb-reply-form').forEach(details => {
+        details.addEventListener('toggle', () => {
+            if (details.open) details.querySelector('textarea').focus();
+        });
+    });
 
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {

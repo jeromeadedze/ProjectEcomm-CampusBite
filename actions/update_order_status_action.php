@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $orderCtrl->updateOrderStatus($orderId, $status);
         $_SESSION['success'] = "Order #{$order['invoice_no']} is now {$status}.";
+        require_once __DIR__ . '/../controllers/OrderEmails.php';
+        (new OrderEmails())->statusChanged($orderId, $status);
     }
 }
 

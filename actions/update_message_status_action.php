@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/SupportController.php';
-require_once __DIR__ . '/../controllers/OrderController.php';
 
 require_login();
 if (!is_admin() && !is_kitchen()) {
@@ -20,30 +19,16 @@ $id = (int)($_POST['message_id'] ?? 0);
 $status = $_POST['status'] ?? '';
 
 $msg = $supportCtrl->getMessageById($id);
+$role = $supportCtrl->roleFor($msg);
 
 if (!$msg) {
     $_SESSION['error'] = "That message no longer exists.";
+} elseif ($role !== 'admin' && $role !== 'kitchen') {
+    $_SESSION['error'] = "You cannot update messages for another kitchen.";
+} elseif (!$supportCtrl->setStatus($id, $status)) {
+    $_SESSION['error'] = "Choose a status from the list.";
 } else {
-    $kitchenId = get_kitchen_id();
-    $canManage = is_admin();
-    if (!$canManage && $kitchenId) {
-        if ((int)$msg['brand_id'] === $kitchenId) {
-            $canManage = true;
-        } elseif ($msg['order_id']) {
-            $order = (new OrderController())->getOrderById($msg['order_id']);
-            if ($order && (int)$order['brand_id'] === $kitchenId) {
-                $canManage = true;
-            }
-        }
-    }
-
-    if (!$canManage) {
-        $_SESSION['error'] = "You cannot update messages for another kitchen.";
-    } elseif (!$supportCtrl->setStatus($id, $status)) {
-        $_SESSION['error'] = "Choose a status from the list.";
-    } else {
-        $_SESSION['success'] = "Message marked " . strtolower($status) . ".";
-    }
+    $_SESSION['success'] = "Message marked " . strtolower($status) . ".";
 }
 
 redirect_back(is_kitchen() ? '../views/kitchen/kitchen_messages.php' : '../views/admin/messages.php');

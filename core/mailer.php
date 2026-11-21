@@ -35,14 +35,24 @@ function app_url($path) {
 }
 
 /**
- * The HTML for an email: a white card with the CampusBite name, a heading, paragraphs and an optional red button.
- * $paragraphs are plain text and get escaped here.
+ * The HTML for an email: a white card with the CampusBite name, a heading, paragraphs, an optional table of
+ * [label, value] rows (a third item true makes the row bold, as for a total) and an optional red button.
+ * Everything passed in is plain text and gets escaped here.
  */
-function email_html($heading, array $paragraphs, $buttonText = null, $buttonUrl = null, $footnote = null) {
+function email_html($heading, array $paragraphs, $buttonText = null, $buttonUrl = null, $footnote = null, array $rows = []) {
     $e = function ($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); };
     $body = '';
     foreach ($paragraphs as $p) {
         $body .= '<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#0F0F0F">' . nl2br($e($p)) . '</p>';
+    }
+    if ($rows) {
+        $body .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:4px 0 16px;font-size:14px">';
+        foreach ($rows as $row) {
+            $strong = !empty($row[2]);
+            $cell = 'padding:8px 0;border-top:1px solid #E6E6EA;color:#0F0F0F;' . ($strong ? 'font-weight:700;' : '');
+            $body .= '<tr><td style="' . $cell . 'padding-right:12px">' . $e($row[0]) . '</td><td style="' . $cell . 'text-align:right;white-space:nowrap">' . $e($row[1]) . '</td></tr>';
+        }
+        $body .= '</table>';
     }
     if ($buttonText && $buttonUrl) {
         $body .= '<p style="margin:22px 0"><a href="' . $e($buttonUrl) . '" style="display:inline-block;background:#E3001B;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:999px">' . $e($buttonText) . '</a></p>'
@@ -62,8 +72,14 @@ function email_html($heading, array $paragraphs, $buttonText = null, $buttonUrl 
 }
 
 // The plain-text copy of the same email, for mail apps that don't show HTML
-function email_text($heading, array $paragraphs, $buttonText = null, $buttonUrl = null, $footnote = null) {
+function email_text($heading, array $paragraphs, $buttonText = null, $buttonUrl = null, $footnote = null, array $rows = []) {
     $text = $heading . "\n\n" . implode("\n\n", $paragraphs);
+    if ($rows) {
+        $text .= "\n";
+        foreach ($rows as $row) {
+            $text .= "\n" . $row[0] . ': ' . $row[1];
+        }
+    }
     if ($buttonText && $buttonUrl) {
         $text .= "\n\n" . $buttonText . ":\n" . $buttonUrl;
     }
