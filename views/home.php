@@ -1,5 +1,9 @@
 <?php
-// Translated from the theme's campusbite-dashboard section
+// Translated from the theme's campusbite-dashboard section. index.php includes this file; opened on its own, go there.
+if (!defined('ROOT_DIR')) {
+    header('Location: ../index.php');
+    exit;
+}
 require_once __DIR__ . '/../controllers/ProductController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 

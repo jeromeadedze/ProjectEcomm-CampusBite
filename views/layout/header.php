@@ -23,6 +23,7 @@ $pageTitles = [
     'forgot_password' => 'Forgot Password',
     'reset_password' => 'New Password',
     'customers' => 'Customers',
+    'customer' => 'Customer',
     'brand' => 'Kitchens',
     'category' => 'Categories',
     'kitchen' => 'Kitchen',

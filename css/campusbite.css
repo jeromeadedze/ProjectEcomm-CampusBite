@@ -405,10 +405,24 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 /* ── Admin dashboard ── */
 .cb-kpi-split div.is-total{border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
 .cb-kpi-split div.is-total dt{color:var(--ink);font-weight:600}
-.cb .cb-card.cb-attention{margin:20px 0 0;border-left:4px solid var(--ember)}
-.cb .cb-card.cb-attention h2{margin-bottom:10px}
-.cb-attention ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;font-size:13.5px;line-height:1.6}
-.cb-attention .cb-status{margin-right:6px}
+.cb .cb-card.cb-attention{margin:20px 0 0}
+.cb-attention-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.cb .cb-card .cb-attention-head h2{margin:0}
+.cb-attention-count{min-width:24px;height:24px;padding:0 8px;border-radius:999px;background:var(--ember);color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.cb-attention ul{list-style:none;margin:0;padding:0}
+.cb-attention li{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+.cb-attention li:first-child{border-top:0}
+.cb-attention-icon{flex:none;width:40px;height:40px;border-radius:50%;background:var(--ember-soft);color:var(--ember);display:flex;align-items:center;justify-content:center;font-size:17px}
+.cb-attention-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cb-attention-text b{font-size:14px;font-weight:600;color:var(--ink)}
+.cb-attention-text span{font-size:12.5px;color:var(--muted);line-height:1.5}
+.cb-attention-text a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+.cb-attention li > .cb-btn{flex:none;padding:8px 16px;font-size:12.5px}
+@media (max-width:600px){
+  .cb-attention li{flex-wrap:wrap;align-items:flex-start}
+  .cb-attention-text{flex-basis:calc(100% - 54px)}
+  .cb-attention li > .cb-btn{margin-left:54px}
+}
 
 /* Kitchen tickets: the next-step button, with other statuses tucked away */
 .cb-ticket-actions > form > .cb-btn{width:100%}
@@ -573,3 +587,9 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-wait-chip.is-you{background:var(--ember-soft);color:var(--ember-d)}
 .cb-messages li[id^="message-"]{scroll-margin-top:100px}
 .cb-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Customer page (Sprint 20) */
+.cb-suspended-note{background:var(--ember-soft);font-size:13.5px;line-height:1.6;margin-bottom:16px}
+.cb-kpi-num.cb-kpi-text{font-size:20px;line-height:1.3;overflow-wrap:anywhere}
+.cb-link-quiet{color:inherit;text-decoration:underline;text-decoration-color:var(--dash);text-underline-offset:3px}
+.cb-link-quiet:hover{color:var(--ember-d);text-decoration-color:currentColor}

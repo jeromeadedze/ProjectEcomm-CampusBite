@@ -57,7 +57,7 @@ require_once __DIR__ . '/../layout/header.php';
                     </div>
                     <p><?php echo nl2br(htmlspecialchars($msg['message'])); ?></p>
                     <small>
-                        <?php echo htmlspecialchars($msg['customer_name']); ?> ·
+                        <a class="cb-link-quiet" href="customer.php?id=<?php echo (int)$msg['customer_id']; ?>"><?php echo htmlspecialchars($msg['customer_name']); ?></a> ·
                         <a class="cb-link" href="mailto:<?php echo htmlspecialchars($msg['customer_email']); ?>"><?php echo htmlspecialchars($msg['customer_email']); ?></a> ·
                         <?php echo htmlspecialchars($msg['customer_contact']); ?> ·
                         <?php echo date('M d, Y · h:i A', strtotime($msg['created_at'])); ?>

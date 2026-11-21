@@ -53,39 +53,52 @@ $pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Rea
     <?php endforeach; ?>
 </div>
 
-<?php if ($waiting || $noLogin || $noMeals || $openMessages): ?>
+<?php
+// Each issue: icon, headline, a muted detail line, and the place to fix it
+$issues = [];
+if ($waiting) {
+    $n = count($waiting);
+    $issues[] = ['bi-clock-history', $plural($n, 'order') . ($n === 1 ? ' is' : ' are') . ' still waiting for a kitchen',
+        'Placed over ' . WAITING_MINUTES . ' minutes ago: ' . implode(', ', array_map(function ($w) use ($ROOT_DIR) {
+            return '<a class="cb-link-quiet" href="' . $ROOT_DIR . '/views/order_tracking.php?order_id=' . (int)$w['order_id'] . '">#' . htmlspecialchars($w['invoice_no']) . '</a> (' . htmlspecialchars($w['brand_name'] ?? 'no kitchen') . ')';
+        }, array_slice($waiting, 0, 3))) . ($n > 3 ? ' and ' . ($n - 3) . ' more' : ''),
+        'View orders', 'orders.php?status=Placed'];
+}
+if ($noLogin) {
+    $n = count($noLogin);
+    $issues[] = ['bi-person-x', $plural($n, 'kitchen') . ($n === 1 ? ' has' : ' have') . ' no login',
+        "Nobody there can receive orders: " . htmlspecialchars(implode(', ', array_column($noLogin, 'brand_name'))),
+        'Create logins', 'brand.php#kitchen-logins'];
+}
+if ($noMeals) {
+    $n = count($noMeals);
+    $first = reset($noMeals);
+    $issues[] = ['bi-journal-x', $plural($n, 'kitchen') . ($n === 1 ? ' has' : ' have') . ' an empty menu',
+        htmlspecialchars(implode(', ', array_column($noMeals, 'brand_name'))) . ($n === 1 ? ' needs' : ' need') . ' to add meals from the kitchen portal',
+        $n === 1 ? 'Open kitchen' : 'View kitchens', $n === 1 ? 'kitchen.php?id=' . (int)$first['brand_id'] : 'brand.php'];
+}
+if ($openMessages) {
+    $issues[] = ['bi-chat-left-dots', $plural($openMessages, 'support message') . ($openMessages === 1 ? ' is' : ' are') . ' open',
+        'Customers are waiting for a reply', 'Open Support', 'messages.php'];
+}
+?>
+<?php if ($issues): ?>
     <section class="cb-card cb-attention" aria-labelledby="attention-title">
-        <h2 id="attention-title">Needs attention</h2>
+        <div class="cb-attention-head">
+            <h2 id="attention-title">Needs attention</h2>
+            <span class="cb-attention-count"><?php echo count($issues); ?></span>
+        </div>
         <ul>
-            <?php if ($waiting): ?>
+            <?php foreach ($issues as [$icon, $title, $detail, $label, $href]): ?>
                 <li>
-                    <span class="cb-status cb-status-placed"><?php echo $plural(count($waiting), 'order'); ?></span>
-                    still waiting for a kitchen after <?php echo WAITING_MINUTES; ?> minutes:
-                    <?php echo implode(', ', array_map(function ($w) use ($ROOT_DIR) {
-                        return '<a class="cb-link" href="' . $ROOT_DIR . '/views/order_tracking.php?order_id=' . (int)$w['order_id'] . '">#' . htmlspecialchars($w['invoice_no']) . '</a> (' . htmlspecialchars($w['brand_name'] ?? 'no kitchen') . ')';
-                    }, array_slice($waiting, 0, 5))); ?><?php echo count($waiting) > 5 ? ' and more' : ''; ?>
+                    <span class="cb-attention-icon" aria-hidden="true"><i class="bi <?php echo $icon; ?>"></i></span>
+                    <div class="cb-attention-text">
+                        <b><?php echo $title; ?></b>
+                        <span><?php echo $detail; ?></span>
+                    </div>
+                    <a class="cb-btn cb-btn-quiet" href="<?php echo $href; ?>"><?php echo $label; ?></a>
                 </li>
-            <?php endif; ?>
-            <?php if ($noLogin): ?>
-                <li>
-                    <span class="cb-status cb-status-preparing"><?php echo $plural(count($noLogin), 'kitchen'); ?></span>
-                    with no kitchen login, so nobody there can receive orders:
-                    <?php echo htmlspecialchars(implode(', ', array_column($noLogin, 'brand_name'))); ?>.
-                    <a class="cb-link" href="brand.php#kitchen-logins">Create logins ›</a>
-                </li>
-            <?php endif; ?>
-            <?php if ($noMeals): ?>
-                <li>
-                    <span class="cb-status cb-status-preparing"><?php echo $plural(count($noMeals), 'kitchen'); ?></span>
-                    with an empty menu: <?php echo htmlspecialchars(implode(', ', array_column($noMeals, 'brand_name'))); ?>.
-                </li>
-            <?php endif; ?>
-            <?php if ($openMessages): ?>
-                <li>
-                    <span class="cb-status cb-status-in-transit"><?php echo $plural($openMessages, 'message'); ?></span>
-                    from customers waiting for a reply. <a class="cb-link" href="messages.php">Open Support ›</a>
-                </li>
-            <?php endif; ?>
+            <?php endforeach; ?>
         </ul>
     </section>
 <?php endif; ?>

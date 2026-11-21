@@ -42,6 +42,10 @@ CREATE TABLE `customer` (
   `brand_id` int(11) DEFAULT NULL, -- for kitchen accounts (role 4): the kitchen they run
   `has_pass` tinyint(1) NOT NULL DEFAULT 0, -- 1 if customer subscribed to GH₵ 35 CampusBite Pass
   `pass_expiry` date DEFAULT NULL,
+  `is_suspended` tinyint(1) NOT NULL DEFAULT 0, -- 1: an admin suspended the account; it can't sign in
+  `suspended_at` datetime DEFAULT NULL,
+  `suspend_reason` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`customer_id`),
   UNIQUE KEY `customer_email` (`customer_email`),
   KEY `brand_id` (`brand_id`)

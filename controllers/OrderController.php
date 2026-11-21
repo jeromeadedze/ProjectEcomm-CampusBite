@@ -293,6 +293,7 @@ class OrderController
         $f = [
             'q' => mb_substr(trim((string)($input['q'] ?? '')), 0, 100),
             'brand_id' => max(0, (int)($input['brand'] ?? 0)),
+            'customer_id' => max(0, (int)($input['customer'] ?? 0)),
             'from' => $readDate($input['from'] ?? ''),
             'to' => $readDate($input['to'] ?? ''),
             'status' => (array_key_exists($input['status'] ?? '', self::STATUSES) || ($input['status'] ?? '') === 'Cancelled') ? $input['status'] : '',
@@ -308,6 +309,11 @@ class OrderController
         $orders = $this->orderModel->searchOrders($f, self::ORDERS_PER_PAGE, ($page - 1) * self::ORDERS_PER_PAGE);
 
         return ['filters' => $f, 'orders' => $orders, 'counts' => $counts, 'total' => $total, 'page' => $page, 'pages' => $pages];
+    }
+
+    public function getCustomerOrderStats($customerId)
+    {
+        return $this->orderModel->getCustomerOrderStats($customerId);
     }
 
     public function updateOrderStatus($orderId, $status)

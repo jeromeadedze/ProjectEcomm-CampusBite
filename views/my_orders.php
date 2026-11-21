@@ -2,6 +2,11 @@
 // The shopper's past orders, newest first, with what each one cost
 require_once __DIR__ . '/../core/core.php';
 require_login();
+// Admins and kitchens don't order; their orders list is elsewhere
+if (!can_order()) {
+    header("Location: .." . staff_orders_path());
+    exit;
+}
 
 require_once __DIR__ . '/../controllers/OrderController.php';
 $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());

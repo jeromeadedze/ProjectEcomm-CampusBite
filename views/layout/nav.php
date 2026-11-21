@@ -40,7 +40,7 @@ if (is_kitchen()) {
         ['/views/admin/orders.php', ['orders', 'order_tracking'], 'Orders', 'orders'],
         ['/views/admin/brand.php', ['brand', 'kitchen', 'category'], 'Kitchens', 'shop'],
         ['/views/admin/money.php', ['money'], 'Money', 'money'],
-        ['/views/customers.php', ['customers'], 'Customers', 'people'],
+        ['/views/customers.php', ['customers', 'customer'], 'Customers', 'people'],
         ['/views/admin/messages.php', ['messages'], 'Support', 'help'],
         ['/views/menu.php', ['menu', 'single_product', 'search_results'], 'View shop', 'home'],
     ];

@@ -3,6 +3,11 @@
 $ROOT_DIR = defined('ROOT_DIR') ? ROOT_DIR : '..';
 require_once __DIR__ . '/../core/core.php';
 require_login();
+// Customers write in here; kitchens and admins answer from their own inboxes
+if (!can_order()) {
+    header("Location: .." . (is_kitchen() ? '/views/kitchen/kitchen_messages.php' : '/views/admin/messages.php'));
+    exit;
+}
 
 require_once __DIR__ . '/../controllers/SupportController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';

@@ -125,6 +125,10 @@ class OrderClass extends Database
             $where[] = "o.brand_id = ?";
             $params[] = (int)$f['brand_id'];
         }
+        if (!empty($f['customer_id'])) {
+            $where[] = "o.customer_id = ?";
+            $params[] = (int)$f['customer_id'];
+        }
         if (!empty($f['from'])) {
             $where[] = "o.order_date >= ?";
             $params[] = $f['from'] . ' 00:00:00';
@@ -138,6 +142,26 @@ class OrderClass extends Database
             $params[] = $f['status'];
         }
         return [implode(' AND ', $where), $params];
+    }
+
+    // One customer's ordering history in numbers, for the admin's customer page
+    public function getCustomerOrderStats($customerId)
+    {
+        $stats = $this->fetchOne("SELECT COUNT(*) AS orders,
+                                         COALESCE(SUM(order_status = 'Delivered'), 0) AS delivered,
+                                         COALESCE(SUM(order_status = 'Cancelled'), 0) AS cancelled,
+                                         COALESCE(SUM(order_status NOT IN ('Delivered', 'Cancelled')), 0) AS in_progress,
+                                         MIN(order_date) AS first_order, MAX(order_date) AS last_order
+                                  FROM orders WHERE customer_id = ?", [$customerId]);
+        $stats['spent'] = (float)$this->fetchOne("SELECT COALESCE(SUM(p.amt), 0) AS v FROM payment p JOIN orders o ON o.order_id = p.order_id
+                                                  WHERE o.customer_id = ? AND o.order_status <> 'Cancelled'", [$customerId])['v'];
+        $stats['refunded'] = (float)$this->fetchOne("SELECT COALESCE(SUM(r.amount), 0) AS v FROM refunds r JOIN orders o ON o.order_id = r.order_id
+                                                     WHERE o.customer_id = ? AND r.status NOT IN ('failed', 'needs-attention', 'not_needed')", [$customerId])['v'];
+        $top = $this->fetchOne("SELECT b.brand_id, b.brand_name, COUNT(*) AS n FROM orders o JOIN brands b ON b.brand_id = o.brand_id
+                                WHERE o.customer_id = ? AND o.order_status <> 'Cancelled'
+                                GROUP BY b.brand_id, b.brand_name ORDER BY n DESC, b.brand_name LIMIT 1", [$customerId]);
+        $stats['top_kitchen'] = $top ?: null;
+        return $stats;
     }
 
     // One page of matching orders, newest first, with the first payment recorded for each
