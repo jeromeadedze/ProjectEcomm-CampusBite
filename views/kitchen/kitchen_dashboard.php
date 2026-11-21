@@ -20,6 +20,7 @@ $meals = $productCtrl->getProductsForKitchen($kitchenId);
 $soldOut = count(array_filter($meals, function ($meal) { return !(int)$meal['is_available']; }));
 $commissionPercent = round($kitchen['commission_rate'] * 100);
 $payoutLabel = ProductController::payoutLabel($kitchen);
+$refunds = $orderCtrl->getKitchenRefundBalance($kitchenId);
 
 $pageHeading = $kitchen['brand_name'];
 require_once __DIR__ . '/../layout/header.php';
@@ -59,7 +60,10 @@ $pipeline = ['Placed' => 'New', 'Preparing' => 'Preparing', 'Ready' => 'Ready to
 <section class="cb-card">
     <?php if ($payoutLabel): ?>
         <p class="cb-card-lead">Paystack pays your share of every order straight to <strong><?php echo htmlspecialchars($payoutLabel); ?></strong> when the customer pays, usually by the next working day. Your share is the meals minus CampusBite's <?php echo $commissionPercent; ?>% commission, plus the delivery fee.</p>
-        <p class="cb-field-hint">If an order is cancelled, the customer is refunded in full through Paystack.</p>
+        <?php if ($refunds['owed'] > 0): ?>
+            <p class="cb-warn-note"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> <?php echo $money($refunds['owed']); ?> still to take back for refunded orders. It comes out of your share of your next orders, so those payouts will be smaller until it's repaid.</p>
+        <?php endif; ?>
+        <p class="cb-field-hint">If an order is cancelled, the customer gets back everything they paid. Paystack takes the refund from CampusBite, so your share of that order is taken back from your next orders.</p>
     <?php else: ?>
         <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Students can't pay for your meals until you add a payout account.&nbsp;<a href="kitchen_info.php#payout">Add it under Kitchen info</a></p>
     <?php endif; ?>

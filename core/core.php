@@ -221,6 +221,13 @@ function require_csrf() {
 /**
  * Direct communication helpers for contacting kitchens or customers via call or WhatsApp
  */
+// The Bootstrap icon that stands in for a meal with no photo: its category's icon, so a jollof bowl,
+// a shawarma and a smoothie don't all look the same
+function meal_icon($meal) {
+    $icon = is_array($meal) ? ($meal['cat_icon'] ?? '') : '';
+    return preg_match('/^bi-[a-z0-9-]+$/', (string)$icon) ? $icon : 'bi-egg-fried';
+}
+
 function phone_tel_url($phone) {
     return 'tel:' . preg_replace('/[^0-9+]/', '', (string)$phone);
 }

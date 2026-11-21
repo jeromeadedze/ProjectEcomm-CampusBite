@@ -121,6 +121,17 @@ $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kit
             <?php if (!empty($kitchen['payout_account_name'])): ?><div><dt>Name on the account</dt><dd><?php echo htmlspecialchars($kitchen['payout_account_name']); ?></dd></div><?php endif; ?>
             <div><dt>Paystack subaccount</dt><dd><?php echo htmlspecialchars($kitchen['paystack_subaccount']); ?></dd></div>
         </dl>
+    <?php endif; ?>
+    <?php $refunds = (new OrderController())->getKitchenRefundBalance((int)$kitchen['brand_id']); ?>
+    <?php if ($refunds['refunded'] > 0): ?>
+        <dl class="cb-facts">
+            <div><dt>Kitchen's share of refunds</dt><dd>GH₵ <?php echo number_format($refunds['refunded'], 2); ?></dd></div>
+            <div><dt>Taken back so far</dt><dd>GH₵ <?php echo number_format($refunds['recovered'], 2); ?></dd></div>
+            <div><dt>Still to take back</dt><dd>GH₵ <?php echo number_format(max(0, $refunds['owed']), 2); ?></dd></div>
+        </dl>
+        <p class="cb-field-hint">Paystack takes refunds from CampusBite's balance. The kitchen's share of each refunded order is taken back from its next orders, up to that order's whole share.</p>
+    <?php endif; ?>
+    <?php if ($payoutLabel): ?>
         <p class="cb-field-hint">Paystack pays the kitchen's share of each order to this account when the customer pays; CampusBite keeps its <?php echo round($kitchen['commission_rate'] * 100); ?>% commission. The kitchen manages the account under Kitchen info.</p>
     <?php else: ?>
         <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> No payout account yet, so customers can't pay for this kitchen's meals. The kitchen's staff add one under Kitchen info.</p>

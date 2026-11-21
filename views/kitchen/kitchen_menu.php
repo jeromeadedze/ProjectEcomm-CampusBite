@@ -98,6 +98,10 @@ require_once __DIR__ . '/../layout/header.php';
 
 <section class="cb-card">
     <h2>Your meals</h2>
+    <?php $noPhoto = count(array_filter($meals, function ($m) { return empty($m['product_image']); })); ?>
+    <?php if ($noPhoto > 0): ?>
+        <p class="cb-warn-note"><i class="bi bi-camera" aria-hidden="true"></i> <?php echo $noPhoto === count($meals) ? 'None of your meals have' : $noPhoto . ' of your meals ' . ($noPhoto === 1 ? 'has' : 'have'); ?> a photo yet, so students only see the category icon. A photo helps them choose: choose Edit, then add one.</p>
+    <?php endif; ?>
     <div class="cb-table-wrap">
         <table class="cb-table">
             <thead>
@@ -110,7 +114,7 @@ require_once __DIR__ . '/../layout/header.php';
                 <?php foreach ($meals as $meal): ?>
                     <?php $available = (int)$meal['is_available'] === 1; ?>
                     <tr <?php echo $editMeal && (int)$editMeal['product_id'] === (int)$meal['product_id'] ? 'class="is-editing"' : ''; ?>>
-                        <td class="cb-table-name"><?php echo htmlspecialchars($meal['product_title']); ?></td>
+                        <td class="cb-table-name"><?php echo htmlspecialchars($meal['product_title']); ?><?php if (empty($meal['product_image'])): ?><span class="cb-table-sub"><i class="bi bi-camera" aria-hidden="true"></i> No photo</span><?php endif; ?></td>
                         <td><?php echo htmlspecialchars($meal['cat_name']); ?></td>
                         <td class="num">GH₵ <?php echo number_format($meal['product_price'], 2); ?></td>
                         <td class="num"><?php echo (int)$meal['prep_time_minutes']; ?> min</td>

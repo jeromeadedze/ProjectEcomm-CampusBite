@@ -95,7 +95,7 @@ require_once __DIR__ . '/layout/header.php';
                     <?php if ($orderImage): ?>
                         <img src="<?php echo $orderImage; ?>" alt="" loading="lazy">
                     <?php else: ?>
-                        <span class="cb-dish-emoji" aria-hidden="true"><i class="bi bi-egg-fried"></i></span>
+                        <span class="cb-dish-emoji" aria-hidden="true"><i class="bi <?php echo meal_icon($order); ?>"></i></span>
                     <?php endif; ?>
                 </div>
                 <span class="cb-vchip"><?php echo htmlspecialchars($order['first_kitchen'] ?? ''); ?></span>

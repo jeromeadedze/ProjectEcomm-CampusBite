@@ -66,7 +66,7 @@ foreach ($cartItems as $item) {
                                     <?php if ($itemImage): ?>
                                         <img src="<?php echo $itemImage; ?>" alt="">
                                     <?php else: ?>
-                                        <i class="bi bi-egg-fried" aria-hidden="true"></i>
+                                        <i class="bi <?php echo meal_icon($item); ?>" aria-hidden="true"></i>
                                     <?php endif; ?>
                                 </span>
 

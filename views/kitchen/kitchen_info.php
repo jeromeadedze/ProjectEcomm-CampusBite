@@ -3,6 +3,7 @@
 define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
+require_once __DIR__ . '/../../controllers/OrderController.php';
 require_once __DIR__ . '/../../core/paystack.php';
 
 require_kitchen();
@@ -13,6 +14,7 @@ $adminPaused = (int)($kitchen['admin_paused'] ?? 0) === 1;
 
 // Payout account: where Paystack pays the kitchen's share of each order
 $payoutLabel = ProductController::payoutLabel($kitchen);
+$refunds = (new OrderController())->getKitchenRefundBalance((int)$kitchen['brand_id']);
 $payout = $_SESSION['payout_form'] ?? [
     'payout_bank_code' => $kitchen['payout_bank_code'] ?? '',
     'payout_account_number' => $kitchen['payout_account_number'] ?? '',
@@ -65,6 +67,7 @@ require_once __DIR__ . '/../layout/header.php';
         <h2 id="payout-title">Payout account</h2>
         <?php if ($payoutLabel): ?>
             <p class="cb-card-lead">Paystack pays your share of every order straight to <strong><?php echo htmlspecialchars($payoutLabel); ?></strong><?php if (!empty($kitchen['payout_account_name'])): ?> (<?php echo htmlspecialchars($kitchen['payout_account_name']); ?>)<?php endif; ?>: the meals minus CampusBite's <?php echo $commissionPct; ?>% commission, plus the delivery fee. Paystack settles it on its usual schedule, normally the next working day.</p>
+            <p class="cb-field-hint">When an order is cancelled, Paystack refunds the customer from CampusBite's balance, so your share of that order is taken back from your next orders.<?php if ($refunds['owed'] > 0): ?> Still to take back: <strong>GH₵ <?php echo number_format($refunds['owed'], 2); ?></strong>.<?php endif; ?></p>
         <?php else: ?>
             <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Students can't pay for your meals until you add a payout account. Paystack sends your share of each order there.</p>
             <p class="cb-card-lead">Add the Mobile Money number or bank account your kitchen gets paid into. Your share is the meals minus CampusBite's <?php echo $commissionPct; ?>% commission, plus the delivery fee.</p>

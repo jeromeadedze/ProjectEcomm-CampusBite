@@ -161,6 +161,7 @@ CREATE TABLE `payment` (
   `subaccount_code` varchar(40) DEFAULT NULL, -- the kitchen's Paystack subaccount the payment was split with; NULL = all went to CampusBite
   `kitchen_share` decimal(10,2) DEFAULT NULL, -- what Paystack sends the kitchen
   `campusbite_share` decimal(10,2) DEFAULT NULL, -- CampusBite's commission; Paystack's fee comes out of this
+  `refund_recovery` decimal(10,2) NOT NULL DEFAULT 0.00, -- taken from the kitchen's share to repay earlier refunds (negative = handed back)
   PRIMARY KEY (`pay_id`),
   UNIQUE KEY `transaction_reference` (`transaction_reference`),
   KEY `customer_id` (`customer_id`),

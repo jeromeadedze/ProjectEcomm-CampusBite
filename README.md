@@ -38,9 +38,10 @@ CampusBite has three kinds of account. A new sign-up is always a customer.
 
 ### Kitchen staff (kitchen portal)
 
-- **Dashboard.** Today's sales, the last 7 days and all time, CampusBite's commission, the order queue, best sellers, and how the kitchen gets paid.
+- **Dashboard.** Today's sales, the last 7 days and all time, CampusBite's commission, the order queue, best sellers, and how the kitchen gets paid (including any refunds still to be taken back).
+- **New-order alert.** While any kitchen page is open, it checks for new orders every 20 seconds. A new order puts a count on the Orders link and in the tab title, plays a short chime (once someone has clicked or typed on the page, as browsers require) and shows a message. The Orders page reloads itself unless someone is filling in a form.
 - **Orders.** *In progress* shows tickets with one button for the next step: Start preparing, Mark ready, Out for delivery, Mark delivered. You can reject an order (with a refund) while it's Placed or Preparing. *All orders* can be searched by invoice or customer, and filtered by date and status.
-- **Menu.** Add, edit, mark sold out and delete meals, with photos. A meal that has been ordered can't be deleted, only marked sold out.
+- **Menu.** Add, edit, mark sold out and delete meals, with photos. Meals without a photo are marked "No photo", and the page says how many are missing one. A meal that has been ordered can't be deleted, only marked sold out.
 - **Customers.** Everyone who has ordered from the kitchen, with order counts, spend, usual drop point, and Call and WhatsApp buttons.
 - **Messages.** Customer questions sent to the kitchen, with replies.
 - **Kitchen info.** Location, phone, open or paused, and the **payout account**: a Mobile Money number or bank account that Paystack pays the kitchen's share into. A kitchen without a payout account can't take orders.
@@ -65,6 +66,7 @@ The super admin looks after kitchens and money. Kitchens own their food, custome
 3. Paystack pays the kitchen's share straight to its account on Paystack's settlement schedule. CampusBite never holds the kitchen's money, so there are no manual payouts.
 4. Each order stores the commission rate it was paid at, and each payment stores both shares. Changing a kitchen's commission later doesn't change past orders.
 5. Cancelled orders are refunded in full through Paystack. They don't count in sales, commission or best sellers.
+6. Paystack takes refunds from CampusBite's balance, even for split payments. So the kitchen's share of a refunded order is **taken back from its next orders**: the next payments send CampusBite a larger charge, up to that order's whole kitchen share, until the amount is repaid. Each payment stores what it took back (`payment.refund_recovery`). Kitchens see what's still to take back on their dashboard and Kitchen info; the admin sees it on the Money page and the kitchen's page.
 
 ## Demo accounts
 
@@ -241,10 +243,10 @@ More detail for contributors:
 
 ## Known limits and open questions
 
-- **Refunds on split payments.** Paystack's docs don't say who pays when a split payment is refunded. It is probably CampusBite's balance, which would mean CampusBite covers the kitchen's share of a cancelled order.
+- **Refunds on split payments.** Paystack's support articles say refunds come from the main account's balance. CampusBite takes the kitchen's share back from the kitchen's next orders. A kitchen that stops taking orders keeps what it owes until it is settled outside the site.
 - **Older orders.** Orders paid before split payments (Sprint 22) were collected by CampusBite. Any balance owed to a kitchen from them has to be settled outside the site.
 - **No Paystack webhook yet.** A refund's status updates when someone opens the order page.
 - **Emails are sent while the page waits.** A slow mail server makes buttons slower, but never undoes a change.
 - **Delivery fee.** It is one fee per order, by the kitchen's zone. The original theme charged per kitchen.
 - **Bootstrap.** Bootstrap is still loaded for a few older pages.
-- **Seed photos.** Seed meals point to photos that aren't in `images/products/`.
+- **Seed photos.** Seed meals point to photos that aren't in `images/products/`. Until a kitchen uploads one, each meal shows its category's icon, so a jollof bowl, a grill and a smoothie look different.
