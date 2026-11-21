@@ -102,6 +102,109 @@ document.addEventListener('DOMContentLoaded', () => {
         update();
     });
 
+    // Kitchens: check for new orders every 20 seconds while a kitchen page is open. A new order updates the Orders
+    // badge and the tab title, plays a short chime and shows a message; the Orders page reloads itself unless
+    // someone is filling in a form there.
+    const orderWatch = document.querySelector('[data-order-watch]');
+    if (orderWatch) {
+        const badge = orderWatch.querySelector('[data-new-count]');
+        const live = document.getElementById('cb-order-live');
+        const baseTitle = document.title.replace(/^\(\d+\) /, '');
+        let latest = Number(orderWatch.dataset.latest) || 0;
+        let placedBefore = badge && !badge.hidden ? Number(badge.firstChild.nodeValue) : 0;
+        let audio = null;
+
+        // Browsers only allow sound after the person has used the page, so get the audio ready on the first click or key
+        const unlockAudio = () => {
+            try {
+                audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+                if (audio.state === 'suspended') audio.resume();
+            } catch (e) { audio = null; }
+        };
+        document.addEventListener('pointerdown', unlockAudio, { once: true });
+        document.addEventListener('keydown', unlockAudio, { once: true });
+
+        const chime = () => {
+            if (!audio || audio.state !== 'running') return;
+            [880, 1175].forEach((freq, i) => {
+                const start = audio.currentTime + i * 0.18;
+                const osc = audio.createOscillator();
+                const gain = audio.createGain();
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.0001, start);
+                gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+                osc.connect(gain).connect(audio.destination);
+                osc.start(start);
+                osc.stop(start + 0.4);
+            });
+        };
+
+        const showCount = (placed) => {
+            if (badge) {
+                badge.hidden = placed < 1;
+                badge.firstChild.nodeValue = placed;
+            }
+            document.title = placed > 0 ? '(' + placed + ') ' + baseTitle : baseTitle;
+        };
+
+        const onOrdersPage = /kitchen_orders\.php$/.test(location.pathname) && !/[?&]view=(all|done)/.test(location.search);
+        const busy = () => {
+            const field = document.activeElement;
+            return (field && field.matches('input, select, textarea')) || document.querySelector('details[open]');
+        };
+
+        const announce = (placed, fresh) => {
+            const text = fresh === 1 ? 'New order just came in.' : fresh + ' new orders just came in.';
+            if (live) live.textContent = text + ' ' + placed + ' waiting to start.';
+            if (onOrdersPage && !busy()) {
+                location.reload();
+                return;
+            }
+            let toast = document.getElementById('cb-new-order-toast');
+            if (!toast) {
+                const toasts = document.querySelector('.cb-toasts');
+                if (!toasts) return;
+                toast = document.createElement('div');
+                toast.id = 'cb-new-order-toast';
+                toast.className = 'cb-toast cb-toast-error cb-toast-order';
+                toast.innerHTML = '<i class="bi bi-bell-fill" aria-hidden="true"></i><p></p>'
+                    + '<button type="button" aria-label="Dismiss message"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
+                toast.querySelector('button').addEventListener('click', () => toast.remove());
+                toasts.appendChild(toast);
+            }
+            const p = toast.querySelector('p');
+            p.textContent = text + ' ';
+            const link = document.createElement('a');
+            link.href = orderWatch.href;
+            link.textContent = onOrdersPage ? 'Show it' : 'Open orders';
+            p.appendChild(link);
+        };
+
+        const check = () => {
+            if (document.hidden) return;
+            fetch(orderWatch.dataset.orderWatch, { credentials: 'same-origin', cache: 'no-store' })
+                .then(response => (response.ok ? response.json() : null))
+                .then(state => {
+                    if (!state) return;
+                    showCount(state.placed);
+                    // Order numbers are shared by all kitchens, so count the new ones from the waiting orders instead
+                    if (state.latest > latest) {
+                        const fresh = Math.max(1, state.placed - placedBefore);
+                        latest = state.latest;
+                        chime();
+                        announce(state.placed, fresh);
+                    }
+                    placedBefore = state.placed;
+                })
+                .catch(() => {});
+        };
+
+        showCount(placedBefore);
+        setInterval(check, 20000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    }
+
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {
         form.addEventListener('submit', event => {

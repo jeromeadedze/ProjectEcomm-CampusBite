@@ -3,6 +3,7 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
+require_once __DIR__ . '/../controllers/OrderController.php';
 require_once __DIR__ . '/../core/paystack.php';
 
 require_login();
@@ -79,7 +80,9 @@ if (!$kitchen || empty($kitchen['paystack_subaccount'])) {
 $subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
 $grandTotal = $subtotal + $deliveryFee;
 // CampusBite's commission stays with CampusBite; the rest (meals minus commission, plus delivery) goes to the kitchen
-$split = paystack_split_for($subtotal, $deliveryFee, $kitchen['commission_rate']);
+// plus anything the kitchen owes for refunded orders (Paystack refunds come out of CampusBite's balance)
+$refundsOwed = (new OrderController())->getKitchenRefundBalance((int)$kitchen['brand_id'])['owed'];
+$split = paystack_split_for($subtotal, $deliveryFee, $kitchen['commission_rate'], $refundsOwed);
 
 if (!paystack_configured()) {
     error_log('Checkout: core/paystack_config.php is missing or has no secret key');
@@ -103,6 +106,7 @@ $metadata = [
     'commission_rate' => (float)$kitchen['commission_rate'],
     'subaccount' => $kitchen['paystack_subaccount'],
     'commission' => $split['commission'],
+    'refund_recovery' => $split['refund_recovery'],
     'kitchen_share' => $split['kitchen_share'],
     'items' => array_map(function ($item) {
         return ['p_id' => (int)$item['p_id'], 'qty' => (int)$item['qty'], 'price' => (float)$item['product_price'], 'notes' => $item['notes']];
@@ -122,7 +126,7 @@ $init = paystack_request('POST', '/transaction/initialize', [
     'callback_url' => site_url('actions/paystack_callback_action.php'),
     'metadata' => $metadata,
     'subaccount' => $kitchen['paystack_subaccount'],
-    'transaction_charge' => to_pesewas($split['commission']),
+    'transaction_charge' => to_pesewas($split['charge']),
     'bearer' => $split['bearer'],
 ]);
 

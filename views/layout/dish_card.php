@@ -26,7 +26,7 @@ $heartIcon = '<i class="bi ' . ($dishSaved ? 'bi-heart-fill' : 'bi-heart') . '" 
         <?php if ($dishImage): ?>
             <img src="<?php echo $dishImage; ?>" alt="" loading="lazy">
         <?php else: ?>
-            <span class="cb-dish-emoji" aria-hidden="true"><i class="bi bi-egg-fried"></i></span>
+            <span class="cb-dish-emoji" aria-hidden="true"><i class="bi <?php echo meal_icon($dish); ?>"></i></span>
         <?php endif; ?>
     </a>
     <?php if ($showKitchen): ?>

@@ -146,16 +146,24 @@ function paystack_save_subaccount($code, $businessName, $bankCode, $accountNumbe
 }
 
 /**
- * How one order's payment is split. CampusBite keeps its commission on the meals (sent to Paystack as a flat
- * transaction_charge); the kitchen gets the rest, delivery fee included. Paystack's fee comes out of CampusBite's
+ * How one order's payment is split. CampusBite keeps its commission on the meals, plus any refunds the kitchen still
+ * owes (sent to Paystack as a flat transaction_charge); the kitchen gets the rest, delivery fee included. Paystack's fee comes out of CampusBite's
  * share, unless there is no commission to take it from, in which case the kitchen bears it. Amounts in GH₵.
  */
-function paystack_split_for($mealsTotal, $deliveryFee, $commissionRate) {
+function paystack_split_for($mealsTotal, $deliveryFee, $commissionRate, $refundsOwed = 0) {
     $commission = round((float)$mealsTotal * (float)$commissionRate, 2);
     $total = round((float)$mealsTotal + (float)$deliveryFee, 2);
+    $share = round($total - $commission, 2);
+    // Refunds the kitchen still owes come out of this order's share (never more than the share); a credit (negative,
+    // from taking a refund back twice) is handed back out of CampusBite's commission (never more than the commission)
+    $owed = round((float)$refundsOwed, 2);
+    $recovery = $owed > 0 ? min($owed, $share) : -min(-$owed, $commission);
+    $charge = round($commission + $recovery, 2);
     return [
         'commission' => $commission,
-        'kitchen_share' => round($total - $commission, 2),
-        'bearer' => $commission > 0 ? 'account' : 'subaccount',
+        'refund_recovery' => $recovery,
+        'charge' => $charge, // what CampusBite keeps: Paystack's transaction_charge
+        'kitchen_share' => round($total - $charge, 2),
+        'bearer' => $charge > 0 ? 'account' : 'subaccount',
     ];
 }

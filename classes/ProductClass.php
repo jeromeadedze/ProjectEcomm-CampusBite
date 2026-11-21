@@ -71,7 +71,7 @@ class ProductClass extends Database
     // Every meal a kitchen has, sold out included, with how often each was ordered
     public function getProductsForKitchen($brandId)
     {
-        $sql = "SELECT p.*, c.cat_name,
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon,
                        (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od JOIN orders o ON o.order_id = od.order_id
                         WHERE od.product_id = p.product_id AND o.order_status <> 'Cancelled') AS meals_sold
                 FROM products p
@@ -147,7 +147,7 @@ class ProductClass extends Database
     // ==========================================
     public function getAllProducts()
     {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone 
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -157,7 +157,7 @@ class ProductClass extends Database
 
     public function getFeaturedProducts($limit = 12)
     {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone 
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -169,7 +169,7 @@ class ProductClass extends Database
 
     public function getProductById($id)
     {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone, b.location_desc, b.is_active AS brand_active
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.location_desc, b.is_active AS brand_active
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -179,7 +179,7 @@ class ProductClass extends Database
 
     public function getProductsByCategory($cat_id)
     {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone 
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -190,7 +190,7 @@ class ProductClass extends Database
 
     public function getProductsByBrand($brand_id)
     {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone 
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -203,7 +203,7 @@ class ProductClass extends Database
     {
         // Escape LIKE wildcards so "%" or "_" in a search are matched literally
         $term = "%" . addcslashes($query, '%_\\') . "%";
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone 
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -292,7 +292,7 @@ class ProductClass extends Database
     public function getAvailableProductsPage($brandId, $catId, $limit, $offset)
     {
         [$where, $params] = $this->availableFilter($brandId, $catId);
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 JOIN brands b ON p.product_brand = b.brand_id

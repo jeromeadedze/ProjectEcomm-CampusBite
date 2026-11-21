@@ -36,7 +36,7 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
         <?php if ($mealImage): ?>
             <img src="<?php echo $mealImage; ?>" alt="<?php echo htmlspecialchars($product['product_title']); ?>">
         <?php else: ?>
-            <span class="cb-dish-emoji" aria-hidden="true"><i class="bi bi-egg-fried"></i></span>
+            <span class="cb-dish-emoji" aria-hidden="true"><i class="bi <?php echo meal_icon($product); ?>"></i></span>
         <?php endif; ?>
     </div>
 
