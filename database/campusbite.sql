@@ -287,7 +287,7 @@ INSERT INTO `products` (`product_id`, `product_cat`, `product_brand`, `product_t
 (5, 4, 5, 'Eat Healthy Grilled Chicken & Avocado Salad', 38.00, 'Romaine lettuce, diced ripe avocado, cherry tomatoes, cucumbers and tender grilled chicken breast with honey mustard dressing.', 'salad_bowl.jpg', 'healthy, salad, avocado, diet, eat healthy', 1, 12),
 (6, 1, 4, 'Peckish Loaded Fried Plantain & Beans (Red Red)', 25.00, 'Sweet fried ripe plantain with slow-cooked black-eyed beans stew, boiled egg and fried gari topping.', 'red_red.jpg', 'peckish, beans, plantain, red red, local', 1, 15),
 (7, 3, 3, 'Munchees Late-Night Suya Platter', 35.00, 'Sliced tender beef suya dusted in spicy yaji pepper blend, served with sliced onions and fresh tomatoes.', 'suya.jpg', 'suya, beef, munchees, late night', 1, 10),
-(8, 6, 5, 'Fresh Pineapple Ginger Juice (500ml)', 15.00, 'Cold-pressed natural sweet pineapple juice infused with fresh spicy ginger root. No added sugar.', 'juice.jpg', 'juice, drink, ginger, healthy', 1, 5);
+(8, 6, 5, 'Fresh Pineapple Ginger Juice (500ml)', 15.00, 'Cold-pressed natural sweet pineapple juice infused with fresh spicy ginger root. No added sugar.', 'pineapple_juice.jpg', 'juice, drink, ginger, healthy', 1, 5);
 
 
 -- Demo accounts, so a fresh import can be signed into straight away (passwords are in README.md: demo only, change
