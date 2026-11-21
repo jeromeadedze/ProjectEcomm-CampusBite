@@ -165,13 +165,14 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
 
 <div class="cb-row" id="payout-accounts"><h2>How kitchens get paid</h2></div>
 <section class="cb-card">
-    <p class="cb-card-lead">Paystack splits every payment: the kitchen's share goes straight to the payout account the kitchen added under Kitchen info, and CampusBite keeps its commission. A kitchen without a payout account can't take orders.</p>
+    <p class="cb-card-lead">Paystack splits every payment: the kitchen's share goes straight to the payout account the kitchen added under Kitchen info, and CampusBite keeps its commission. A kitchen without a payout account can't take orders. Paystack takes refunds from CampusBite's balance, so the kitchen's share of a refunded order is taken back from its next orders.</p>
+    <?php $refundCtrl = new OrderController(); ?>
     <div class="cb-table-wrap">
         <table class="cb-table">
-            <thead><tr><th>Kitchen</th><th>Payout account</th><th class="num">Commission now</th></tr></thead>
+            <thead><tr><th>Kitchen</th><th>Payout account</th><th class="num">Commission now</th><th class="num">Refunds to take back</th></tr></thead>
             <tbody>
                 <?php foreach ($kitchens as $k): ?>
-                    <?php $label = ProductController::payoutLabel($k); ?>
+                    <?php $label = ProductController::payoutLabel($k); $owed = $refundCtrl->getKitchenRefundBalance((int)$k['brand_id'])['owed']; ?>
                     <tr>
                         <td class="cb-table-name"><a href="kitchen.php?id=<?php echo (int)$k['brand_id']; ?>"><?php echo htmlspecialchars($k['brand_name']); ?></a></td>
                         <td>
@@ -182,6 +183,7 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
                             <?php endif; ?>
                         </td>
                         <td class="num"><?php echo round($k['commission_rate'] * 100); ?>%</td>
+                        <td class="num"><?php echo $owed > 0 ? $money($owed) : '–'; ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

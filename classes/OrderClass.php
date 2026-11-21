@@ -32,14 +32,14 @@ class OrderClass extends Database
         return $this->execute($sql, [$orderId, $productId, $qty, $price, $notes]);
     }
 
-    // $split: ['subaccount' => code, 'kitchen_share' => GH₵, 'campusbite_share' => GH₵] for a split payment
+    // $split: ['subaccount' => code, 'kitchen_share' => GH₵, 'campusbite_share' => GH₵, 'refund_recovery' => GH₵] for a split payment
     public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false, $split = null)
     {
         $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, verified_at,
-                                     subaccount_code, kitchen_share, campusbite_share)
-                VALUES (?, ?, ?, 'GHS', ?, ?, " . ($verified ? "NOW()" : "NULL") . ", ?, ?, ?)";
+                                     subaccount_code, kitchen_share, campusbite_share, refund_recovery)
+                VALUES (?, ?, ?, 'GHS', ?, ?, " . ($verified ? "NOW()" : "NULL") . ", ?, ?, ?, ?)";
         return $this->execute($sql, [$amt, $customerId, $orderId, $paymentMode, $ref,
-            $split['subaccount'] ?? null, $split['kitchen_share'] ?? null, $split['campusbite_share'] ?? null]);
+            $split['subaccount'] ?? null, $split['kitchen_share'] ?? null, $split['campusbite_share'] ?? null, $split['refund_recovery'] ?? 0]);
     }
 
     /**
@@ -57,7 +57,7 @@ class OrderClass extends Database
                        b.brand_name, b.brand_phone, COALESCE(o.commission_rate, b.commission_rate) AS commission_rate,
                        COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM customer ks
                         WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1)) AS kitchen_contact,
-                       pay.pay_id, pay.amt, pay.payment_mode, pay.transaction_reference, pay.verified_at,
+                       pay.pay_id, pay.amt, pay.payment_mode, pay.transaction_reference, pay.verified_at, pay.subaccount_code, pay.kitchen_share,
                        r.refund_id, r.amount AS refund_amount, r.status AS refund_status, r.paystack_refund_id, r.updated_at AS refund_updated_at
                 FROM orders o
                 JOIN customer c ON o.customer_id = c.customer_id
@@ -70,7 +70,8 @@ class OrderClass extends Database
 
     public function getOrderDetails($orderId)
     {
-        $sql = "SELECT od.*, COALESCE(od.price, p.product_price) AS unit_price, p.product_title, p.product_price, p.product_image, p.product_brand, b.brand_name
+        $sql = "SELECT od.*, COALESCE(od.price, p.product_price) AS unit_price, p.product_title, p.product_price, p.product_image, p.product_brand, b.brand_name,
+                       (SELECT cat_icon FROM categories WHERE cat_id = p.product_cat) AS cat_icon
                 FROM orderdetails od
                 JOIN products p ON od.product_id = p.product_id
                 JOIN brands b ON p.product_brand = b.brand_id
@@ -495,6 +496,9 @@ class OrderClass extends Database
                         WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_title,
                        (SELECT p.product_image FROM orderdetails od JOIN products p ON od.product_id = p.product_id
                         WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_image,
+                       (SELECT c.cat_icon FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                        JOIN categories c ON p.product_cat = c.cat_id
+                        WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS cat_icon,
                        (SELECT b.brand_name FROM orderdetails od JOIN products p ON od.product_id = p.product_id
                         JOIN brands b ON p.product_brand = b.brand_id
                         WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_kitchen
@@ -503,6 +507,32 @@ class OrderClass extends Database
                 ORDER BY o.order_id DESC
                 LIMIT " . intval($limit);
         return $this->fetchAll($sql, [$customerId]);
+    }
+
+    /**
+     * Refunds a kitchen still has to repay. Paystack takes a refund from CampusBite's balance, so the kitchen's share of
+     * every refunded split payment is owed back; payments that took some back (refund_recovery) reduce it. A payment
+     * whose own order was refunded doesn't count as having taken anything back, because that money went to the customer.
+     */
+    // New orders waiting for a kitchen, and its newest order id (the kitchen portal checks these for new orders)
+    public function getKitchenNewOrderState($brandId)
+    {
+        $row = $this->fetchOne("SELECT COALESCE(SUM(order_status = 'Placed'), 0) AS placed, COALESCE(MAX(order_id), 0) AS latest
+                                FROM orders WHERE brand_id = ?", [$brandId]);
+        return ['placed' => (int)$row['placed'], 'latest' => (int)$row['latest']];
+    }
+
+    public function getKitchenRefundBalance($brandId)
+    {
+        $refunded = $this->fetchOne(
+            "SELECT COALESCE(SUM(p.kitchen_share), 0) AS amount
+             FROM refunds r JOIN payment p ON p.pay_id = r.pay_id JOIN orders o ON o.order_id = r.order_id
+             WHERE o.brand_id = ? AND p.subaccount_code IS NOT NULL AND r.status NOT IN ('failed', 'not_needed')", [$brandId]);
+        $recovered = $this->fetchOne(
+            "SELECT COALESCE(SUM(p.refund_recovery), 0) AS amount
+             FROM payment p JOIN orders o ON o.order_id = p.order_id
+             WHERE o.brand_id = ? AND NOT EXISTS (SELECT 1 FROM refunds r WHERE r.order_id = o.order_id AND r.status NOT IN ('failed', 'not_needed'))", [$brandId]);
+        return ['refunded' => round((float)$refunded['amount'], 2), 'recovered' => round((float)$recovered['amount'], 2)];
     }
 }
 ?>

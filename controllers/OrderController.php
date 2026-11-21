@@ -467,5 +467,21 @@ class OrderController
     {
         return $this->orderModel->getRecentOrdersWithSummary($customerId, $limit);
     }
+
+    /**
+     * What a kitchen owes back for refunded orders: ['refunded', 'recovered', 'owed']. 'owed' is taken from its next
+     * orders at checkout; a negative 'owed' (taken back twice by two orders paid at once) is handed back the same way.
+     */
+    public function getKitchenNewOrderState($brandId)
+    {
+        return $this->orderModel->getKitchenNewOrderState($brandId);
+    }
+
+    public function getKitchenRefundBalance($brandId)
+    {
+        $b = $this->orderModel->getKitchenRefundBalance($brandId);
+        $b['owed'] = round($b['refunded'] - $b['recovered'], 2);
+        return $b;
+    }
 }
 ?>

@@ -24,6 +24,8 @@ class ProductController
         'bi-cake2' => 'Cake',
         'bi-cup-hot' => 'Hot cup',
         'bi-cup-straw' => 'Cold drink',
+        'bi-cup' => 'Cup',
+        'bi-segmented-nav' => 'Skewers',
     ];
 
     const IMAGE_TYPES = [

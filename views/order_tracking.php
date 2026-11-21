@@ -128,7 +128,7 @@ foreach ($items as $it) {
     <?php if ($canCancel): ?>
         <details class="cb-cancel" id="cancel">
             <summary><?php echo $cancelAs === 'kitchen' ? 'Reject this order' : 'Cancel this order'; ?></summary>
-            <form action="<?php echo $ROOT_DIR; ?>/actions/cancel_order_action.php" method="POST" data-confirm="<?php echo $cancelAs === 'kitchen' ? 'Reject' : 'Cancel'; ?> order #<?php echo htmlspecialchars($order['invoice_no']); ?>?<?php echo !empty($order['verified_at']) ? ' GH₵ ' . number_format((float)$order['amt'], 2) . ' will be refunded to the customer.' : ''; ?> This can't be undone.">
+            <form action="<?php echo $ROOT_DIR; ?>/actions/cancel_order_action.php" method="POST" data-confirm="<?php echo $cancelAs === 'kitchen' ? 'Reject' : 'Cancel'; ?> order #<?php echo htmlspecialchars($order['invoice_no']); ?>?<?php echo !empty($order['verified_at']) ? ' GH₵ ' . number_format((float)$order['amt'], 2) . ' will be refunded to the customer.' : ''; ?><?php echo $cancelAs !== 'customer' && !empty($order['subaccount_code']) && (float)$order['kitchen_share'] > 0 ? ' The kitchen\'s share (GH₵ ' . number_format((float)$order['kitchen_share'], 2) . ') is taken back from its next orders.' : ''; ?> This can't be undone.">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
                 <?php if ($cancelAs === 'kitchen'): ?>

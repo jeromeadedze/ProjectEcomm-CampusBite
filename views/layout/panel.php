@@ -49,7 +49,7 @@ $panelHostel = $panelCustomer['campus_hostel'] ?? '';
                             <?php if (!empty($trayItem['product_image']) && file_exists(__DIR__ . '/../../' . $trayImage)): ?>
                                 <img src="<?php echo $ROOT_DIR . '/' . htmlspecialchars($trayImage); ?>" alt="">
                             <?php else: ?>
-                                <i class="bi bi-egg-fried" aria-hidden="true"></i>
+                                <i class="bi <?php echo meal_icon($trayItem); ?>" aria-hidden="true"></i>
                             <?php endif; ?>
                         </span>
                         <div class="cb-tray-main">

@@ -27,7 +27,7 @@ class FavoriteClass extends Database
     // Saved meals, newest first, with whether each can be ordered right now
     public function getFavoriteProducts($customerId)
     {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone, b.is_active AS brand_active
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.is_active AS brand_active
                 FROM favorites f
                 JOIN products p ON f.product_id = p.product_id
                 JOIN categories c ON p.product_cat = c.cat_id

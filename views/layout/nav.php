@@ -61,6 +61,13 @@ if (is_kitchen()) {
     }
 }
 $isShopperNav = !is_admin() && !is_kitchen();
+
+// Kitchens: how many new orders are waiting, and the newest order, so main.js can tell when another comes in
+$kitchenOrders = null;
+if (is_kitchen()) {
+    require_once __DIR__ . '/../../controllers/OrderController.php';
+    $kitchenOrders = (new OrderController())->getKitchenNewOrderState(get_kitchen_id());
+}
 ?>
 <header class="cb-bar">
     <a href="<?php echo $ROOT_DIR . home_path_for_role(); ?>" class="cb-logo">Campus<span>Bite</span></a>
@@ -68,11 +75,14 @@ $isShopperNav = !is_admin() && !is_kitchen();
     <nav class="cb-nav<?php echo $isShopperNav ? ' cb-nav-tabs' : ''; ?>" aria-label="<?php echo $navLabel; ?>">
         <?php foreach ($navLinks as $link): ?>
             <?php $active = in_array($currentPage, $link[1], true); ?>
-            <a href="<?php echo $ROOT_DIR . $link[0]; ?>" class="<?php echo trim(($active ? 'is-active' : '') . (!empty($link[4]) ? ' cb-nav-phone' : '')); ?>" <?php echo $active ? 'aria-current="page"' : ''; ?>>
+            <?php $watchOrders = $kitchenOrders && $link[0] === '/views/kitchen/kitchen_orders.php'; ?>
+            <a href="<?php echo $ROOT_DIR . $link[0]; ?>" class="<?php echo trim(($active ? 'is-active' : '') . (!empty($link[4]) ? ' cb-nav-phone' : '')); ?>" <?php echo $active ? 'aria-current="page"' : ''; ?><?php if ($watchOrders): ?> data-order-watch="<?php echo $ROOT_DIR; ?>/actions/kitchen_order_poll.php" data-latest="<?php echo $kitchenOrders['latest']; ?>"<?php endif; ?>>
                 <?php echo $icon($link[3]); ?><span><?php echo $link[2]; ?></span>
+                <?php if ($watchOrders): ?><span class="cb-nav-badge" data-new-count <?php echo $kitchenOrders['placed'] ? '' : 'hidden'; ?>><?php echo $kitchenOrders['placed']; ?><span class="visually-hidden"> new</span></span><?php endif; ?>
             </a>
         <?php endforeach; ?>
     </nav>
+    <?php if ($kitchenOrders): ?><div class="visually-hidden" role="status" id="cb-order-live"></div><?php endif; ?>
 
     <div class="cb-bar-actions">
         <?php if (can_order()): ?>

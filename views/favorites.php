@@ -48,7 +48,7 @@ require_once __DIR__ . '/layout/header.php';
             <ul class="cb-bill-items">
                 <?php foreach ($unavailable as $meal): ?>
                     <li class="cb-bill-item is-unavailable">
-                        <span class="cb-menu-img"><i class="bi bi-egg-fried" aria-hidden="true"></i></span>
+                        <span class="cb-menu-img"><i class="bi <?php echo meal_icon($meal); ?>" aria-hidden="true"></i></span>
                         <div class="cb-bill-item-main">
                             <b><?php echo htmlspecialchars($meal['product_title']); ?></b>
                             <small><?php echo htmlspecialchars($meal['brand_name']); ?> · sold out or kitchen paused</small>

@@ -85,10 +85,12 @@ if (($data['currency'] ?? '') !== 'GHS' || $paidPesewas !== to_pesewas($expected
 $split = null;
 $subaccount = (string)($data['subaccount']['subaccount_code'] ?? $meta['subaccount'] ?? '');
 if ($subaccount !== '') {
+    $recovery = round((float)($meta['refund_recovery'] ?? 0), 2);
     $split = [
         'subaccount' => $subaccount,
         'campusbite_share' => round((float)($meta['commission'] ?? 0), 2),
-        'kitchen_share' => round((float)($meta['kitchen_share'] ?? ($paidPesewas / 100 - (float)($meta['commission'] ?? 0))), 2),
+        'refund_recovery' => $recovery,
+        'kitchen_share' => round((float)($meta['kitchen_share'] ?? ($paidPesewas / 100 - (float)($meta['commission'] ?? 0) - $recovery)), 2),
     ];
 }
 $commissionRate = isset($meta['commission_rate']) ? (float)$meta['commission_rate'] : null;
