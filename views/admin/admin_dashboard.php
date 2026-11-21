@@ -11,7 +11,6 @@ require_admin();
 $orderCtrl = new OrderController();
 $summary = $orderCtrl->getPlatformSummary();
 $kitchens = $orderCtrl->getKitchenOverview(date('Y-m-d 00:00:00', strtotime('-6 days')));
-$recentOrders = array_slice($orderCtrl->getAllOrders(), 0, 6);
 
 $accounts = (new CustomerController())->getAllCustomers();
 $roleCount = array_count_values(array_map(function ($c) { return (int)$c['user_role']; }, $accounts));
@@ -36,10 +35,9 @@ $plural = function ($n, $word) { return $n . ' ' . $word . ($n === 1 ? '' : 's')
             <p class="cb-kpi-num"><?php echo $money($summary[$key]['sales']); ?></p>
             <p class="cb-kpi-sub"><?php echo $plural($summary[$key]['orders'], 'order'); ?> · meal sales</p>
             <dl class="cb-kpi-split">
-                <div><dt>Commission</dt><dd><?php echo $money($summary[$key]['commission']); ?></dd></div>
-                <div><dt>Delivery fees (kitchens keep)</dt><dd><?php echo $money($summary[$key]['delivery']); ?></dd></div>
                 <div class="is-total"><dt>CampusBite earns</dt><dd><?php echo $money($summary[$key]['earned']); ?></dd></div>
             </dl>
+            <p class="cb-kpi-sub">Commission on meals. Kitchens also kept <?php echo $money($summary[$key]['delivery']); ?> in delivery fees.</p>
         </section>
     <?php endforeach; ?>
 </div>
@@ -96,36 +94,16 @@ if ($openMessages) {
                 <?php foreach ($kitchens as $k): ?>
                     <tr>
                         <td class="cb-table-name"><a href="kitchen.php?id=<?php echo (int)$k['brand_id']; ?>"><?php echo htmlspecialchars($k['brand_name']); ?></a><span class="cb-table-sub"><?php echo htmlspecialchars($k['zone']); ?> · <?php echo round($k['commission_rate'] * 100); ?>% commission</span></td>
-                        <td><span class="cb-dot-status <?php echo $k['is_active'] ? '' : 'off'; ?>"><?php echo $k['is_active'] ? 'Open' : 'Paused'; ?></span></td>
+                        <td>
+                            <span class="cb-dot-status <?php echo $k['is_active'] ? '' : 'off'; ?>"><?php echo $k['is_active'] ? 'Open' : 'Paused'; ?></span>
+                            <?php if (empty($k['paystack_subaccount'])): ?><a class="cb-no-payout" href="money.php#payout-accounts"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Can't take payments</a><?php endif; ?>
+                        </td>
                         <td><?php echo (int)$k['logins'] > 0 ? $plural((int)$k['logins'], 'login') : '<a class="cb-link" href="users.php?kitchen=' . (int)$k['brand_id'] . '#new-login">Add login</a>'; ?></td>
                         <td class="num"><?php echo (int)$k['meals']; ?><?php if ((int)$k['sold_out'] > 0): ?><span class="cb-table-sub"><?php echo (int)$k['sold_out']; ?> sold out</span><?php endif; ?></td>
                         <td class="num"><?php echo (int)$k['active']; ?></td>
                         <td class="num"><?php echo (int)$k['orders']; ?></td>
                         <td class="num"><?php echo $money($k['sales']); ?></td>
                         <td class="num"><?php echo $money($k['commission']); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
-
-<div class="cb-row"><h2>Latest orders</h2><a class="cb-viewall" href="orders.php">All orders ›</a></div>
-<section class="cb-card">
-    <div class="cb-table-wrap">
-        <table class="cb-table">
-            <thead><tr><th>Invoice</th><th>Kitchen</th><th>Customer</th><th class="num">Total</th><th>Status</th></tr></thead>
-            <tbody>
-                <?php if (empty($recentOrders)): ?>
-                    <tr><td colspan="5" class="cb-table-empty">No orders yet.</td></tr>
-                <?php endif; ?>
-                <?php foreach ($recentOrders as $o): ?>
-                    <tr>
-                        <td class="cb-table-name"><a href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$o['order_id']; ?>">#<?php echo htmlspecialchars($o['invoice_no']); ?></a><span class="cb-table-sub"><?php echo date('M d · h:i A', strtotime($o['order_date'])); ?></span></td>
-                        <td><?php echo htmlspecialchars($o['brand_name'] ?? '–'); ?></td>
-                        <td><?php echo htmlspecialchars($o['customer_name']); ?></td>
-                        <td class="num"><?php echo $money($o['amt'] ?? ((float)$o['items_total'] + (float)$o['delivery_fee'])); ?></td>
-                        <td><span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $o['order_status'])); ?>"><?php echo htmlspecialchars($o['order_status']); ?></span></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

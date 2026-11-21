@@ -106,10 +106,11 @@ function home_path_for_role() {
 }
 
 /**
- * Where staff go when they open a shopper-only page: admins to all orders, kitchens to their own
+ * Where staff go when they open a shopper-only page: kitchens to their orders, admins to their dashboard
+ * (orders belong to the kitchens; the admin has no order list)
  */
 function staff_orders_path() {
-    return is_kitchen() ? '/views/kitchen/kitchen_orders.php' : '/views/admin/orders.php';
+    return is_kitchen() ? '/views/kitchen/kitchen_orders.php' : '/views/admin/admin_dashboard.php';
 }
 
 /**

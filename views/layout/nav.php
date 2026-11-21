@@ -38,7 +38,6 @@ if (is_kitchen()) {
     $navLabel = 'Admin';
     $navLinks = [
         ['/views/admin/admin_dashboard.php', ['admin_dashboard'], 'Dashboard', 'grid'],
-        ['/views/admin/orders.php', ['orders', 'order_tracking'], 'Orders', 'orders'],
         ['/views/admin/brand.php', ['brand', 'kitchen', 'category'], 'Kitchens', 'shop'],
         ['/views/admin/money.php', ['money'], 'Money', 'money'],
         ['/views/admin/users.php', ['users'], 'Users', 'people'],

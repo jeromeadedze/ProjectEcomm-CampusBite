@@ -195,7 +195,7 @@ foreach ($items as $it) {
                         <?php if (!empty($order['kitchen_contact'])): ?>
                             <div class="cb-contact-pills">
                                 <a href="<?php echo phone_tel_url($order['kitchen_contact']); ?>" class="cb-btn cb-btn-quiet">
-                                    <i class="bi bi-telephone-fill" aria-hidden="true"></i> Call <?php echo htmlspecialchars($order['kitchen_contact']); ?>
+                                    <i class="bi bi-telephone" aria-hidden="true"></i> Call <?php echo htmlspecialchars($order['kitchen_contact']); ?>
                                 </a>
                                 <a href="<?php echo phone_wa_url($order['kitchen_contact'], 'Hi ' . ($order['brand_name'] ?? 'kitchen') . ', I am checking on my order #' . $order['invoice_no']); ?>" target="_blank" rel="noopener" class="cb-btn cb-btn-quiet">
                                     <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp

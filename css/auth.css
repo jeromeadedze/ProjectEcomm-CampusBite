@@ -6,7 +6,7 @@
 .cb-toast p{flex:1;margin:0;line-height:1.5}
 .cb-toast>i{font-size:16px;line-height:1.3}
 .cb-toast button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:0 2px;font-size:12px;line-height:1.6}
-.cb-toast button:hover{color:var(--ink)}
+@media (hover:hover){.cb-toast button:hover{color:var(--ink)}}
 .cb-toast-error{border-left-color:var(--ember)}
 .cb-toast-error>i{color:var(--ember)}
 .cb-toast-success>i{color:var(--ink)}
@@ -31,7 +31,7 @@
 .cb-auth .cb-checkout{margin-top:4px}
 .cb-auth-switch{font-size:13px;color:var(--muted);text-align:center;margin:18px 0 0}
 .cb-auth-switch a{color:var(--ember-d);font-weight:600}
-.cb-auth-switch a:hover{color:var(--ink)}
+@media (hover:hover){.cb-auth-switch a:hover{color:var(--ink)}}
 
 @media (max-width:860px){
   .cb-auth{padding:22px 18px}
@@ -48,13 +48,13 @@
 .cb-toast-actions .cb-btn{padding:7px 12px;font-size:12px}
 /* .cb-toast button (the dismiss ×) would otherwise strip the action buttons' fill and border */
 .cb-toast .cb-toast-actions button.cb-btn{background:var(--ink);color:#fff;border:1px solid var(--ink);padding:7px 14px}
-.cb-toast .cb-toast-actions button.cb-btn:hover{background:var(--ember);border-color:var(--ember);color:#fff}
+@media (hover:hover){.cb-toast .cb-toast-actions button.cb-btn:hover{background:var(--ember);border-color:var(--ember);color:#fff}}
 .cb-toast .cb-toast-actions button.cb-btn-quiet{background:var(--card);color:var(--ink);border-color:var(--dash)}
-.cb-toast .cb-toast-actions button.cb-btn-quiet:hover{background:var(--card);border-color:var(--ink);color:var(--ink)}
+@media (hover:hover){.cb-toast .cb-toast-actions button.cb-btn-quiet:hover{background:var(--card);border-color:var(--ink);color:var(--ink)}}
 
 /* Forgot password (Sprint 17) */
 .cb-auth-forgot{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;color:var(--ember-d)}
-.cb-auth-forgot:hover{color:var(--ink)}
+@media (hover:hover){.cb-auth-forgot:hover{color:var(--ink)}}
 .cb-auth a.cb-checkout{display:flex;justify-content:center;text-decoration:none}
 .cb-dev-note{background:var(--ember-soft);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;margin:0 0 18px;overflow-wrap:anywhere}
 .cb-dev-note code{font-size:12px}

@@ -1,6 +1,6 @@
 <?php
 // Admin: one kitchen at a glance. Its money for a date range, its menu and categories (read-only:
-// kitchens manage their own meals in the kitchen portal), recent orders, support messages and staff logins.
+// kitchens manage their own meals in the kitchen portal), support messages and staff logins.
 define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../../core/core.php';
 require_admin();
@@ -9,7 +9,6 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
 require_once __DIR__ . '/../../controllers/SupportController.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
-require_once __DIR__ . '/../../controllers/PayoutController.php';
 
 $productCtrl = new ProductController();
 $orderCtrl = new OrderController();
@@ -46,10 +45,6 @@ foreach ($report['kitchens'] as $row) {
     }
 }
 
-$payoutCtrl = new PayoutController();
-$balance = $payoutCtrl->getBalance($kitchen);
-$payouts = $payoutCtrl->getPayouts($kitchenId, 5);
-
 $meals = $productCtrl->getProductsForKitchen($kitchenId);
 $categories = [];
 foreach ($meals as $meal) {
@@ -62,7 +57,6 @@ ksort($categories);
 $soldOut = count(array_filter($meals, function ($m) { return !(int)$m['is_available']; }));
 
 $byStatus = $orderCtrl->countKitchenOrdersByStatus($kitchenId);
-$recentOrders = array_slice($orderCtrl->getKitchenOrders($kitchenId, 'all'), 0, 6);
 $bestSellers = $orderCtrl->getKitchenBestSellers($kitchenId, 5);
 $messages = (new SupportController())->getMessagesByKitchen($kitchenId);
 $openMessages = count(array_filter($messages, function ($m) { return $m['status'] === 'Open'; }));
@@ -106,39 +100,30 @@ $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kit
         <p class="cb-kpi-sub">Commission on its meal sales</p>
     </section>
     <section class="cb-card cb-kpi">
-        <h2>Kitchen is owed</h2>
+        <h2>Kitchen's share</h2>
         <p class="cb-kpi-num"><?php echo $money($figures['owed'] ?? 0); ?></p>
-        <p class="cb-kpi-sub">Includes <?php echo $money($figures['delivery'] ?? 0); ?> in delivery fees</p>
+        <p class="cb-kpi-sub">Paid to it by Paystack, incl. <?php echo $money($figures['delivery'] ?? 0); ?> delivery</p>
     </section>
     <section class="cb-card cb-kpi">
         <h2>Still in progress</h2>
         <p class="cb-kpi-num"><?php echo $money($figures['pending_value'] ?? 0); ?></p>
-        <p class="cb-kpi-sub"><?php echo $plural($figures['pending_orders'] ?? 0, 'order'); ?>, not owed until delivered</p>
+        <p class="cb-kpi-sub"><?php echo $plural($figures['pending_orders'] ?? 0, 'order'); ?>, not counted until delivered</p>
     </section>
 </div>
 <p class="cb-field-hint">Orders placed <?php echo date('M j, Y', strtotime($from)); ?> – <?php echo date('M j, Y', strtotime($to)); ?>. The same figures as this kitchen's row on the <a class="cb-link" href="money.php?from=<?php echo urlencode($from); ?>&amp;to=<?php echo urlencode($to); ?>">Money</a> page.</p>
 
-<div class="cb-row">
-    <h2>Payouts</h2>
-    <?php if ($balance['balance'] > 0): ?><a class="cb-viewall" href="money.php?pay=<?php echo $kitchenId; ?>#record-payout">Record payout ›</a><?php endif; ?>
-</div>
+<div class="cb-row"><h2>How <?php echo htmlspecialchars($kitchen['brand_name']); ?> gets paid</h2></div>
 <section class="cb-card">
-    <dl class="cb-kpi-split cb-money-check">
-        <div><dt>Earned on delivered orders, all time</dt><dd><?php echo $money($balance['earned']); ?></dd></div>
-        <div><dt>Paid out by CampusBite</dt><dd>− <?php echo $money($balance['paid']); ?></dd></div>
-        <div class="is-total"><dt>Balance owed</dt><dd><?php echo $money($balance['balance']); ?></dd></div>
-    </dl>
-    <?php if (empty($payouts)): ?>
-        <p class="cb-muted">Nothing paid out yet.</p>
+    <?php $payoutLabel = ProductController::payoutLabel($kitchen); ?>
+    <?php if ($payoutLabel): ?>
+        <dl class="cb-facts">
+            <div><dt>Payout account</dt><dd><?php echo htmlspecialchars($payoutLabel); ?></dd></div>
+            <?php if (!empty($kitchen['payout_account_name'])): ?><div><dt>Name on the account</dt><dd><?php echo htmlspecialchars($kitchen['payout_account_name']); ?></dd></div><?php endif; ?>
+            <div><dt>Paystack subaccount</dt><dd><?php echo htmlspecialchars($kitchen['paystack_subaccount']); ?></dd></div>
+        </dl>
+        <p class="cb-field-hint">Paystack pays the kitchen's share of each order to this account when the customer pays; CampusBite keeps its <?php echo round($kitchen['commission_rate'] * 100); ?>% commission. The kitchen manages the account under Kitchen info.</p>
     <?php else: ?>
-        <ul class="cb-kitchen-best cb-payout-list">
-            <?php foreach ($payouts as $p): ?>
-                <li>
-                    <span><?php echo date('M j, Y', strtotime($p['paid_on'])); ?> · <?php echo htmlspecialchars($p['method']); ?><?php echo $p['reference'] ? ' · ' . htmlspecialchars($p['reference']) : ''; ?></span>
-                    <b><?php echo $money($p['amount']); ?></b>
-                </li>
-            <?php endforeach; ?>
-        </ul>
+        <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> No payout account yet, so customers can't pay for this kitchen's meals. The kitchen's staff add one under Kitchen info.</p>
     <?php endif; ?>
 </section>
 
@@ -193,35 +178,6 @@ $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kit
 
 <div class="cb-bill">
     <div>
-        <div class="cb-row">
-            <h2>Recent orders</h2>
-            <span class="cb-muted"><?php echo $plural($inProgress, 'order'); ?> in progress</span>
-        </div>
-        <section class="cb-card">
-            <?php if (empty($recentOrders)): ?>
-                <p class="cb-muted">No orders yet.</p>
-            <?php else: ?>
-                <div class="cb-table-wrap">
-                    <table class="cb-table">
-                        <thead><tr><th>Order</th><th>Customer</th><th class="num">Total</th><th>Status</th></tr></thead>
-                        <tbody>
-                            <?php foreach ($recentOrders as $o): ?>
-                                <tr>
-                                    <td class="cb-table-name">
-                                        <a href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$o['order_id']; ?>">#<?php echo htmlspecialchars($o['invoice_no']); ?></a>
-                                        <span class="cb-table-sub"><?php echo date('M d · h:i A', strtotime($o['order_date'])); ?></span>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($o['customer_name']); ?></td>
-                                    <td class="num"><?php echo $money((float)$o['items_total'] + (float)$o['delivery_fee']); ?></td>
-                                    <td><span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $o['order_status'])); ?>"><?php echo htmlspecialchars($o['order_status']); ?></span></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-        </section>
-
         <div class="cb-row">
             <h2>Support messages</h2>
             <a class="cb-viewall" href="messages.php">All messages ›</a>

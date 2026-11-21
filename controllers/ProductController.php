@@ -129,6 +129,66 @@ class ProductController
         return $this->productModel->updateBrandInfo($id, $location, $isActive, $phone);
     }
 
+    /**
+     * A kitchen sets where Paystack pays it: a Mobile Money number or a Ghana bank account. The account is created
+     * (or updated) as the kitchen's Paystack subaccount first, and only saved here once Paystack accepts it.
+     * Returns ['error' => message or null, 'values' => what was typed, to refill the form].
+     */
+    public function savePayoutAccount($brandId, $input)
+    {
+        require_once __DIR__ . '/../core/paystack.php';
+        $kitchen = $this->productModel->getBrandById($brandId);
+        $values = [
+            'payout_bank_code' => trim((string)($input['payout_bank_code'] ?? '')),
+            'payout_account_number' => preg_replace('/\s+/', '', (string)($input['payout_account_number'] ?? '')),
+            'payout_account_name' => trim(preg_replace('/\s+/', ' ', (string)($input['payout_account_name'] ?? ''))),
+        ];
+        // One list of networks and banks; which one was picked decides the account type
+        $momo = paystack_payout_options('mobile_money');
+        $banks = paystack_payout_options('bank');
+        $options = $momo + $banks;
+        $isMomo = isset($momo[$values['payout_bank_code']]);
+        $values['payout_type'] = $isMomo ? 'mobile_money' : 'bank';
+
+        $error = null;
+        if (!$kitchen) {
+            $error = "That kitchen doesn't exist.";
+        } elseif (!paystack_configured() || !$options) {
+            $error = "Paystack couldn't be reached to check the account. Try again in a minute.";
+        } elseif (!isset($options[$values['payout_bank_code']])) {
+            $error = 'Choose your Mobile Money network or bank.';
+        } elseif ($isMomo && !preg_match('/^0\d{9}$/', $values['payout_account_number'])) {
+            $error = 'Enter the Mobile Money number as 10 digits starting with 0, e.g. 0241234567.';
+        } elseif (!$isMomo && !preg_match('/^\d{8,20}$/', $values['payout_account_number'])) {
+            $error = 'Enter the bank account number: 8 to 20 digits, no spaces or dashes.';
+        } elseif (mb_strlen($values['payout_account_name']) < 2 || mb_strlen($values['payout_account_name']) > 100) {
+            $error = 'Enter the name the account is registered in, as the network or bank has it.';
+        }
+        if ($error) {
+            return ['error' => $error, 'values' => $values];
+        }
+
+        $saved = paystack_save_subaccount($kitchen['paystack_subaccount'] ?? null, $kitchen['brand_name'], $values['payout_bank_code'],
+            $values['payout_account_number'], round((float)$kitchen['commission_rate'] * 100, 2), (string)($kitchen['brand_phone'] ?? ''));
+        if (!$saved['ok']) {
+            return ['error' => 'Paystack didn\'t accept that account: ' . rtrim($saved['message'], '.') . '. Check the details and try again.', 'values' => $values];
+        }
+        $this->productModel->setPayoutAccount($brandId, $values['payout_type'], $values['payout_bank_code'], $options[$values['payout_bank_code']],
+            $values['payout_account_number'], $saved['account_name'] ?: $values['payout_account_name'], $saved['code']);
+        return ['error' => null, 'values' => $values];
+    }
+
+    /** "MTN Mobile Money ·· 4567" style label for a kitchen's payout account, or null when none is set */
+    public static function payoutLabel($kitchen)
+    {
+        if (empty($kitchen['paystack_subaccount'])) {
+            return null;
+        }
+        $bank = $kitchen['payout_bank_name'] ?: $kitchen['payout_bank_code'];
+        $suffix = $kitchen['payout_type'] === 'mobile_money' ? ' Mobile Money' : '';
+        return $bank . $suffix . ' ·· ' . substr((string)$kitchen['payout_account_number'], -4);
+    }
+
     public function getProductsForKitchen($brandId)
     {
         return $this->productModel->getProductsForKitchen($brandId);

@@ -10,14 +10,18 @@
 
 .cb-admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 .cb-admin-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.cb-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:999px;padding:11px 22px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s}
+.cb-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:999px;padding:11px 22px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s,scale .15s ease-out}
 .cb-btn-quiet{background:var(--card);color:var(--ink);border-color:var(--dash)}
 
 .cb-field textarea{width:100%;background:var(--paper);border:1px solid var(--field-line);border-radius:14px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--ink);resize:vertical}
 .cb-field textarea:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
 .cb-field input[type=file]{font-size:13px}
 
-.cb-table-wrap{overflow-x:auto;margin:0 -6px;position:relative}
+.cb-table-wrap{overflow-x:auto;margin:0 -6px;position:relative;transition:box-shadow .15s}
+/* main.js marks a table that has more columns off to one side; an inner shadow on that edge shows it scrolls */
+.cb-table-wrap.has-more-right{box-shadow:inset -14px 0 10px -10px rgba(15,15,15,.28)}
+.cb-table-wrap.has-more-left{box-shadow:inset 14px 0 10px -10px rgba(15,15,15,.28)}
+.cb-table-wrap.has-more-left.has-more-right{box-shadow:inset 14px 0 10px -10px rgba(15,15,15,.28),inset -14px 0 10px -10px rgba(15,15,15,.28)}
 .cb-table{width:100%;border-collapse:collapse;font-size:13px}
 .cb-table th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:0 6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 .cb-table td{padding:11px 6px;border-bottom:1px solid var(--line);vertical-align:middle}

@@ -90,7 +90,7 @@ require_once __DIR__ . '/layout/header.php';
                     </div>
                     <div class="cb-direct-contact-actions">
                         <a id="btn_call_kitchen" href="#" class="cb-btn cb-btn-quiet">
-                            <i class="bi bi-telephone-fill" aria-hidden="true"></i> <span id="lbl_call_kitchen">Call</span>
+                            <i class="bi bi-telephone" aria-hidden="true"></i> <span id="lbl_call_kitchen">Call</span>
                         </a>
                         <a id="btn_wa_kitchen" href="#" target="_blank" rel="noopener" class="cb-btn cb-btn-quiet">
                             <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp

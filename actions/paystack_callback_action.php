@@ -81,19 +81,31 @@ if (($data['currency'] ?? '') !== 'GHS' || $paidPesewas !== to_pesewas($expected
     payment_failed('mismatch', $reference);
 }
 
+// Who got what: Paystack reports the subaccount it paid; the shares come from the split set at checkout
+$split = null;
+$subaccount = (string)($data['subaccount']['subaccount_code'] ?? $meta['subaccount'] ?? '');
+if ($subaccount !== '') {
+    $split = [
+        'subaccount' => $subaccount,
+        'campusbite_share' => round((float)($meta['commission'] ?? 0), 2),
+        'kitchen_share' => round((float)($meta['kitchen_share'] ?? ($paidPesewas / 100 - (float)($meta['commission'] ?? 0))), 2),
+    ];
+}
+$commissionRate = isset($meta['commission_rate']) ? (float)$meta['commission_rate'] : null;
+
 $cartCtrl = new CartController();
 try {
     $orderCtrl->beginTransaction();
 
     $orderId = $orderCtrl->createOrder($userId, (int)$meta['brand_id'], mt_rand(100000, 999999), $meta['delivery_zone'],
-        (float)$meta['delivery_fee'], $meta['drop_location'], $meta['notes'] ?? '');
+        (float)$meta['delivery_fee'], $meta['drop_location'], $meta['notes'] ?? '', $commissionRate);
     if (!$orderId) {
         throw new RuntimeException('Order row was not created');
     }
     foreach ($meta['items'] as $item) {
         $orderCtrl->addOrderDetail($orderId, (int)$item['p_id'], (int)$item['qty'], (float)$item['price'], $item['notes'] ?? null);
     }
-    $orderCtrl->recordPayment($paidPesewas / 100, $userId, $orderId, paystack_channel_label($data['channel'] ?? ''), $reference, true);
+    $orderCtrl->recordPayment($paidPesewas / 100, $userId, $orderId, paystack_channel_label($data['channel'] ?? ''), $reference, true, $split);
     $cartCtrl->clearCart(get_cart_token(), $userId);
 
     $orderCtrl->commit();

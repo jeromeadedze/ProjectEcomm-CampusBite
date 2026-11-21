@@ -27,7 +27,7 @@ button,input,select{font:inherit}
 .cb-nav>a:last-of-type{margin-right:auto}
 .cb-nav::-webkit-scrollbar{display:none}
 .cb-nav a{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:500;color:#3A3C40;white-space:nowrap;transition:background .15s,color .15s}
-.cb-nav a:hover{color:var(--ember)}
+@media (hover:hover){.cb-nav a:hover{color:var(--ember)}}
 .cb-nav a.is-active{background:var(--ember-soft);color:var(--ember-d)}
 .cb-nav svg{width:18px;height:18px;flex:none}
 .cb-nav .cb-nav-phone{display:none}
@@ -38,13 +38,13 @@ button,input,select{font:inherit}
 .cb-search:focus-within{outline:2px solid var(--ember)}
 .cb-search svg{width:17px;height:17px;color:var(--ink);flex:none}
 .cb-cart-pill{display:flex;align-items:center;gap:8px;background:var(--ember);color:#fff;border-radius:999px;padding:11px 20px;font-size:14px;font-weight:600;transition:background .15s}
-.cb-cart-pill:hover{background:var(--ember-d);color:#fff}
+@media (hover:hover){.cb-cart-pill:hover{background:var(--ember-d);color:#fff}}
 .cb-cart-pill svg{width:18px;height:18px}
 .cb-cart-count{background:#fff;color:var(--ember);border-radius:999px;min-width:20px;height:20px;padding:0 6px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .cb-avatar{width:44px;height:44px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;flex:none}
-.cb-avatar:hover{background:var(--ember);color:#fff}
+@media (hover:hover){.cb-avatar:hover{background:var(--ember);color:#fff}}
 .cb-signin{background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:12px 20px;border-radius:999px;white-space:nowrap}
-.cb-signin:hover{background:var(--ember);color:#fff}
+@media (hover:hover){.cb-signin:hover{background:var(--ember);color:#fff}}
 
 /* Page and order panel */
 .cb-body{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start;flex:1}
@@ -61,7 +61,7 @@ button,input,select{font:inherit}
 .cb-hero p{font-size:13px;opacity:.92;margin:0;max-width:380px;line-height:1.6;position:relative}
 .cb-hero-btn{display:inline-flex;align-items:center;gap:10px;margin-top:18px;background:#fff;color:var(--ink);font-size:13px;font-weight:600;padding:8px 20px 8px 8px;border-radius:999px;position:relative}
 .cb-hero-btn::before{content:"\F138";font-family:'bootstrap-icons';width:34px;height:34px;border-radius:50%;background:var(--ember);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
-.cb-hero-btn:hover{color:var(--ember)}
+@media (hover:hover){.cb-hero-btn:hover{color:var(--ember)}}
 .cb-hero-media{position:relative;width:190px;flex:none;display:flex;justify-content:center}
 .cb-hero-media img{max-height:170px;width:auto;object-fit:contain;margin-bottom:-30px}
 .cb-hero-emoji{font-size:110px;line-height:1}
@@ -72,7 +72,8 @@ button,input,select{font:inherit}
 /* Kitchen cards */
 .cb-vendors{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
 .cb-vcard{background:var(--card);border:1.5px dashed var(--dash);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:3px;transition:border-color .15s,transform .15s}
-.cb-vcard:hover{border-color:var(--ember);transform:translateY(-2px)}
+@media (hover:hover){.cb-vcard:hover{border-color:var(--ember)}}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){.cb-vcard:hover{transform:translateY(-2px)}}
 .cb-vcard-icon{width:48px;height:48px;border-radius:50%;background:var(--ember-soft);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px}
 .cb-vcard b{font-size:14px;font-weight:600}
 .cb-vcard span{font-size:12px;color:var(--muted)}
@@ -83,31 +84,31 @@ button,input,select{font:inherit}
 /* Categories: pills with a round icon */
 .cb-cats{display:flex;flex-wrap:wrap;gap:10px}
 .cb-cat{display:inline-flex;align-items:center;gap:10px;background:var(--card);border-radius:999px;padding:6px 18px 6px 6px;font-size:13px;font-weight:500;color:var(--ink);transition:background .15s,color .15s}
-.cb-cat:hover{background:var(--ink);color:#fff}
+@media (hover:hover){.cb-cat:hover{background:var(--ink);color:#fff}}
 .cb-cat-icon{width:38px;height:38px;border-radius:50%;background:var(--ember-soft);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
 .cb-cat-icon img{width:38px;height:38px;border-radius:50%;object-fit:cover}
 
 /* Filter chips */
 .cb-chips{display:flex;gap:8px;margin:20px 0 18px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .cb-chips::-webkit-scrollbar{display:none}
-.cb-chip{flex:none;border:0;background:var(--card);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;text-decoration:none;transition:background .15s,color .15s}
-.cb-chip:hover{color:var(--ember)}
+.cb-chip{flex:none;border:0;background:var(--card);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;text-decoration:none;transition:background .15s,color .15s,scale .15s ease-out}
+@media (hover:hover){.cb-chip:hover{color:var(--ember)}}
 .cb-chip.is-on{background:var(--ink);color:#fff}
 
 /* Meal cards: dashed outline, round plate, black + button */
 .cb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
 .cb-dish{background:var(--card);border:1.5px dashed var(--dash);border-radius:22px;padding:16px;position:relative;display:flex;flex-direction:column;transition:border-color .15s}
-.cb-dish:hover{border-color:var(--ember)}
+@media (hover:hover){.cb-dish:hover{border-color:var(--ember)}}
 .cb-dish[hidden]{display:none}
 .cb-badge{position:absolute;top:14px;left:0;background:var(--ember);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:0 999px 999px 0;z-index:1}
-.cb-heart{position:absolute;top:12px;right:12px;width:32px;height:32px;border:0;border-radius:50%;background:var(--paper);cursor:pointer;color:#B5B7BD;z-index:1;padding:0}
+.cb-heart{position:absolute;top:12px;right:12px;width:32px;height:32px;border:0;border-radius:50%;background:var(--paper);cursor:pointer;color:var(--field-line);z-index:1;padding:0}
 .cb-heart.is-on{color:var(--ember)}
-.cb-heart svg{width:17px;height:17px}
+.cb-heart i{font-size:16px;line-height:1;margin-top:1px}
 .cb-dish-img{width:72%;aspect-ratio:1;margin:8px auto 14px;display:flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;background:var(--paper);box-shadow:0 10px 24px rgba(15,15,15,.12)}
-.cb-dish-img img{width:100%;height:100%;object-fit:cover}
+.cb-dish-img img{width:100%;height:100%;object-fit:cover;border-radius:50%;outline:1px solid rgba(0,0,0,.1);outline-offset:-1px}
 .cb-dish-emoji{font-size:58px;line-height:1}
 .cb-vchip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:var(--muted);width:max-content}
-.cb-vchip:hover{color:var(--ember)}
+@media (hover:hover){.cb-vchip:hover{color:var(--ember)}}
 .cb-vchip i{font-style:normal;font-size:10px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--ember-soft);color:var(--ember-d)}
 .cb-vchip i.b{background:var(--ink);color:#fff}
 .cb-dish-name{font-size:15px;font-weight:600;margin:4px 0 2px;line-height:1.35}
@@ -115,8 +116,9 @@ button,input,select{font:inherit}
 .cb-dish-foot form{margin:0}
 .cb-price{font-size:15px;font-weight:600;color:var(--ember)}
 .cb-price s{font-size:11.5px;color:var(--muted);font-weight:400;margin-left:4px}
-.cb-add{width:34px;height:34px;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .15s}
-.cb-add:hover{background:var(--ember);transform:scale(1.06)}
+.cb-add{width:34px;height:34px;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .15s,scale .15s ease-out}
+@media (hover:hover){.cb-add:hover{background:var(--ember)}}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){.cb-add:hover{transform:scale(1.06)}}
 .cb-add[disabled]{opacity:.5}
 .cb-recent-meta{font-size:12px;color:var(--muted)}
 .cb-empty{font-size:12.5px;color:var(--muted);padding:18px;border:1.5px dashed var(--dash);border-radius:18px;text-align:center}
@@ -133,15 +135,15 @@ button,input,select{font:inherit}
 .cb-pairings .cb-dish-foot{padding-top:4px;align-self:end}
 
 /* Order panel */
-.cb-panel{background:var(--paper);border-radius:24px;padding:24px 22px;display:flex;flex-direction:column;position:sticky;top:96px;max-height:calc(100vh - 116px);overflow-y:auto}
+.cb-panel{background:var(--paper);border-radius:24px;padding:24px 22px;display:flex;flex-direction:column;position:sticky;top:96px;max-height:calc(100vh - 116px);overflow-y:auto;overscroll-behavior:contain}
 .cb-panel-head{display:flex;align-items:center;gap:10px}
 .cb-panel-head h2{flex:1}
 .cb-panel-count{font-size:13px;color:var(--muted)}
 .cb-panel-close{width:32px;height:32px;border-radius:50%;border:0;background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s}
-.cb-panel-close:hover{background:var(--ember-soft);color:var(--ember)}
+@media (hover:hover){.cb-panel-close:hover{background:var(--ember-soft);color:var(--ember)}}
 .cb-panel-close svg{width:15px;height:15px}
 .cb-panel-bills{display:block;text-align:center;font-size:12.5px;font-weight:600;color:var(--muted);margin-top:12px}
-.cb-panel-bills:hover{color:var(--ember)}
+@media (hover:hover){.cb-panel-bills:hover{color:var(--ember)}}
 .cb-menu{margin-top:8px;flex:1}
 .cb-tray-vendor{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#4A4C52;margin:16px 0 10px}
 .cb-tray-vendor .cb-zone{margin-top:0;text-transform:none;letter-spacing:0}
@@ -156,8 +158,8 @@ button,input,select{font:inherit}
 
 /* Round − count + buttons (order panel and product page) */
 .cb-qty{display:flex;align-items:center;gap:6px;margin:0;flex:none}
-.cb-qty button{width:26px;height:26px;border-radius:50%;border:0;background:var(--window);color:var(--ink);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
-.cb-qty button:hover:not([disabled]){background:var(--ink);color:#fff}
+.cb-qty button{width:26px;height:26px;border-radius:50%;border:0;background:var(--window);color:var(--ink);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s,scale .15s ease-out}
+@media (hover:hover){.cb-qty button:hover:not([disabled]){background:var(--ink);color:#fff}}
 .cb-qty button[disabled]{opacity:.4;cursor:not-allowed}
 .cb-qty output,.cb-qty input{min-width:18px;width:24px;text-align:center;font-weight:600;font-size:13px;border:0;background:transparent;padding:0;-moz-appearance:textfield}
 .cb-qty input::-webkit-outer-spin-button,.cb-qty input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -172,8 +174,8 @@ button,input,select{font:inherit}
 .cb-totals div span:last-child{color:var(--ink);font-weight:500;text-transform:none;letter-spacing:0}
 .cb-totals div.total{color:var(--ink);font-weight:700}
 .cb-totals div.total span:last-child{font-size:18px;font-weight:700}
-.cb-checkout{width:100%;margin-top:16px;background:var(--ember);color:#fff;border:0;border-radius:999px;padding:17px;font-weight:600;font-size:15px;cursor:pointer;transition:background .15s}
-.cb-checkout:hover{background:var(--ember-d);color:#fff}
+.cb-checkout{width:100%;margin-top:16px;background:var(--ember);color:#fff;border:0;border-radius:999px;padding:17px;font-weight:600;font-size:15px;cursor:pointer;transition:background .15s,scale .15s ease-out}
+@media (hover:hover){.cb-checkout:hover{background:var(--ember-d);color:#fff}}
 .cb-checkout[disabled]{opacity:.45;cursor:not-allowed;background:var(--ink)}
 
 /* Shopper tab bar on phones (the same links as the top bar) */
@@ -237,7 +239,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 /* Home and menu pages */
 .cb-sub{font-size:13px;color:var(--muted);margin:-10px 0 18px}
 .cb-link{color:var(--ember);font-weight:600}
-.cb-link:hover{color:var(--ember-d)}
+@media (hover:hover){.cb-link:hover{color:var(--ember-d)}}
 .cb-vcard-icon i,.cb-cat-icon i{font-size:inherit;line-height:1;color:var(--ember)}
 .cb-hero-emoji i{color:#fff}
 .cb-dish-emoji i{color:var(--ember)}
@@ -247,13 +249,14 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 /* Heart on dish cards: the form wrapper takes the corner, the button sits inside it */
 .cb-heart-form{position:absolute;top:12px;right:12px;z-index:1;margin:0}
 .cb-heart-form .cb-heart{position:static}
-.cb-heart{display:flex;align-items:center;justify-content:center;transition:color .15s,transform .15s}
-.cb-heart:hover{color:var(--ember);transform:scale(1.1)}
+.cb-heart{display:flex;align-items:center;justify-content:center;transition:color .15s,transform .15s,scale .15s ease-out}
+@media (hover:hover){.cb-heart:hover{color:var(--ember)}}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){.cb-heart:hover{transform:scale(1.1)}}
 
 /* Quantity stepper: buttons around a number (product page) or a count (bill) */
 .cb-stepper{display:inline-flex;align-items:center;gap:6px;margin:0}
-.cb-stepper button{width:30px;height:30px;border-radius:50%;border:0;background:var(--window);font-size:16px;line-height:1;color:var(--ink);cursor:pointer;transition:background .15s,color .15s}
-.cb-stepper button:hover:not([disabled]){background:var(--ink);color:#fff}
+.cb-stepper button{width:30px;height:30px;border-radius:50%;border:0;background:var(--window);font-size:16px;line-height:1;color:var(--ink);cursor:pointer;transition:background .15s,color .15s,scale .15s ease-out}
+@media (hover:hover){.cb-stepper button:hover:not([disabled]){background:var(--ink);color:#fff}}
 .cb-stepper button[disabled]{color:#C9CBD0;cursor:not-allowed}
 .cb-stepper input,.cb-stepper output{width:30px;text-align:center;font-weight:600;font-size:14px;border:0;background:transparent;padding:0;-moz-appearance:textfield}
 .cb .cb-field .cb-stepper input{width:46px;border:0;background:transparent;padding:0}
@@ -273,8 +276,8 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-meal-form{margin:0}
 .cb-meal-form .cb-field input{background:var(--card);border:1.5px dashed var(--dash);border-radius:16px}
 .cb-meal-buy{display:flex;align-items:center;gap:18px;margin-top:22px;flex-wrap:wrap}
-.cb-cta{flex:1;min-width:240px;display:flex;align-items:center;background:var(--ink);color:#fff;border:0;border-radius:999px;padding:6px 6px 6px 26px;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s}
-.cb-cta:hover{background:var(--ember)}
+.cb-cta{flex:1;min-width:240px;display:flex;align-items:center;background:var(--ink);color:#fff;border:0;border-radius:999px;padding:6px 6px 6px 26px;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,scale .15s ease-out}
+@media (hover:hover){.cb-cta:hover{background:var(--ember)}}
 .cb-cta-price{padding-right:22px;border-right:1px solid rgba(255,255,255,.3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cb-cta span:last-child{flex:1;text-align:center;padding:12px 20px}
 .cb-meal-save{margin-top:12px}
@@ -299,7 +302,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-bill-note i{color:var(--ember)}
 .cb-bill-line{font-weight:600;color:var(--ember);text-align:right;white-space:nowrap}
 .cb-bill-remove{width:34px;height:34px;border-radius:50%;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px}
-.cb-bill-remove:hover{background:var(--ember-soft);color:var(--ember-d)}
+@media (hover:hover){.cb-bill-remove:hover{background:var(--ember-soft);color:var(--ember-d)}}
 .cb-bill-item form{margin:0}
 .cb-bill-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:-4px}
 .cb-bill-foot form{margin:0}
@@ -367,7 +370,8 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-kpi-split dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
 .cb-queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
 .cb .cb-card.cb-queue-step{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:16px 18px;margin-bottom:0;transition:border-color .15s,transform .15s}
-.cb .cb-card.cb-queue-step:hover{border-color:var(--ember);transform:translateY(-2px)}
+@media (hover:hover){.cb .cb-card.cb-queue-step:hover{border-color:var(--ember)}}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){.cb .cb-card.cb-queue-step:hover{transform:translateY(-2px)}}
 .cb-queue-num{font-family:'Poppins',system-ui,sans-serif;font-size:28px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
 .cb-kitchen-split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;margin-top:24px}
 .cb-best{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
@@ -483,7 +487,8 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 
 .cb-order-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .cb-order-card{background:var(--card);border:1.5px dashed var(--dash);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s,transform .15s}
-.cb-order-card:hover{border-color:var(--ember);transform:translateY(-2px)}
+@media (hover:hover){.cb-order-card:hover{border-color:var(--ember)}}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){.cb-order-card:hover{transform:translateY(-2px)}}
 .cb-order-card p{margin:0;font-size:12.5px}
 .cb-order-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .cb-order-card-head b{font-size:16px}
@@ -561,11 +566,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-ticket-reject{display:block;margin-top:10px;font-size:12.5px}
 .cb-ticket-cancelled{margin:12px 0 0;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* Kitchen payouts (Sprint 16) */
-.cb-payout-list{margin-top:6px}
-.cb-payout-list li b{flex-shrink:0;white-space:nowrap}
-.cb-payout-list li .cb-table-sub{white-space:normal;text-align:left}
-#record-payout{scroll-margin-top:90px}
+#payout{scroll-margin-top:90px}
 
 /* Support conversations (Sprint 18) */
 .cb-thread{list-style:none;margin:10px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line);display:grid;gap:8px}
@@ -583,14 +584,28 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-reply-actions .cb-btn{margin-left:auto}
 .cb-check{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
 .cb-check input{width:16px;height:16px;accent-color:var(--ember)}
-.cb-wait-chip{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:999px;background:var(--paper);color:var(--muted);font-size:11px;font-weight:600;vertical-align:1px}
+.cb-wait-chip{display:inline-block;white-space:nowrap;margin-left:6px;padding:2px 9px;border-radius:999px;background:var(--paper);color:var(--muted);font-size:11px;font-weight:600;vertical-align:1px}
 .cb-wait-chip.is-you{background:var(--ember-soft);color:var(--ember-d)}
 .cb-messages li[id^="message-"]{scroll-margin-top:100px}
 .cb-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* Customer page (Sprint 20) */
 .cb-link-quiet{color:inherit;text-decoration:underline;text-decoration-color:var(--dash);text-underline-offset:3px}
-.cb-link-quiet:hover{color:var(--ember-d);text-decoration-color:currentColor}
+@media (hover:hover){.cb-link-quiet:hover{color:var(--ember-d);text-decoration-color:currentColor}}
 
 /* Kitchen customers: call and WhatsApp buttons under the customer's details */
 .cb-customer-contact{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px}
+/* Sprint 22: a plain warning line (kitchen without a payout account, checkout that can't take payment) */
+.cb .cb-warn-note{display:flex;gap:8px;align-items:flex-start;background:var(--ember-soft);color:var(--ember-d);border-radius:14px;padding:12px 14px;font-weight:600;font-size:14px;line-height:1.45;margin:0 0 14px}
+.cb .cb-warn-note i{flex:none;margin-top:1px}
+.cb .cb-warn-note a{color:inherit;text-decoration:underline}
+/* Warnings that aren't an order status: a kitchen that can't take payments, a payment check problem */
+.cb-status-warn{background:var(--ember-soft);border-color:#F8C2C8;color:var(--ember-d)}
+.cb-no-payout{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:12px;font-weight:600;color:var(--ember-d);text-decoration:none;white-space:nowrap}
+@media (hover:hover){.cb-no-payout:hover{text-decoration:underline}}
+/* Press feedback: a pressed control shrinks slightly (not when disabled, and not under reduced motion) */
+.cb-add,.cb-checkout,.cb-btn,.cb-cta,.cb-chip,.cb-qty button,.cb-heart,.cb-stepper button,.cb-cat,.cb-hero-btn,.cb-cart-pill{-webkit-tap-highlight-color:transparent}
+@media (prefers-reduced-motion:no-preference){
+  .cb-add:not(:disabled):active,.cb-checkout:not(:disabled):active,.cb-btn:not(:disabled):active,.cb-cta:not(:disabled):active,
+  .cb-chip:active,.cb-qty button:not(:disabled):active,.cb-heart:active,.cb-stepper button:not(:disabled):active{scale:.96}
+}
