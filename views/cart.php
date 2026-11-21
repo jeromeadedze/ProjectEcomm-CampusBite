@@ -17,6 +17,12 @@ $deliveryZone = $cartCtrl->deliveryZoneFor($cartItems);
 $grandTotal = $subtotal + $deliveryFee;
 $hasUnavailable = !empty($cartCtrl->unavailableItems($cartItems));
 $hasMixedKitchens = count($cartCtrl->kitchenIds($cartItems)) > 1;
+// A kitchen without a payout account can't be paid through Paystack yet
+$cantTakePayment = false;
+if (!$hasMixedKitchens && $cartItems) {
+    $billKitchen = (new ProductController())->getBrandById((int)$cartCtrl->kitchenIds($cartItems)[0]);
+    $cantTakePayment = !$billKitchen || empty($billKitchen['paystack_subaccount']);
+}
 $mealCount = array_sum(array_column($cartItems, 'qty'));
 
 // Group the meals by kitchen, keeping each kitchen's zone for its badge
@@ -121,6 +127,9 @@ foreach ($cartItems as $item) {
                 <button type="button" class="cb-checkout" disabled>Keep meals from one kitchen to check out</button>
             <?php elseif ($hasUnavailable): ?>
                 <button type="button" class="cb-checkout" disabled>Remove unavailable meals to check out</button>
+            <?php elseif ($cantTakePayment): ?>
+                <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> <?php echo htmlspecialchars($billKitchen['brand_name'] ?? 'This kitchen'); ?> can't take online payments yet. Try again later or order from another kitchen.</p>
+                <button type="button" class="cb-checkout" disabled>Checkout unavailable</button>
             <?php elseif (is_logged_in()): ?>
                 <a class="cb-checkout cb-checkout-link" href="<?php echo $ROOT_DIR; ?>/views/checkout.php">Proceed to checkout</a>
             <?php else: ?>

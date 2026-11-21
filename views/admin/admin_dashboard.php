@@ -35,10 +35,9 @@ $plural = function ($n, $word) { return $n . ' ' . $word . ($n === 1 ? '' : 's')
             <p class="cb-kpi-num"><?php echo $money($summary[$key]['sales']); ?></p>
             <p class="cb-kpi-sub"><?php echo $plural($summary[$key]['orders'], 'order'); ?> · meal sales</p>
             <dl class="cb-kpi-split">
-                <div><dt>Commission</dt><dd><?php echo $money($summary[$key]['commission']); ?></dd></div>
-                <div><dt>Delivery fees (kitchens keep)</dt><dd><?php echo $money($summary[$key]['delivery']); ?></dd></div>
                 <div class="is-total"><dt>CampusBite earns</dt><dd><?php echo $money($summary[$key]['earned']); ?></dd></div>
             </dl>
+            <p class="cb-kpi-sub">Commission on meals. Kitchens also kept <?php echo $money($summary[$key]['delivery']); ?> in delivery fees.</p>
         </section>
     <?php endforeach; ?>
 </div>
@@ -95,7 +94,10 @@ if ($openMessages) {
                 <?php foreach ($kitchens as $k): ?>
                     <tr>
                         <td class="cb-table-name"><a href="kitchen.php?id=<?php echo (int)$k['brand_id']; ?>"><?php echo htmlspecialchars($k['brand_name']); ?></a><span class="cb-table-sub"><?php echo htmlspecialchars($k['zone']); ?> · <?php echo round($k['commission_rate'] * 100); ?>% commission</span></td>
-                        <td><span class="cb-dot-status <?php echo $k['is_active'] ? '' : 'off'; ?>"><?php echo $k['is_active'] ? 'Open' : 'Paused'; ?></span></td>
+                        <td>
+                            <span class="cb-dot-status <?php echo $k['is_active'] ? '' : 'off'; ?>"><?php echo $k['is_active'] ? 'Open' : 'Paused'; ?></span>
+                            <?php if (empty($k['paystack_subaccount'])): ?><a class="cb-no-payout" href="money.php#payout-accounts"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Can't take payments</a><?php endif; ?>
+                        </td>
                         <td><?php echo (int)$k['logins'] > 0 ? $plural((int)$k['logins'], 'login') : '<a class="cb-link" href="users.php?kitchen=' . (int)$k['brand_id'] . '#new-login">Add login</a>'; ?></td>
                         <td class="num"><?php echo (int)$k['meals']; ?><?php if ((int)$k['sold_out'] > 0): ?><span class="cb-table-sub"><?php echo (int)$k['sold_out']; ?> sold out</span><?php endif; ?></td>
                         <td class="num"><?php echo (int)$k['active']; ?></td>

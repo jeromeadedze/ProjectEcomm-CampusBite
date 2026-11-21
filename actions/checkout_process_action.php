@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
+require_once __DIR__ . '/../controllers/ProductController.php';
 require_once __DIR__ . '/../core/paystack.php';
 
 require_login();
@@ -67,8 +68,18 @@ if ($unavailable) {
     exit;
 }
 
+// Paystack pays the kitchen directly, so it needs a payout account (a Paystack subaccount) first
+$kitchen = (new ProductController())->getBrandById((int)$kitchenIds[0]);
+if (!$kitchen || empty($kitchen['paystack_subaccount'])) {
+    $_SESSION['error'] = ($kitchen['brand_name'] ?? 'This kitchen') . " can't take online payments yet. Please try again later or order from another kitchen.";
+    header("Location: ../views/checkout.php");
+    exit;
+}
+
 $subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
 $grandTotal = $subtotal + $deliveryFee;
+// CampusBite's commission stays with CampusBite; the rest (meals minus commission, plus delivery) goes to the kitchen
+$split = paystack_split_for($subtotal, $deliveryFee, $kitchen['commission_rate']);
 
 if (!paystack_configured()) {
     error_log('Checkout: core/paystack_config.php is missing or has no secret key');
@@ -88,6 +99,11 @@ $metadata = [
     'delivery_fee' => (float)$deliveryFee,
     'drop_location' => $dropLocation,
     'notes' => $notes,
+    // The split this payment was made with, so the order keeps the same commission rate
+    'commission_rate' => (float)$kitchen['commission_rate'],
+    'subaccount' => $kitchen['paystack_subaccount'],
+    'commission' => $split['commission'],
+    'kitchen_share' => $split['kitchen_share'],
     'items' => array_map(function ($item) {
         return ['p_id' => (int)$item['p_id'], 'qty' => (int)$item['qty'], 'price' => (float)$item['product_price'], 'notes' => $item['notes']];
     }, $cartItems),
@@ -105,6 +121,9 @@ $init = paystack_request('POST', '/transaction/initialize', [
     'reference' => $reference,
     'callback_url' => site_url('actions/paystack_callback_action.php'),
     'metadata' => $metadata,
+    'subaccount' => $kitchen['paystack_subaccount'],
+    'transaction_charge' => to_pesewas($split['commission']),
+    'bearer' => $split['bearer'],
 ]);
 
 if (empty($init['status']) || empty($init['data']['authorization_url'])) {

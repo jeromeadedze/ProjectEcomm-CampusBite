@@ -27,7 +27,7 @@ unset($_SESSION['brand_form']);
 require_once __DIR__ . '/../layout/header.php';
 ?>
 
-<p class="cb-sub">Open a kitchen to see its money, menu, categories and orders. Kitchens manage their own meals from the kitchen portal.</p>
+<p class="cb-sub">Open a kitchen to see its money, menu, categories, messages and staff. Kitchens manage their own meals from the kitchen portal.</p>
 <section class="cb-card">
     <h2>All kitchens</h2>
     <div class="cb-table-wrap">
@@ -44,7 +44,7 @@ require_once __DIR__ . '/../layout/header.php';
             </thead>
             <tbody>
                 <?php if (empty($brands)): ?>
-                    <tr><td colspan="6" class="cb-table-empty">No kitchens yet. Add the first one above.</td></tr>
+                    <tr><td colspan="6" class="cb-table-empty">No kitchens yet. Add the first one below.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($brands as $brand): ?>
                     <?php $isEditing = $editBrand && (int)$editBrand['brand_id'] === (int)$brand['brand_id']; ?>
@@ -59,13 +59,14 @@ require_once __DIR__ . '/../layout/header.php';
                         <td><?php echo htmlspecialchars($brand['zone']); ?></td>
                         <td>
                             <span class="cb-dot-status <?php echo $brand['is_active'] ? '' : 'off'; ?>"><?php echo $brand['is_active'] ? 'Active' : (!empty($brand['admin_paused']) ? 'Paused by you' : 'Paused by kitchen'); ?></span>
+                            <?php if (empty($brand['paystack_subaccount'])): ?><a class="cb-no-payout" href="money.php#payout-accounts"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Can't take payments</a><?php endif; ?>
                         </td>
                         <td class="num"><?php echo round($brand['commission_rate'] * 100); ?>%</td>
                         <td class="num"><?php echo (int)$brand['product_count']; ?></td>
                         <td>
                             <div class="cb-table-actions">
                                 <a href="kitchen.php?id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Open <?php echo htmlspecialchars($brand['brand_name']); ?>">Open</a>
-                                <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>" aria-label="Commission &amp; status for <?php echo htmlspecialchars($brand['brand_name']); ?>">Commission &amp; status</a>
+                                <a href="brand.php?edit_id=<?php echo (int)$brand['brand_id']; ?>#kitchen-form" aria-label="Commission &amp; status for <?php echo htmlspecialchars($brand['brand_name']); ?>">Commission &amp; status</a>
                                 <?php if ((int)$brand['product_count'] === 0): // a kitchen with meals can't be deleted, so only empty ones offer it ?>
                                     <form action="<?php echo $ROOT_DIR; ?>/actions/delete_brand_action.php" method="POST" data-confirm="Delete <?php echo htmlspecialchars($brand['brand_name']); ?>? This can't be undone.">
                                         <?php echo csrf_field(); ?>

@@ -11,6 +11,7 @@ if (!can_order()) {
 
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
+require_once __DIR__ . '/../controllers/ProductController.php';
 
 $cartCtrl = new CartController();
 $cartIp = get_cart_token();
@@ -28,6 +29,10 @@ $deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, has_active_pass($user
 $grandTotal = $subtotal + $deliveryFee;
 $zone = $cartCtrl->deliveryZoneFor($cartItems);
 $kitchenName = $cartItems[0]['brand_name'] ?? '';
+// Paystack pays the kitchen directly, so a kitchen without a payout account can't be paid yet
+$kitchenIds = $cartCtrl->kitchenIds($cartItems);
+$billKitchen = count($kitchenIds) === 1 ? (new ProductController())->getBrandById((int)$kitchenIds[0]) : null;
+$canPay = $billKitchen && !empty($billKitchen['paystack_subaccount']);
 
 $dropPoints = [
     'Walter Sisulu Hall (Hostel 1)', 'Wangari Maathai Hall (Hostel 2)', 'Charlotte Court (Off-Campus)', 'Masere Hostel (Berekuso)',
@@ -92,7 +97,12 @@ require_once __DIR__ . '/layout/header.php';
             <div><span>Delivery (<?php echo htmlspecialchars($zone); ?>)</span><span>GH₵ <?php echo number_format($deliveryFee, 2); ?></span></div>
             <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
         </div>
-        <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> Pay GH₵ <?php echo number_format($grandTotal, 2); ?> with Paystack</button>
+        <?php if ($canPay): ?>
+            <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> Pay GH₵ <?php echo number_format($grandTotal, 2); ?> with Paystack</button>
+        <?php else: ?>
+            <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> <?php echo htmlspecialchars($kitchenName ?: 'This kitchen'); ?> can't take online payments yet. Try again later or order from another kitchen.</p>
+            <button type="button" class="cb-checkout" disabled>Payment unavailable</button>
+        <?php endif; ?>
         <a class="cb-panel-bills" href="<?php echo $ROOT_DIR; ?>/views/cart.php">‹ Back to bill</a>
     </aside>
 </form>

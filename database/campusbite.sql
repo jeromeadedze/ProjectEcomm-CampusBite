@@ -58,6 +58,13 @@ CREATE TABLE `brands` (
   `brand_image` varchar(150) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `admin_paused` tinyint(1) NOT NULL DEFAULT 0, -- 1: paused by the admin; the kitchen can't reopen itself
+  -- Where Paystack pays the kitchen its share of each order (split payments). Set by the kitchen in Kitchen info.
+  `payout_type` varchar(20) DEFAULT NULL, -- 'mobile_money' or 'bank'
+  `payout_bank_code` varchar(20) DEFAULT NULL, -- Paystack's code for the network or bank, e.g. MTN, 040100
+  `payout_bank_name` varchar(100) DEFAULT NULL,
+  `payout_account_number` varchar(30) DEFAULT NULL,
+  `payout_account_name` varchar(100) DEFAULT NULL,
+  `paystack_subaccount` varchar(40) DEFAULT NULL, -- Paystack subaccount code (ACCT_...); no code = can't take orders yet
   PRIMARY KEY (`brand_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -151,6 +158,9 @@ CREATE TABLE `payment` (
   `transaction_reference` varchar(100) DEFAULT NULL,
   `payment_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `verified_at` datetime DEFAULT NULL, -- when Paystack confirmed this payment; NULL for simulated payments
+  `subaccount_code` varchar(40) DEFAULT NULL, -- the kitchen's Paystack subaccount the payment was split with; NULL = all went to CampusBite
+  `kitchen_share` decimal(10,2) DEFAULT NULL, -- what Paystack sends the kitchen
+  `campusbite_share` decimal(10,2) DEFAULT NULL, -- CampusBite's commission; Paystack's fee comes out of this
   PRIMARY KEY (`pay_id`),
   UNIQUE KEY `transaction_reference` (`transaction_reference`),
   KEY `customer_id` (`customer_id`),
@@ -190,24 +200,6 @@ CREATE TABLE `password_resets` (
   KEY `customer_id` (`customer_id`),
   KEY `request_ip` (`request_ip`, `created_at`),
   CONSTRAINT `password_resets_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Money CampusBite has paid out to kitchens. Balance = what delivered orders earned - payouts
-CREATE TABLE `payouts` (
-  `payout_id` int(11) NOT NULL AUTO_INCREMENT,
-  `brand_id` int(11) NOT NULL,
-  `amount` decimal(10,2) NOT NULL,
-  `method` varchar(30) NOT NULL,            -- Mobile Money, Bank transfer, Cash
-  `reference` varchar(100) DEFAULT NULL,    -- MoMo transaction ID, bank reference, receipt number
-  `note` varchar(255) DEFAULT NULL,
-  `paid_on` date NOT NULL,
-  `recorded_by` int(11) DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`payout_id`),
-  KEY `brand_id` (`brand_id`),
-  KEY `recorded_by` (`recorded_by`),
-  CONSTRAINT `payouts_b_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`),
-  CONSTRAINT `payouts_c_fk` FOREIGN KEY (`recorded_by`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 9. order_tracking (Live timeline tracking) ─────────────────────

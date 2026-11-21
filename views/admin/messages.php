@@ -48,7 +48,7 @@ require_once __DIR__ . '/../layout/header.php';
                             <input type="hidden" name="message_id" value="<?php echo (int)$msg['message_id']; ?>">
                             <?php if ($msg['status'] === 'Open'): ?>
                                 <input type="hidden" name="status" value="Resolved">
-                                <button type="submit" class="cb-btn">Mark resolved</button>
+                                <button type="submit" class="cb-btn cb-btn-quiet">Mark resolved</button>
                             <?php else: ?>
                                 <input type="hidden" name="status" value="Open">
                                 <button type="submit" class="cb-btn cb-btn-quiet">Reopen</button>

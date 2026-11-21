@@ -9,12 +9,13 @@ class OrderClass extends Database
      */
     const LINE_RATE = "CASE WHEN p.product_brand = o.brand_id AND o.commission_rate IS NOT NULL THEN o.commission_rate ELSE b.commission_rate END";
 
-    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '')
+    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null)
     {
-        // The kitchen's commission rate is copied onto the order, so changing a rate later doesn't change past payouts
+        // The commission rate is copied onto the order, so changing a rate later doesn't change past orders.
+        // $commissionRate is the rate the Paystack split was made with; without it, the kitchen's current rate.
         $sql = "INSERT INTO orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions, commission_rate)
-                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?, (SELECT commission_rate FROM brands WHERE brand_id = ?))";
-        $success = $this->execute($sql, [$customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $brandId]);
+                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?, COALESCE(?, (SELECT commission_rate FROM brands WHERE brand_id = ?)))";
+        $success = $this->execute($sql, [$customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $commissionRate, $brandId]);
         if ($success) {
             $orderId = $this->getLastInsertId();
             // Create initial tracking entry
@@ -31,11 +32,14 @@ class OrderClass extends Database
         return $this->execute($sql, [$orderId, $productId, $qty, $price, $notes]);
     }
 
-    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false)
+    // $split: ['subaccount' => code, 'kitchen_share' => GH₵, 'campusbite_share' => GH₵] for a split payment
+    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false, $split = null)
     {
-        $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, verified_at)
-                VALUES (?, ?, ?, 'GHS', ?, ?, " . ($verified ? "NOW()" : "NULL") . ")";
-        return $this->execute($sql, [$amt, $customerId, $orderId, $paymentMode, $ref]);
+        $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, verified_at,
+                                     subaccount_code, kitchen_share, campusbite_share)
+                VALUES (?, ?, ?, 'GHS', ?, ?, " . ($verified ? "NOW()" : "NULL") . ", ?, ?, ?)";
+        return $this->execute($sql, [$amt, $customerId, $orderId, $paymentMode, $ref,
+            $split['subaccount'] ?? null, $split['kitchen_share'] ?? null, $split['campusbite_share'] ?? null]);
     }
 
     /**
@@ -312,7 +316,7 @@ class OrderClass extends Database
      */
     public function getKitchenOverview($since)
     {
-        $sql = "SELECT b.brand_id, b.brand_name, b.zone, b.is_active, b.commission_rate,
+        $sql = "SELECT b.brand_id, b.brand_name, b.zone, b.is_active, b.commission_rate, b.paystack_subaccount,
                        (SELECT COUNT(*) FROM customer c WHERE c.user_role = 4 AND c.brand_id = b.brand_id) AS logins,
                        (SELECT COUNT(*) FROM products p WHERE p.product_brand = b.brand_id) AS meals,
                        (SELECT COUNT(*) FROM products p WHERE p.product_brand = b.brand_id AND p.is_available = 0) AS sold_out,

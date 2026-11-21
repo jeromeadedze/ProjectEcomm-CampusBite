@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // A link to a form or conversation further down (#record-payout, #message-12): the browser jumps there before the page has finished
+    // A link to a form or conversation further down (#payout, #message-12): the browser jumps there before the page has finished
     // laying out, so jump again once it has loaded, and put the cursor in the first field
     const jumpTarget = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
     if (jumpTarget && jumpTarget.querySelector('form')) {
@@ -88,6 +88,18 @@ document.addEventListener('DOMContentLoaded', () => {
         details.addEventListener('toggle', () => {
             if (details.open) details.querySelector('textarea').focus();
         });
+    });
+
+    // Wide tables scroll sideways on small screens: shade the edge that has more columns behind it
+    document.querySelectorAll('.cb-table-wrap').forEach(wrap => {
+        const update = () => {
+            const max = wrap.scrollWidth - wrap.clientWidth;
+            wrap.classList.toggle('has-more-left', max > 1 && wrap.scrollLeft > 1);
+            wrap.classList.toggle('has-more-right', max > 1 && wrap.scrollLeft < max - 1);
+        };
+        wrap.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        update();
     });
 
     // Ask before a destructive form submits

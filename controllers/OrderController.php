@@ -53,9 +53,9 @@ class OrderController
         $this->orderModel = new OrderClass();
     }
 
-    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '')
+    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null)
     {
-        return $this->orderModel->createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes);
+        return $this->orderModel->createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $commissionRate);
     }
 
     public function addOrderDetail($orderId, $productId, $qty, $price, $notes = null)
@@ -165,9 +165,9 @@ class OrderController
         return $this->orderModel->rollBack();
     }
 
-    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false)
+    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false, $split = null)
     {
-        return $this->orderModel->recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified);
+        return $this->orderModel->recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified, $split);
     }
 
     public function getOrderIdByReference($ref)

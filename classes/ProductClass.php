@@ -60,6 +60,14 @@ class ProductClass extends Database
         return $this->execute("UPDATE brands SET location_desc = ?, is_active = IF(admin_paused = 1, 0, ?), brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
     }
 
+    // Where Paystack pays the kitchen (split payments), saved once Paystack has accepted the account
+    public function setPayoutAccount($id, $type, $bankCode, $bankName, $number, $name, $subaccount)
+    {
+        return $this->execute("UPDATE brands SET payout_type = ?, payout_bank_code = ?, payout_bank_name = ?, payout_account_number = ?,
+                                                 payout_account_name = ?, paystack_subaccount = ? WHERE brand_id = ?",
+            [$type, $bankCode, $bankName, $number, $name, $subaccount, $id]);
+    }
+
     // Every meal a kitchen has, sold out included, with how often each was ordered
     public function getProductsForKitchen($brandId)
     {

@@ -3,12 +3,25 @@
 define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
+require_once __DIR__ . '/../../core/paystack.php';
 
 require_kitchen();
 
 $controller = new ProductController();
 $kitchen = $controller->getBrandById(get_kitchen_id());
 $adminPaused = (int)($kitchen['admin_paused'] ?? 0) === 1;
+
+// Payout account: where Paystack pays the kitchen's share of each order
+$payoutLabel = ProductController::payoutLabel($kitchen);
+$payout = $_SESSION['payout_form'] ?? [
+    'payout_bank_code' => $kitchen['payout_bank_code'] ?? '',
+    'payout_account_number' => $kitchen['payout_account_number'] ?? '',
+    'payout_account_name' => $kitchen['payout_account_name'] ?? '',
+];
+unset($_SESSION['payout_form']);
+$momoOptions = paystack_configured() ? paystack_payout_options('mobile_money') : [];
+$bankOptions = paystack_configured() ? paystack_payout_options('bank') : [];
+$commissionPct = round($kitchen['commission_rate'] * 100);
 
 $pageHeading = $kitchen['brand_name'];
 require_once __DIR__ . '/../layout/header.php';
@@ -46,6 +59,57 @@ require_once __DIR__ . '/../layout/header.php';
             </div>
             <div class="cb-admin-actions"><button type="submit" class="cb-btn">Save details</button></div>
         </form>
+    </section>
+
+    <section class="cb-card" id="payout" aria-labelledby="payout-title">
+        <h2 id="payout-title">Payout account</h2>
+        <?php if ($payoutLabel): ?>
+            <p class="cb-card-lead">Paystack pays your share of every order straight to <strong><?php echo htmlspecialchars($payoutLabel); ?></strong><?php if (!empty($kitchen['payout_account_name'])): ?> (<?php echo htmlspecialchars($kitchen['payout_account_name']); ?>)<?php endif; ?>: the meals minus CampusBite's <?php echo $commissionPct; ?>% commission, plus the delivery fee. Paystack settles it on its usual schedule, normally the next working day.</p>
+        <?php else: ?>
+            <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Students can't pay for your meals until you add a payout account. Paystack sends your share of each order there.</p>
+            <p class="cb-card-lead">Add the Mobile Money number or bank account your kitchen gets paid into. Your share is the meals minus CampusBite's <?php echo $commissionPct; ?>% commission, plus the delivery fee.</p>
+        <?php endif; ?>
+
+        <?php if (!$momoOptions && !$bankOptions): ?>
+            <p class="cb-field-hint">Paystack can't be reached right now, so the account can't be changed. Try again in a few minutes.</p>
+        <?php else: ?>
+            <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/kitchen_save_payout_action.php" method="POST" autocomplete="off">
+                <?php echo csrf_field(); ?>
+                <div class="cb-field cb-field-full">
+                    <label for="payout_bank_code">Mobile Money network or bank</label>
+                    <select id="payout_bank_code" name="payout_bank_code" required>
+                        <option value="" disabled <?php echo $payout['payout_bank_code'] === '' ? 'selected' : ''; ?>>Choose one</option>
+                        <?php if ($momoOptions): ?>
+                            <optgroup label="Mobile Money">
+                                <?php foreach ($momoOptions as $code => $name): ?>
+                                    <option value="<?php echo htmlspecialchars($code); ?>" <?php echo $payout['payout_bank_code'] === (string)$code ? 'selected' : ''; ?>><?php echo htmlspecialchars($name); ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endif; ?>
+                        <?php if ($bankOptions): ?>
+                            <optgroup label="Banks">
+                                <?php foreach ($bankOptions as $code => $name): ?>
+                                    <option value="<?php echo htmlspecialchars($code); ?>" <?php echo $payout['payout_bank_code'] === (string)$code ? 'selected' : ''; ?>><?php echo htmlspecialchars($name); ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <div class="cb-field">
+                    <label for="payout_account_number">Number</label>
+                    <input type="text" id="payout_account_number" name="payout_account_number" inputmode="numeric" maxlength="20" value="<?php echo htmlspecialchars($payout['payout_account_number']); ?>" placeholder="0241234567" aria-describedby="payout_number_hint" required>
+                    <p class="cb-field-hint" id="payout_number_hint">Mobile Money: 10 digits starting with 0. Bank: the account number, no spaces.</p>
+                </div>
+                <div class="cb-field">
+                    <label for="payout_account_name">Name on the account</label>
+                    <input type="text" id="payout_account_name" name="payout_account_name" maxlength="100" value="<?php echo htmlspecialchars($payout['payout_account_name']); ?>" placeholder="Ama Mensah" required>
+                </div>
+                <div class="cb-admin-actions"><button type="submit" class="cb-btn"><?php echo $payoutLabel ? 'Update payout account' : 'Save payout account'; ?></button></div>
+            </form>
+            <?php if ($payoutLabel): ?>
+                <p class="cb-field-hint">A change applies to new orders. Orders already paid still go to the old account.</p>
+            <?php endif; ?>
+        <?php endif; ?>
     </section>
 
     <section class="cb-card">
