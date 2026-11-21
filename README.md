@@ -68,6 +68,10 @@ The super admin looks after kitchens and money. Kitchens own their food, custome
 5. Cancelled orders are refunded in full through Paystack. They don't count in sales, commission or best sellers.
 6. Paystack takes refunds from CampusBite's balance, even for split payments. So the kitchen's share of a refunded order is **taken back from its next orders**: the next payments send CampusBite a larger charge, up to that order's whole kitchen share, until the amount is repaid. Each payment stores what it took back (`payment.refund_recovery`). Kitchens see what's still to take back on their dashboard and Kitchen info; the admin sees it on the Money page and the kitchen's page.
 
+## Seed menu
+
+A fresh import has six kitchens and 39 meals across nine categories: Rice & Jollof Bowls, Local Staples, Grills & Suya, Healthy Bowls & Salads, Pastries & Quick Bites, Drinks & Fresh Smoothies, Shawarma & Wraps, Desserts & Cakes and Soft Drinks. Each kitchen has its own take on the common items (Hallmark's classic chicken shawarma, Akonnor's spicy beef shawarma with shito, Munchees' mixed platter, Peckish's shawarma fries, Eat Healthy's wholewheat wrap, Hi5's lamb platter), and every meal has a photo in `images/products/` (free Unsplash photos, credited in `images/products/CREDITS.md`). An existing database gets the extra meals from `database/migrations/2026-11-26_more_meals.sql`.
+
 ## Demo accounts
 
 | Role | Email | Password | Notes |
@@ -219,7 +223,7 @@ The code follows the same MVC layout as the course labs. In the code, **brands a
 | `css/` | `campusbite.css` (theme), `admin.css` (tables and forms), `auth.css`, `style.css` |
 | `js/` | `main.js` (toasts, confirmations, price updates, table scroll hints), `validate.js` (sign-up checks) |
 | `database/` | `campusbite.sql` (schema and seed) and `migrations/` |
-| `images/products/` | Uploaded meal photos |
+| `images/products/` | Meal photos: the seed meals' Unsplash photos (credits in `CREDITS.md` there) and kitchens' uploads |
 | `docs/` | Roadmap |
 
 More detail for contributors:
@@ -249,4 +253,3 @@ More detail for contributors:
 - **Emails are sent while the page waits.** A slow mail server makes buttons slower, but never undoes a change.
 - **Delivery fee.** It is one fee per order, by the kitchen's zone. The original theme charged per kitchen.
 - **Bootstrap.** Bootstrap is still loaded for a few older pages.
-- **Seed photos.** Seed meals point to photos that aren't in `images/products/`. Until a kitchen uploads one, each meal shows its category's icon, so a jollof bowl, a grill and a smoothie look different.
