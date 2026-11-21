@@ -103,9 +103,25 @@ class ProductController
         return $this->productModel->addBrand($name, $zone, $location, $commission, $isActive, $phone);
     }
 
-    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
+    public function updateBrandTerms($id, $commission, $isActive)
     {
-        return $this->productModel->updateBrand($id, $name, $zone, $location, $commission, $isActive, $phone);
+        return $this->productModel->updateBrandTerms($id, $commission, $isActive);
+    }
+
+    /**
+     * Check the admin's edit of a kitchen: only the commission and Active or Paused can change.
+     */
+    public function checkBrandTerms($input)
+    {
+        $values = [
+            'commission_percent' => trim($input['commission_percent'] ?? ''),
+            'is_active' => ($input['is_active'] ?? '1') === '0' ? 0 : 1,
+        ];
+        $error = null;
+        if (!ctype_digit($values['commission_percent']) || (int)$values['commission_percent'] > 100) {
+            $error = "Commission must be a whole number from 0 to 100.";
+        }
+        return ['values' => $values, 'error' => $error];
     }
 
     public function updateBrandInfo($id, $location, $isActive, $phone = null)
@@ -220,11 +236,6 @@ class ProductController
     public function searchProducts($query)
     {
         return $this->productModel->searchProducts($query);
-    }
-
-    public function getProductsForAdmin()
-    {
-        return $this->productModel->getProductsForAdmin();
     }
 
     public function countOrdersForProduct($id)

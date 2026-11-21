@@ -1,14 +1,10 @@
 <?php
 // Moves an order through Placed → Preparing → Ready → In Transit → Delivered.
-// Allowed for admins and for the kitchen the order is from.
+// Only the kitchen the order is from can do this: it cooks and delivers the order. Admins watch, they don't move orders.
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 
-require_login();
-if (!is_admin() && !is_kitchen()) {
-    header("Location: ../index.php");
-    exit;
-}
+require_kitchen();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
@@ -20,8 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$order) {
         $_SESSION['error'] = "That order no longer exists.";
-    } elseif (is_kitchen() && (int)$order['brand_id'] !== get_kitchen_id()) {
+    } elseif ((int)$order['brand_id'] !== get_kitchen_id()) {
         $_SESSION['error'] = "That order isn't from your kitchen.";
+    } elseif ($order['order_status'] === 'Cancelled') {
+        $_SESSION['error'] = "Order #{$order['invoice_no']} was cancelled, so its status can't change.";
     } elseif (!array_key_exists($status, OrderController::STATUSES)) {
         $_SESSION['error'] = "Choose a status from the list.";
     } elseif ($status === $order['order_status']) {

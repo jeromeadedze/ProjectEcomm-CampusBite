@@ -33,12 +33,6 @@ $dropPoints = [
     'Walter Sisulu Hall (Hostel 1)', 'Wangari Maathai Hall (Hostel 2)', 'Charlotte Court (Off-Campus)', 'Masere Hostel (Berekuso)',
     'FabLab / Engineering Building Courtyard', 'Library Courtyard / Upper Quad', 'Faculty Office Lounge', 'Student Center Hive',
 ];
-// Must match the list checkout_process_action.php accepts
-$payments = [
-    'Paystack - MTN MoMo' => ['MTN MoMo', 'A prompt on your phone', 'bi-phone-fill'],
-    'Paystack - Telecel Cash' => ['Telecel Cash', 'USSD or push prompt', 'bi-phone'],
-    'Paystack - Bank Card' => ['Visa / Mastercard', 'Pay online by card', 'bi-credit-card-2-front'],
-];
 
 require_once __DIR__ . '/layout/header.php';
 ?>
@@ -73,17 +67,12 @@ require_once __DIR__ . '/layout/header.php';
         </section>
 
         <section class="cb-card">
-            <h2><span class="cb-step-num">2</span> How would you like to pay?</h2>
-            <div class="cb-pay-options">
-                <?php $first = true; foreach ($payments as $value => [$label, $hint, $iconClass]): ?>
-                    <label class="cb-pay-option">
-                        <input type="radio" name="payment_mode" value="<?php echo htmlspecialchars($value); ?>" <?php echo $first ? 'checked' : ''; ?>>
-                        <span class="cb-pay-icon" aria-hidden="true"><i class="bi <?php echo $iconClass; ?>"></i></span>
-                        <span><b><?php echo $label; ?></b><small><?php echo $hint; ?></small></span>
-                    </label>
-                <?php $first = false; endforeach; ?>
+            <h2><span class="cb-step-num">2</span> Pay securely with Paystack</h2>
+            <div class="cb-pay-options cb-pay-info">
+                <div class="cb-pay-option"><span class="cb-pay-icon" aria-hidden="true"><i class="bi bi-phone-fill"></i></span><span><b>Mobile Money</b><small>MTN, Telecel or AirtelTigo</small></span></div>
+                <div class="cb-pay-option"><span class="cb-pay-icon" aria-hidden="true"><i class="bi bi-credit-card-2-front"></i></span><span><b>Visa / Mastercard</b><small>Debit or credit card</small></span></div>
             </div>
-            <p class="cb-field-hint">Payment is simulated for now. No money is taken until Paystack is connected.</p>
+            <p class="cb-field-hint">You'll choose how to pay on Paystack's secure page. Your order goes to the kitchen as soon as Paystack confirms the payment. If you cancel, nothing is charged and your bill stays as it is.</p>
         </section>
     </div>
 
@@ -103,7 +92,7 @@ require_once __DIR__ . '/layout/header.php';
             <div><span>Delivery (<?php echo htmlspecialchars($zone); ?>)</span><span>GH₵ <?php echo number_format($deliveryFee, 2); ?></span></div>
             <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
         </div>
-        <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> Pay GH₵ <?php echo number_format($grandTotal, 2); ?> and place order</button>
+        <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> Pay GH₵ <?php echo number_format($grandTotal, 2); ?> with Paystack</button>
         <a class="cb-panel-bills" href="<?php echo $ROOT_DIR; ?>/views/cart.php">‹ Back to bill</a>
     </aside>
 </form>

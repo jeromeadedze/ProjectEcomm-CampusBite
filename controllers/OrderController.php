@@ -20,6 +20,32 @@ class OrderController
         'In Transit' => ['status' => 'Delivered', 'label' => 'Mark delivered'],
     ];
 
+    // Who can cancel an order, and up to which stage. Customers only before the kitchen starts;
+    // the kitchen can reject it until it's packed; the admin can cancel anything not yet delivered.
+    const CANCELLABLE_FROM = [
+        'customer' => ['Placed'],
+        'kitchen' => ['Placed', 'Preparing'],
+        'admin' => ['Placed', 'Preparing', 'Ready', 'In Transit'],
+    ];
+
+    // Reasons a kitchen can pick when it rejects an order
+    const KITCHEN_REJECT_REASONS = [
+        'A meal ran out',
+        'Too busy to make it in time',
+        'Kitchen is closing',
+        "Can't deliver to that drop point",
+    ];
+
+    // How each refund status reads to people
+    const REFUND_LABELS = [
+        'pending' => 'Refund started',
+        'processing' => 'Refund processing',
+        'processed' => 'Refunded',
+        'failed' => 'Refund failed',
+        'needs-attention' => 'Refund needs attention',
+        'not_needed' => 'No refund needed',
+    ];
+
     private $orderModel;
 
     public function __construct()
@@ -139,9 +165,14 @@ class OrderController
         return $this->orderModel->rollBack();
     }
 
-    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref)
+    public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false)
     {
-        return $this->orderModel->recordPayment($amt, $customerId, $orderId, $paymentMode, $ref);
+        return $this->orderModel->recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified);
+    }
+
+    public function getOrderIdByReference($ref)
+    {
+        return $this->orderModel->getOrderIdByReference($ref);
     }
 
     public function getOrderById($orderId)
@@ -164,6 +195,121 @@ class OrderController
         return $this->orderModel->getAllOrders();
     }
 
+    /** True when $by (customer, kitchen or admin) may still cancel this order */
+    public function canCancel($order, $by)
+    {
+        return in_array($order['order_status'] ?? '', self::CANCELLABLE_FROM[$by] ?? [], true);
+    }
+
+    /**
+     * Cancels an order and refunds the customer in full through Paystack.
+     * The order is claimed first (so it can't be cancelled twice or moved on meanwhile), then the refund is started.
+     * If Paystack won't start the refund, the order goes back to how it was and nothing changes.
+     * Payments from before Paystack was connected were simulated, so they're cancelled with no refund to send.
+     * Returns ['ok' => bool, 'message' => what to tell the person].
+     */
+    public function cancelOrder($order, $by, $reason)
+    {
+        $orderId = (int)$order['order_id'];
+        $previous = $order['order_status'];
+        $reason = mb_substr(trim($reason), 0, 255);
+
+        if (!$this->canCancel($order, $by)) {
+            return ['ok' => false, 'message' => "Order #{$order['invoice_no']} can't be cancelled now: it's {$previous}."];
+        }
+        if (!$this->orderModel->claimCancellation($orderId, self::CANCELLABLE_FROM[$by], $by, $reason ?: null)) {
+            return ['ok' => false, 'message' => "Order #{$order['invoice_no']} changed while you were looking at it. Check it and try again."];
+        }
+
+        $amount = round((float)($order['amt'] ?? 0), 2);
+        $paidThroughPaystack = !empty($order['verified_at']) && !empty($order['transaction_reference']) && $amount > 0;
+        $refundStatus = 'not_needed';
+        $paystackId = null;
+
+        if ($paidThroughPaystack) {
+            require_once __DIR__ . '/../core/paystack.php';
+            $refund = paystack_configured()
+                ? paystack_refund($order['transaction_reference'], to_pesewas($amount), "CampusBite order #{$order['invoice_no']} cancelled")
+                : ['ok' => false, 'message' => 'Paystack is not set up on this site.'];
+            if (!$refund['ok']) {
+                $this->orderModel->undoCancellation($orderId, $previous);
+                $why = $refund['message'] !== '' ? ' Paystack said: ' . $refund['message'] : '';
+                return ['ok' => false, 'message' => "The refund couldn't be started, so order #{$order['invoice_no']} has not been cancelled.{$why}"];
+            }
+            $refundStatus = $refund['status'] ?: 'pending';
+            $paystackId = $refund['id'];
+        }
+
+        $who = ['customer' => 'the customer', 'kitchen' => $order['brand_name'] ?? 'the kitchen', 'admin' => 'CampusBite'][$by];
+        $note = 'Cancelled by ' . $who . ($reason !== '' ? ': ' . $reason : '') . '.';
+        $note .= $paidThroughPaystack ? ' GH₵ ' . number_format($amount, 2) . ' is being refunded through Paystack.' : '';
+        try {
+            $this->orderModel->recordRefund($orderId, $order['pay_id'] ?? null, $paidThroughPaystack ? $amount : 0, $refundStatus, $paystackId);
+            $this->orderModel->addTrackingUpdate($orderId, 'Cancelled', mb_substr($note, 0, 255));
+        } catch (PDOException $e) {
+            // The order is cancelled and Paystack has the refund; only our record of it failed
+            error_log("Order $orderId cancelled but its refund record failed: " . $e->getMessage() . " (Paystack refund $paystackId)");
+        }
+
+        $message = "Order #{$order['invoice_no']} is cancelled.";
+        if ($paidThroughPaystack) {
+            $message .= ' GH₵ ' . number_format($amount, 2) . ' is on its way back to ' . ($by === 'customer' ? 'you' : 'the customer') . ' through Paystack. Mobile Money refunds usually arrive within a day; cards can take a few days.';
+        }
+        return ['ok' => true, 'message' => $message];
+    }
+
+    /** Asks Paystack for the latest status of a refund that's still in progress, and saves it. Returns the status. */
+    public function refreshRefund($order)
+    {
+        $status = $order['refund_status'] ?? null;
+        if (!in_array($status, ['pending', 'processing'], true) || empty($order['paystack_refund_id'])) {
+            return $status;
+        }
+        // At most once a minute per order
+        if (!empty($order['refund_updated_at']) && strtotime($order['refund_updated_at']) > time() - 60) {
+            return $status;
+        }
+        require_once __DIR__ . '/../core/paystack.php';
+        $latest = paystack_configured() ? paystack_refund_status($order['paystack_refund_id']) : null;
+        if ($latest !== null && $latest !== '') {
+            $this->orderModel->updateRefundStatus((int)$order['refund_id'], mb_substr($latest, 0, 20));
+            return $latest;
+        }
+        return $status;
+    }
+
+    const ORDERS_PER_PAGE = 25;
+
+    /**
+     * Admin order search. Cleans the query string into filters and returns one page of orders,
+     * the per-status counts for the chips, and paging details.
+     */
+    public function searchOrdersForAdmin($input)
+    {
+        $readDate = function ($value) {
+            $d = DateTime::createFromFormat('Y-m-d', (string)$value);
+            return ($d && $d->format('Y-m-d') === $value) ? $value : '';
+        };
+        $f = [
+            'q' => mb_substr(trim((string)($input['q'] ?? '')), 0, 100),
+            'brand_id' => max(0, (int)($input['brand'] ?? 0)),
+            'from' => $readDate($input['from'] ?? ''),
+            'to' => $readDate($input['to'] ?? ''),
+            'status' => (array_key_exists($input['status'] ?? '', self::STATUSES) || ($input['status'] ?? '') === 'Cancelled') ? $input['status'] : '',
+        ];
+        if ($f['from'] !== '' && $f['to'] !== '' && $f['from'] > $f['to']) {
+            [$f['from'], $f['to']] = [$f['to'], $f['from']];
+        }
+
+        $counts = $this->orderModel->countOrdersByStatusFor($f);
+        $total = $f['status'] !== '' ? (int)($counts[$f['status']] ?? 0) : array_sum($counts);
+        $pages = max(1, (int)ceil($total / self::ORDERS_PER_PAGE));
+        $page = min(max(1, (int)($input['page'] ?? 1)), $pages);
+        $orders = $this->orderModel->searchOrders($f, self::ORDERS_PER_PAGE, ($page - 1) * self::ORDERS_PER_PAGE);
+
+        return ['filters' => $f, 'orders' => $orders, 'counts' => $counts, 'total' => $total, 'page' => $page, 'pages' => $pages];
+    }
+
     public function updateOrderStatus($orderId, $status)
     {
         if (!array_key_exists($status, self::STATUSES)) {
@@ -177,7 +323,7 @@ class OrderController
      * Per kitchen: delivered orders, meal sales, CampusBite's commission, delivery fees and what the kitchen
      * is owed (sales - commission + delivery fees), plus orders still in progress, which aren't owed yet.
      */
-    public function getMoneyReport($from, $to, $kitchens)
+    public function getMoneyReport($from, $to, $kitchens, $withPaymentCheck = true)
     {
         $start = $from . ' 00:00:00';
         $end = date('Y-m-d 00:00:00', strtotime($to . ' +1 day'));
@@ -231,20 +377,45 @@ class OrderController
             return [$b['owed'], $b['pending_value'], $a['brand_name']] <=> [$a['owed'], $a['pending_value'], $b['brand_name']];
         });
 
-        // Payment check: each order's expected total against what was recorded as paid
-        $check = ['orders' => 0, 'expected' => 0.0, 'paid' => 0.0, 'problems' => []];
-        foreach ($this->orderModel->getPaymentCheck($start, $end) as $p) {
+        // Payment check: each order's expected total against what was recorded as paid (skipped by pages that don't show it)
+        $check = ['orders' => 0, 'expected' => 0.0, 'paid' => 0.0, 'verified' => 0.0, 'refunded' => 0.0, 'cancelled' => 0, 'problems' => []];
+        foreach ($withPaymentCheck ? $this->orderModel->getPaymentCheck($start, $end) : [] as $p) {
             $expected = round((float)$p['expected'], 2);
             $paid = $p['paid'] === null ? null : round((float)$p['paid'], 2);
             $check['orders']++;
             $check['expected'] += $expected;
             $check['paid'] += (float)$paid;
-            if ($paid === null) {
+            if ((int)$p['verified'] > 0) {
+                $check['verified'] += (float)$paid;
+            }
+            $refunded = $p['refund_status'] !== null && !in_array($p['refund_status'], ['failed', 'needs-attention', 'not_needed'], true) ? round((float)$p['refunded'], 2) : 0.0;
+            $check['refunded'] += $refunded;
+            if ($p['order_status'] === 'Cancelled') {
+                // A cancelled order should end with everything paid sent back
+                $check['cancelled']++;
+                $check['expected'] -= $expected;
+                if ((int)$p['verified'] === 0) {
+                    // A simulated payment on a cancelled order: no real money came in, so none needs to go back
+                    $check['paid'] -= (float)$paid;
+                }
+                if (in_array($p['refund_status'], ['failed', 'needs-attention'], true)) {
+                    $p['problem'] = 'Cancelled, but the Paystack refund failed';
+                } elseif ((int)$p['verified'] > 0 && $p['refund_status'] === null) {
+                    $p['problem'] = 'Cancelled, but no refund was recorded';
+                } elseif ((int)$p['verified'] > 0 && abs($refunded - (float)$paid) >= 0.01) {
+                    $p['problem'] = 'Cancelled, but the refund doesn\'t match the payment';
+                } else {
+                    continue;
+                }
+            } elseif ($paid === null) {
                 $p['problem'] = 'No payment recorded';
             } elseif ((int)$p['payments'] > 1) {
                 $p['problem'] = 'Paid more than once';
             } elseif (abs($paid - $expected) >= 0.01) {
                 $p['problem'] = $paid < $expected ? 'Paid less than the order total' : 'Paid more than the order total';
+            } elseif ((int)$p['verified'] === 0) {
+                // Recorded before Paystack was connected (or by hand): no money was confirmed for it
+                $p['problem'] = 'Not confirmed by Paystack';
             } else {
                 continue;
             }

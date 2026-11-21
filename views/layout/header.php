@@ -23,7 +23,7 @@ $pageTitles = [
     'customers' => 'Customers',
     'brand' => 'Kitchens',
     'category' => 'Categories',
-    'product' => 'Menu Items',
+    'kitchen' => 'Kitchen',
     'orders' => 'Orders',
     'favorites' => 'Favourites',
     'settings' => 'Settings',
@@ -36,6 +36,8 @@ $pageTitles = [
     'kitchen_messages' => 'Customer Messages',
     'kitchen_info' => 'Kitchen Info',
     'money' => 'Money',
+    'payment_success' => 'Payment received',
+    'payment_failed' => 'Payment not completed',
 ];
 $pageTitle = $pageTitles[$currentPage] ?? 'CampusBite';
 // A page can set $pageHeading before including this file to show a different heading than its title

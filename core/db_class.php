@@ -55,6 +55,14 @@ class Database
         return $stmt->execute($params);
     }
 
+    // Runs a write and returns how many rows it changed (0 when a conditional UPDATE matched nothing)
+    public function executeCount($sql, $params = [])
+    {
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount();
+    }
+
     public function getLastInsertId()
     {
         return $this->conn->lastInsertId();

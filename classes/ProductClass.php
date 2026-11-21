@@ -47,23 +47,25 @@ class ProductClass extends Database
         return $this->execute($sql, [$name, $zone, $location, $phone, $commission, $isActive]);
     }
 
-    public function updateBrand($id, $name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
+    // What the admin can change about a kitchen after it's added: CampusBite's commission and whether shoppers can see it
+    public function updateBrandTerms($id, $commission, $isActive)
     {
-        $sql = "UPDATE brands SET brand_name = ?, zone = ?, location_desc = ?, brand_phone = ?, commission_rate = ?, is_active = ? WHERE brand_id = ?";
-        return $this->execute($sql, [$name, $zone, $location, $phone, $commission, $isActive, $id]);
+        // An admin pause is remembered so the kitchen can't undo it; setting Active clears it
+        return $this->execute("UPDATE brands SET commission_rate = ?, is_active = ?, admin_paused = ? WHERE brand_id = ?", [$commission, $isActive, $isActive ? 0 : 1, $id]);
     }
 
-    // What a kitchen can change about itself from its portal
+    // What a kitchen can change about itself from its portal. A kitchen the admin paused stays paused.
     public function updateBrandInfo($id, $location, $isActive, $phone = null)
     {
-        return $this->execute("UPDATE brands SET location_desc = ?, is_active = ?, brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
+        return $this->execute("UPDATE brands SET location_desc = ?, is_active = IF(admin_paused = 1, 0, ?), brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
     }
 
     // Every meal a kitchen has, sold out included, with how often each was ordered
     public function getProductsForKitchen($brandId)
     {
         $sql = "SELECT p.*, c.cat_name,
-                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od WHERE od.product_id = p.product_id) AS meals_sold
+                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od JOIN orders o ON o.order_id = od.order_id
+                        WHERE od.product_id = p.product_id AND o.order_status <> 'Cancelled') AS meals_sold
                 FROM products p
                 JOIN categories c ON p.product_cat = c.cat_id
                 WHERE p.product_brand = ?
@@ -201,18 +203,6 @@ class ProductClass extends Database
                 AND p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC";
         return $this->fetchAll($sql, [$term, $term, $term, $term]);
-    }
-
-    // Includes sold-out meals and paused kitchens, with how many past orders contain each meal
-    public function getProductsForAdmin()
-    {
-        $sql = "SELECT p.*, c.cat_name, b.brand_name, b.zone, b.is_active AS brand_active,
-                       (SELECT COUNT(*) FROM orderdetails od WHERE od.product_id = p.product_id) AS order_count
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
-                ORDER BY b.brand_name ASC, p.product_title ASC";
-        return $this->fetchAll($sql);
     }
 
     public function productTitleExists($title, $brand, $excludeId = 0)

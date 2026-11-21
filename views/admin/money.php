@@ -68,7 +68,7 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
 
 <p class="cb-sub">
     Orders placed <?php echo date('M j, Y', strtotime($from)); ?> – <?php echo date('M j, Y', strtotime($to)); ?>.
-    Only delivered orders count towards what a kitchen is owed.
+    Only delivered orders count towards what a kitchen is owed; cancelled orders don't count at all.
 </p>
 
 <div class="cb-chips cb-money-presets" role="group" aria-label="Date range">
@@ -164,13 +164,15 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
 <section class="cb-card">
     <dl class="cb-kpi-split cb-money-check">
         <div><dt>Orders placed in this range</dt><dd><?php echo (int)$pay['orders']; ?></dd></div>
-        <div><dt>Customers should have paid</dt><dd><?php echo $money($pay['expected']); ?></dd></div>
+        <div><dt>Customers should have paid (cancelled orders left out)</dt><dd><?php echo $money($pay['expected']); ?></dd></div>
         <div><dt>Payments recorded</dt><dd><?php echo $money($pay['paid']); ?></dd></div>
-        <div class="is-total"><dt>Difference</dt><dd><?php echo $money($pay['paid'] - $pay['expected']); ?></dd></div>
+        <div><dt>Confirmed by Paystack</dt><dd><?php echo $money($pay['verified']); ?></dd></div>
+        <div><dt>Refunded for <?php echo (int)$pay['cancelled']; ?> cancelled order<?php echo (int)$pay['cancelled'] === 1 ? '' : 's'; ?></dt><dd>− <?php echo $money($pay['refunded']); ?></dd></div>
+        <div class="is-total"><dt>Difference</dt><dd><?php echo $money($pay['paid'] - $pay['refunded'] - $pay['expected']); ?></dd></div>
     </dl>
 
     <?php if (empty($pay['problems'])): ?>
-        <p class="cb-money-ok"><i class="bi bi-check-circle" aria-hidden="true"></i> Every order has exactly one payment that matches its total.</p>
+        <p class="cb-money-ok"><i class="bi bi-check-circle" aria-hidden="true"></i> Every order has exactly one Paystack-confirmed payment that matches its total.</p>
     <?php else: ?>
         <div class="cb-table-wrap">
             <table class="cb-table">
@@ -187,6 +189,7 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
                             <td class="num"><?php echo $money($p['expected']); ?></td>
                             <td class="num">
                                 <?php echo $p['paid'] === null ? '–' : $money($p['paid']); ?>
+                                <?php if (!empty($p['refunded']) && (float)$p['refunded'] > 0): ?><span class="cb-table-sub">Refund <?php echo $money($p['refunded']); ?> · <?php echo htmlspecialchars($p['refund_status']); ?></span><?php endif; ?>
                                 <?php if (!empty($p['refs'])): ?><span class="cb-table-sub"><?php echo htmlspecialchars($p['refs']); ?></span><?php endif; ?>
                             </td>
                             <td><span class="cb-status cb-status-placed"><?php echo htmlspecialchars($p['problem']); ?></span></td>
@@ -197,6 +200,6 @@ $range = function ($a, $b) { return 'from=' . urlencode($a) . '&to=' . urlencode
         </div>
     <?php endif; ?>
 </section>
-<p class="cb-field-hint">Payments are simulated for now, so this compares orders with the payments CampusBite recorded at checkout. Once Paystack is connected, each payment will be verified with Paystack and this check will use the amounts Paystack actually received.</p>
+<p class="cb-field-hint">Each payment is checked with Paystack's verify API before its order is created, and the amount stored is the amount Paystack reports it received. Orders from before Paystack was connected show as "Not confirmed by Paystack" because their payments were simulated.</p>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

@@ -5,3 +5,4 @@ Thumbs.db
 
 core/db_cred.php
 db_cred.php
+core/paystack_config.php

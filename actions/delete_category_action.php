@@ -23,8 +23,8 @@ if (!$category) {
 // The database would delete every meal in the category along with it, so refuse instead
 $itemCount = $controller->countProductsByCategory($id);
 if ($itemCount > 0) {
-    $items = $itemCount === 1 ? '1 menu item. Move or remove it' : "$itemCount menu items. Move or remove them";
-    $_SESSION['error'] = "{$category['cat_name']} still has $items first.";
+    $items = $itemCount === 1 ? '1 meal' : "$itemCount meals";
+    $_SESSION['error'] = "{$category['cat_name']} still has $items, so it can't be deleted. The kitchens selling them need to move them to another category first.";
     header("Location: ../views/admin/category.php");
     exit;
 }

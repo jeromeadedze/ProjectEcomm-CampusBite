@@ -124,6 +124,13 @@ require_once __DIR__ . '/../layout/header.php';
                                     <input type="hidden" name="product_id" value="<?php echo (int)$meal['product_id']; ?>">
                                     <button type="submit"><?php echo $available ? 'Mark sold out' : 'Back in stock'; ?></button>
                                 </form>
+                                <?php if ((int)$meal['meals_sold'] === 0): ?>
+                                    <form action="<?php echo $ROOT_DIR; ?>/actions/delete_product_action.php" method="POST" data-confirm="Delete <?php echo htmlspecialchars($meal['product_title']); ?>? This can't be undone.">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="product_id" value="<?php echo (int)$meal['product_id']; ?>">
+                                        <button type="submit" aria-label="Delete <?php echo htmlspecialchars($meal['product_title']); ?>">Delete</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

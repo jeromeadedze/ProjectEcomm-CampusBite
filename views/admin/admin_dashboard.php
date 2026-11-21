@@ -93,7 +93,7 @@ $pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Rea
 <div class="cb-row"><h2>Orders right now</h2><a class="cb-viewall" href="orders.php">All orders ›</a></div>
 <div class="cb-queue">
     <?php foreach ($pipeline as $status => $label): ?>
-        <a class="cb-card cb-queue-step" href="orders.php">
+        <a class="cb-card cb-queue-step" href="orders.php?status=<?php echo urlencode($status); ?>">
             <span class="cb-queue-num"><?php echo (int)($byStatus[$status] ?? 0); ?></span>
             <span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $status)); ?>"><?php echo $label; ?></span>
         </a>
@@ -122,14 +122,14 @@ $pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Rea
                 <?php endif; ?>
                 <?php foreach ($kitchens as $k): ?>
                     <tr>
-                        <td class="cb-table-name"><?php echo htmlspecialchars($k['brand_name']); ?><span class="cb-table-sub"><?php echo htmlspecialchars($k['zone']); ?> · <?php echo round($k['commission_rate'] * 100); ?>% commission</span></td>
+                        <td class="cb-table-name"><a href="kitchen.php?id=<?php echo (int)$k['brand_id']; ?>"><?php echo htmlspecialchars($k['brand_name']); ?></a><span class="cb-table-sub"><?php echo htmlspecialchars($k['zone']); ?> · <?php echo round($k['commission_rate'] * 100); ?>% commission</span></td>
                         <td><span class="cb-dot-status <?php echo $k['is_active'] ? '' : 'off'; ?>"><?php echo $k['is_active'] ? 'Open' : 'Paused'; ?></span></td>
                         <td><?php echo (int)$k['logins'] > 0 ? $plural((int)$k['logins'], 'login') : '<a class="cb-link" href="brand.php#kitchen-logins">Add login</a>'; ?></td>
                         <td class="num"><?php echo (int)$k['meals']; ?><?php if ((int)$k['sold_out'] > 0): ?><span class="cb-table-sub"><?php echo (int)$k['sold_out']; ?> sold out</span><?php endif; ?></td>
                         <td class="num"><?php echo (int)$k['active']; ?></td>
                         <td class="num"><?php echo (int)$k['orders']; ?></td>
                         <td class="num"><?php echo $money($k['sales']); ?></td>
-                        <td class="num"><?php echo $money($k['sales'] * $k['commission_rate']); ?></td>
+                        <td class="num"><?php echo $money($k['commission']); ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
