@@ -1,6 +1,6 @@
 <?php
 // Admin: one kitchen at a glance. Its money for a date range, its menu and categories (read-only:
-// kitchens manage their own meals in the kitchen portal), recent orders, support messages and staff logins.
+// kitchens manage their own meals in the kitchen portal), support messages and staff logins.
 define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../../core/core.php';
 require_admin();
@@ -62,7 +62,6 @@ ksort($categories);
 $soldOut = count(array_filter($meals, function ($m) { return !(int)$m['is_available']; }));
 
 $byStatus = $orderCtrl->countKitchenOrdersByStatus($kitchenId);
-$recentOrders = array_slice($orderCtrl->getKitchenOrders($kitchenId, 'all'), 0, 6);
 $bestSellers = $orderCtrl->getKitchenBestSellers($kitchenId, 5);
 $messages = (new SupportController())->getMessagesByKitchen($kitchenId);
 $openMessages = count(array_filter($messages, function ($m) { return $m['status'] === 'Open'; }));
@@ -193,35 +192,6 @@ $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kit
 
 <div class="cb-bill">
     <div>
-        <div class="cb-row">
-            <h2>Recent orders</h2>
-            <span class="cb-muted"><?php echo $plural($inProgress, 'order'); ?> in progress</span>
-        </div>
-        <section class="cb-card">
-            <?php if (empty($recentOrders)): ?>
-                <p class="cb-muted">No orders yet.</p>
-            <?php else: ?>
-                <div class="cb-table-wrap">
-                    <table class="cb-table">
-                        <thead><tr><th>Order</th><th>Customer</th><th class="num">Total</th><th>Status</th></tr></thead>
-                        <tbody>
-                            <?php foreach ($recentOrders as $o): ?>
-                                <tr>
-                                    <td class="cb-table-name">
-                                        <a href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$o['order_id']; ?>">#<?php echo htmlspecialchars($o['invoice_no']); ?></a>
-                                        <span class="cb-table-sub"><?php echo date('M d · h:i A', strtotime($o['order_date'])); ?></span>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($o['customer_name']); ?></td>
-                                    <td class="num"><?php echo $money((float)$o['items_total'] + (float)$o['delivery_fee']); ?></td>
-                                    <td><span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $o['order_status'])); ?>"><?php echo htmlspecialchars($o['order_status']); ?></span></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-        </section>
-
         <div class="cb-row">
             <h2>Support messages</h2>
             <a class="cb-viewall" href="messages.php">All messages ›</a>

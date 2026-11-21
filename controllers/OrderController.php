@@ -281,10 +281,10 @@ class OrderController
     const ORDERS_PER_PAGE = 25;
 
     /**
-     * Admin order search. Cleans the query string into filters and returns one page of orders,
-     * the per-status counts for the chips, and paging details.
+     * A kitchen's order list (kitchen portal, All orders). Cleans the query string into filters, always limited to
+     * $brandId, and returns one page of orders, the per-status counts for the chips, and paging details.
      */
-    public function searchOrdersForAdmin($input)
+    public function searchKitchenOrders($brandId, $input)
     {
         $readDate = function ($value) {
             $d = DateTime::createFromFormat('Y-m-d', (string)$value);
@@ -292,7 +292,7 @@ class OrderController
         };
         $f = [
             'q' => mb_substr(trim((string)($input['q'] ?? '')), 0, 100),
-            'brand_id' => max(0, (int)($input['brand'] ?? 0)),
+            'brand_id' => (int)$brandId,
             'from' => $readDate($input['from'] ?? ''),
             'to' => $readDate($input['to'] ?? ''),
             'status' => (array_key_exists($input['status'] ?? '', self::STATUSES) || ($input['status'] ?? '') === 'Cancelled') ? $input['status'] : '',
