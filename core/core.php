@@ -10,22 +10,19 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 /**
- * Signed-in accounts are re-checked against the database on every request, so a suspension signs the
- * person out at once, and removing someone's kitchen access (or moving them to another kitchen) takes effect immediately.
+ * Signed-in accounts are re-checked against the database on every request, so a deleted account is signed out
+ * and removing someone's kitchen access (or moving them to another kitchen) takes effect immediately.
  */
 function sync_account_session() {
     if (empty($_SESSION['customer_id'])) {
         return;
     }
     require_once __DIR__ . '/db_class.php';
-    $row = (new Database())->fetchOne("SELECT * FROM customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
-    if (!$row || !empty($row['is_suspended'])) {
-        // Deleted or suspended while signed in: end the session, keep only the message
+    $row = (new Database())->fetchOne("SELECT user_role, brand_id FROM customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
+    if (!$row) {
+        // The account was deleted while signed in
         $_SESSION = [];
         session_regenerate_id(true);
-        if ($row) {
-            $_SESSION['error'] = 'Your CampusBite account is suspended. Contact CampusBite support if you think this is a mistake.';
-        }
         return;
     }
     if ((int)($_SESSION['user_role'] ?? 0) === 4) {

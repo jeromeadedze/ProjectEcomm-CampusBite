@@ -6,7 +6,7 @@ require_once __DIR__ . '/../controllers/CustomerController.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: ../views/admin/brand.php#kitchen-logins");
+    header("Location: ../views/admin/users.php");
     exit;
 }
 require_csrf();
@@ -21,6 +21,6 @@ if (!$account || (int)$account['user_role'] !== 4) {
     $_SESSION['success'] = "{$account['customer_name']} no longer has kitchen access.";
 }
 
-header("Location: ../views/admin/brand.php#kitchen-logins");
+header("Location: ../views/admin/users.php");
 exit;
 ?>

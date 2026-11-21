@@ -9,7 +9,7 @@ a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 button,input,select{font:inherit}
 
-.cb{--ink:#0F0F0F;--ember:#E3001B;--ember-d:#C10017;--ember-soft:#FDE7E9;--window:#ECECEE;--paper:#F6F6F7;--card:#FFFFFF;--muted:#8A8D93;--line:#E6E6EA;--dash:#D4D4DA;
+.cb{--ink:#0F0F0F;--ember:#E3001B;--ember-d:#C10017;--ember-soft:#FDE7E9;--window:#ECECEE;--paper:#F6F6F7;--card:#FFFFFF;--muted:#6B6E75;--field-line:#86898F;--line:#E6E6EA;--dash:#D4D4DA;
   max-width:1480px;margin:20px auto;min-height:calc(100vh - 40px);background:var(--window);border-radius:32px;padding:16px;display:flex;flex-direction:column;gap:16px}
 .cb h2{font-size:18px;font-weight:600;margin:0}
 .cb-row{display:flex;align-items:center;justify-content:space-between;margin:30px 0 14px}
@@ -28,7 +28,7 @@ button,input,select{font:inherit}
 .cb-nav::-webkit-scrollbar{display:none}
 .cb-nav a{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:500;color:#3A3C40;white-space:nowrap;transition:background .15s,color .15s}
 .cb-nav a:hover{color:var(--ember)}
-.cb-nav a.is-active{background:var(--ember-soft);color:var(--ember)}
+.cb-nav a.is-active{background:var(--ember-soft);color:var(--ember-d)}
 .cb-nav svg{width:18px;height:18px;flex:none}
 .cb-nav .cb-nav-phone{display:none}
 .cb-bar-actions{display:flex;align-items:center;gap:10px;flex:none}
@@ -335,7 +335,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 
 /* Small select + button side by side in admin tables */
 .cb-inline-form{display:flex;align-items:center;gap:8px;margin:0}
-.cb-inline-form select{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);max-width:180px}
+.cb-inline-form select{background:var(--paper);border:1px solid var(--field-line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);max-width:180px}
 .cb-inline-form select{-webkit-appearance:none;appearance:none;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230F0F0F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;cursor:pointer}
 .cb-inline-form .cb-btn{padding:7px 12px;font-size:12px}
 
@@ -368,7 +368,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
 .cb .cb-card.cb-queue-step{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:16px 18px;margin-bottom:0;transition:border-color .15s,transform .15s}
 .cb .cb-card.cb-queue-step:hover{border-color:var(--ember);transform:translateY(-2px)}
-.cb-queue-num{font-family:'Poppins',system-ui,sans-serif;font-size:28px;font-weight:600;line-height:1}
+.cb-queue-num{font-family:'Poppins',system-ui,sans-serif;font-size:28px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
 .cb-kitchen-split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;margin-top:24px}
 .cb-best{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
 .cb-best li{font-size:13.5px}
@@ -432,7 +432,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 /* Money report */
 .cb-money-range{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
 .cb-money-range label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted)}
-.cb-money-range input{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink)}
+.cb-money-range input{background:var(--paper);border:1px solid var(--field-line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink)}
 .cb-money-range .cb-btn{padding:8px 14px;font-size:13px}
 .cb-table-total th,.cb-table-total td{font-weight:700;border-top:2px solid var(--line)}
 .cb-money-check{max-width:420px;margin:0 0 14px}
@@ -539,7 +539,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 /* Admin orders: search and filters */
 .cb-order-filters{margin-bottom:4px}
 .cb-order-filters .cb-order-search{flex:1 1 240px}
-.cb-order-filters select{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink)}
+.cb-order-filters select{background:var(--paper);border:1px solid var(--field-line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink)}
 .cb-order-filters input[type=search]{width:100%}
 
 /* Cancelled orders and refunds */
@@ -555,7 +555,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-cancel[open] summary::after{transform:rotate(90deg)}
 .cb-cancel form{margin-top:12px;display:grid;gap:10px;max-width:520px}
 .cb-btn.cb-btn-danger{background:var(--ember);border-color:var(--ember);justify-self:start}
-.cb-btn.cb-btn-danger:hover{background:var(--ember-d);border-color:var(--ember-d)}
+@media (hover:hover){.cb-btn.cb-btn-danger:hover{background:var(--ember-d);border-color:var(--ember-d)}}
 .cb-refund-row{color:#16774A}
 @media (prefers-reduced-motion:reduce){.cb-cancel summary::after{transition:none}}
 .cb-ticket-reject{display:block;margin-top:10px;font-size:12.5px}
@@ -577,7 +577,7 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-reply-form summary{list-style:none;display:inline-flex;align-items:center;cursor:pointer;padding:4px 12px;font-size:12px}
 .cb-reply-form summary::-webkit-details-marker{display:none}
 .cb-reply-form[open] summary{display:none}
-.cb-reply-form textarea{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:11px 14px;font:inherit;font-size:13.5px;color:var(--ink);resize:vertical}
+.cb-reply-form textarea{width:100%;background:var(--paper);border:1px solid var(--field-line);border-radius:14px;padding:11px 14px;font:inherit;font-size:13.5px;color:var(--ink);resize:vertical}
 .cb-reply-form textarea:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
 .cb-reply-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12.5px}
 .cb-reply-actions .cb-btn{margin-left:auto}
@@ -589,7 +589,8 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* Customer page (Sprint 20) */
-.cb-suspended-note{background:var(--ember-soft);font-size:13.5px;line-height:1.6;margin-bottom:16px}
-.cb-kpi-num.cb-kpi-text{font-size:20px;line-height:1.3;overflow-wrap:anywhere}
 .cb-link-quiet{color:inherit;text-decoration:underline;text-decoration-color:var(--dash);text-underline-offset:3px}
 .cb-link-quiet:hover{color:var(--ember-d);text-decoration-color:currentColor}
+
+/* Kitchen customers: call and WhatsApp buttons under the customer's details */
+.cb-customer-contact{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px}

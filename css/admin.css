@@ -2,7 +2,6 @@
 
 .cb-admin-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:20px;padding-bottom:2px}
 .cb-admin-tabs a{flex:none;background:var(--card);border:1px solid var(--card);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:500;color:var(--ink);text-decoration:none}
-.cb-admin-tabs a:hover{border-color:var(--ink);color:var(--ink)}
 .cb-admin-tabs a.is-active{background:var(--ink);border-color:var(--ink);color:#fff}
 
 .cb-card{background:var(--card);border:1px solid var(--card);border-radius:22px;padding:24px;margin-bottom:20px}
@@ -12,11 +11,9 @@
 .cb-admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 .cb-admin-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .cb-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:999px;padding:11px 22px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s}
-.cb-btn:hover{background:var(--ember);border-color:var(--ember);color:#fff}
 .cb-btn-quiet{background:var(--card);color:var(--ink);border-color:var(--dash)}
-.cb-btn-quiet:hover{background:var(--card);border-color:var(--ink);color:var(--ink)}
 
-.cb-field textarea{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--ink);resize:vertical}
+.cb-field textarea{width:100%;background:var(--paper);border:1px solid var(--field-line);border-radius:14px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--ink);resize:vertical}
 .cb-field textarea:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
 .cb-field input[type=file]{font-size:13px}
 
@@ -25,7 +22,7 @@
 .cb-table th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:0 6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 .cb-table td{padding:11px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
 .cb-table tr:last-child td{border-bottom:0}
-.cb-table td.num,.cb-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.cb-table td.num,.cb-table th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .cb-table-name{font-weight:600;white-space:nowrap}
 .cb-table-name i{color:var(--ember);margin-right:8px}
 .cb-table-sub{display:block;font-weight:400;font-size:12px;color:var(--muted);white-space:normal}
@@ -33,9 +30,7 @@
 .cb-table-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px;white-space:nowrap}
 .cb-table-actions form{margin:0}
 .cb-table-actions a,.cb-table-actions button{background:none;border:0;padding:0;font-size:12px;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer}
-.cb-table-actions a:hover{color:var(--ember-d)}
 .cb-table-actions button{color:var(--ember-d)}
-.cb-table-actions button:hover{color:var(--ink)}
 .cb-table tr.is-editing td{background:var(--ember-soft)}
 
 .cb-dot-status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap}
@@ -47,3 +42,14 @@
   .cb-admin-form{grid-template-columns:minmax(0,1fr)}
   .cb-card{padding:18px 16px}
 }
+
+/* Hover only where there is a real pointer, so a tap on a phone doesn't leave a button stuck in its hover colour.
+   Buttons darken on hover; red stays for destructive buttons (.cb-btn-danger). */
+@media (hover:hover){
+  .cb-admin-tabs a:hover{border-color:var(--ink);color:var(--ink)}
+  .cb-btn:hover{background:#2A2B2F;border-color:#2A2B2F;color:#fff}
+  .cb-btn-quiet:hover{background:var(--card);border-color:var(--ink);color:var(--ink)}
+  .cb-table-actions a:hover{color:var(--ember-d)}
+  .cb-table-actions button:hover{color:var(--ink)}
+}
+@media (max-width:860px){.cb-field textarea,.cb-reply-form textarea{font-size:16px}}

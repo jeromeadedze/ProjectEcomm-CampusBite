@@ -37,69 +37,6 @@ class CustomerClass extends Database
         return $this->fetchAll($sql);
     }
 
-    // ---------- Admin: customer search and suspension ----------
-
-    // WHERE clause for the admin's account search: text in name, email or phone, and a group
-    private function accountSearchWhere($f, $withGroup = true)
-    {
-        $where = ['1 = 1'];
-        $params = [];
-        if (($f['q'] ?? '') !== '') {
-            $term = '%' . $f['q'] . '%';
-            $where[] = "(c.customer_name LIKE ? OR c.customer_email LIKE ? OR c.customer_contact LIKE ?)";
-            array_push($params, $term, $term, $term);
-        }
-        $groups = [
-            'customers' => 'c.user_role = 2 AND c.is_suspended = 0',
-            'suspended' => 'c.is_suspended = 1',
-            'kitchen' => 'c.user_role = 4',
-            'admin' => 'c.user_role = 1',
-        ];
-        if ($withGroup && isset($groups[$f['group'] ?? ''])) {
-            $where[] = $groups[$f['group']];
-        }
-        return [implode(' AND ', $where), $params];
-    }
-
-    // One page of matching accounts, newest first, with each one's orders, spending and latest order
-    public function searchAccounts($f, $limit, $offset)
-    {
-        [$where, $params] = $this->accountSearchWhere($f);
-        $sql = "SELECT c.customer_id, c.customer_name, c.customer_email, c.customer_contact, c.campus_hostel, c.user_role,
-                       c.has_pass, c.pass_expiry, c.is_suspended, c.created_at, b.brand_name,
-                       (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.customer_id AND o.order_status <> 'Cancelled') AS orders,
-                       (SELECT COALESCE(SUM(p.amt), 0) FROM payment p JOIN orders o ON o.order_id = p.order_id
-                        WHERE o.customer_id = c.customer_id AND o.order_status <> 'Cancelled') AS spent,
-                       (SELECT MAX(o.order_date) FROM orders o WHERE o.customer_id = c.customer_id) AS last_order
-                FROM customer c
-                LEFT JOIN brands b ON c.brand_id = b.brand_id
-                WHERE $where
-                ORDER BY c.customer_id DESC
-                LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
-        return $this->fetchAll($sql, $params);
-    }
-
-    // How many matching accounts are in each group (ignoring the group filter itself)
-    public function countAccountGroups($f)
-    {
-        [$where, $params] = $this->accountSearchWhere($f, false);
-        $row = $this->fetchOne("SELECT COUNT(*) AS all_accounts,
-                                       COALESCE(SUM(c.user_role = 2 AND c.is_suspended = 0), 0) AS customers,
-                                       COALESCE(SUM(c.is_suspended = 1), 0) AS suspended,
-                                       COALESCE(SUM(c.user_role = 4), 0) AS kitchen,
-                                       COALESCE(SUM(c.user_role = 1), 0) AS admin
-                                FROM customer c WHERE $where", $params);
-        return array_map('intval', $row);
-    }
-
-    public function setSuspended($id, $suspended, $reason = null)
-    {
-        $sql = $suspended
-            ? "UPDATE customer SET is_suspended = 1, suspended_at = NOW(), suspend_reason = ? WHERE customer_id = ? AND user_role = 2"
-            : "UPDATE customer SET is_suspended = 0, suspended_at = NULL, suspend_reason = NULL WHERE customer_id = ?";
-        return $this->executeCount($sql, $suspended ? [$reason, $id] : [$id]) === 1;
-    }
-
     public function updateProfile($id, $name, $contact, $hostel)
     {
         $sql = "UPDATE customer SET customer_name = ?, customer_contact = ?, campus_hostel = ? WHERE customer_id = ?";

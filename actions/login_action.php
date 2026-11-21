@@ -15,10 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $custCtrl = new CustomerController();
         $user = $custCtrl->loginCustomer($email, $pass);
 
-        if ($user && !empty($user['is_suspended'])) {
-            // Only said after the right password, so it doesn't reveal which emails are suspended
-            $_SESSION['error'] = "This account is suspended" . (!empty($user['suspend_reason']) ? ': ' . $user['suspend_reason'] : '') . ". Contact CampusBite support if you think this is a mistake.";
-        } elseif ($user) {
+        if ($user) {
             log_in_customer($user);
             $_SESSION['success'] = "Welcome back, " . $user['customer_name'] . "!";
             // Came back from Paystack after the session ran out: finish checking that payment first

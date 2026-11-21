@@ -8,33 +8,24 @@ require_once __DIR__ . '/../../controllers/SupportController.php';
 
 require_admin();
 
-const WAITING_MINUTES = 20; // a Placed order older than this hasn't been picked up by its kitchen
-
 $orderCtrl = new OrderController();
 $summary = $orderCtrl->getPlatformSummary();
-$byStatus = $orderCtrl->countOrdersByStatus();
 $kitchens = $orderCtrl->getKitchenOverview(date('Y-m-d 00:00:00', strtotime('-6 days')));
-$waiting = $orderCtrl->getWaitingOrders(WAITING_MINUTES);
 $recentOrders = array_slice($orderCtrl->getAllOrders(), 0, 6);
 
 $accounts = (new CustomerController())->getAllCustomers();
 $roleCount = array_count_values(array_map(function ($c) { return (int)$c['user_role']; }, $accounts));
 $openMessages = count(array_filter((new SupportController())->getAllMessages(), function ($m) { return $m['status'] === 'Open'; }));
 
-$noLogin = array_filter($kitchens, function ($k) { return (int)$k['logins'] === 0; });
-$noMeals = array_filter($kitchens, function ($k) { return (int)$k['meals'] === 0; });
-
 $pageHeading = 'CampusBite overview';
 require_once __DIR__ . '/../layout/header.php';
 
 $money = function ($amount) { return 'GH₵ ' . number_format($amount, 2); };
 $plural = function ($n, $word) { return $n . ' ' . $word . ($n === 1 ? '' : 's'); };
-$pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Ready' => 'Ready to deliver', 'In Transit' => 'Out for delivery', 'Delivered' => 'Delivered'];
 ?>
 
 <p class="cb-sub">
     <?php echo $plural(count($kitchens), 'kitchen'); ?> ·
-    <?php echo $plural((int)($roleCount[2] ?? 0), 'customer'); ?> ·
     <?php echo $plural((int)($roleCount[4] ?? 0), 'kitchen login'); ?>
 </p>
 
@@ -56,27 +47,6 @@ $pipeline = ['Placed' => 'Waiting for kitchen', 'Preparing' => 'Preparing', 'Rea
 <?php
 // Each issue: icon, headline, a muted detail line, and the place to fix it
 $issues = [];
-if ($waiting) {
-    $n = count($waiting);
-    $issues[] = ['bi-clock-history', $plural($n, 'order') . ($n === 1 ? ' is' : ' are') . ' still waiting for a kitchen',
-        'Placed over ' . WAITING_MINUTES . ' minutes ago: ' . implode(', ', array_map(function ($w) use ($ROOT_DIR) {
-            return '<a class="cb-link-quiet" href="' . $ROOT_DIR . '/views/order_tracking.php?order_id=' . (int)$w['order_id'] . '">#' . htmlspecialchars($w['invoice_no']) . '</a> (' . htmlspecialchars($w['brand_name'] ?? 'no kitchen') . ')';
-        }, array_slice($waiting, 0, 3))) . ($n > 3 ? ' and ' . ($n - 3) . ' more' : ''),
-        'View orders', 'orders.php?status=Placed'];
-}
-if ($noLogin) {
-    $n = count($noLogin);
-    $issues[] = ['bi-person-x', $plural($n, 'kitchen') . ($n === 1 ? ' has' : ' have') . ' no login',
-        "Nobody there can receive orders: " . htmlspecialchars(implode(', ', array_column($noLogin, 'brand_name'))),
-        'Create logins', 'brand.php#kitchen-logins'];
-}
-if ($noMeals) {
-    $n = count($noMeals);
-    $first = reset($noMeals);
-    $issues[] = ['bi-journal-x', $plural($n, 'kitchen') . ($n === 1 ? ' has' : ' have') . ' an empty menu',
-        htmlspecialchars(implode(', ', array_column($noMeals, 'brand_name'))) . ($n === 1 ? ' needs' : ' need') . ' to add meals from the kitchen portal',
-        $n === 1 ? 'Open kitchen' : 'View kitchens', $n === 1 ? 'kitchen.php?id=' . (int)$first['brand_id'] : 'brand.php'];
-}
 if ($openMessages) {
     $issues[] = ['bi-chat-left-dots', $plural($openMessages, 'support message') . ($openMessages === 1 ? ' is' : ' are') . ' open',
         'Customers are waiting for a reply', 'Open Support', 'messages.php'];
@@ -103,16 +73,6 @@ if ($openMessages) {
     </section>
 <?php endif; ?>
 
-<div class="cb-row"><h2>Orders right now</h2><a class="cb-viewall" href="orders.php">All orders ›</a></div>
-<div class="cb-queue">
-    <?php foreach ($pipeline as $status => $label): ?>
-        <a class="cb-card cb-queue-step" href="orders.php?status=<?php echo urlencode($status); ?>">
-            <span class="cb-queue-num"><?php echo (int)($byStatus[$status] ?? 0); ?></span>
-            <span class="cb-status cb-status-<?php echo strtolower(str_replace(' ', '-', $status)); ?>"><?php echo $label; ?></span>
-        </a>
-    <?php endforeach; ?>
-</div>
-
 <div class="cb-row"><h2>Kitchens</h2><a class="cb-viewall" href="brand.php">Manage kitchens ›</a></div>
 <section class="cb-card">
     <div class="cb-table-wrap">
@@ -137,7 +97,7 @@ if ($openMessages) {
                     <tr>
                         <td class="cb-table-name"><a href="kitchen.php?id=<?php echo (int)$k['brand_id']; ?>"><?php echo htmlspecialchars($k['brand_name']); ?></a><span class="cb-table-sub"><?php echo htmlspecialchars($k['zone']); ?> · <?php echo round($k['commission_rate'] * 100); ?>% commission</span></td>
                         <td><span class="cb-dot-status <?php echo $k['is_active'] ? '' : 'off'; ?>"><?php echo $k['is_active'] ? 'Open' : 'Paused'; ?></span></td>
-                        <td><?php echo (int)$k['logins'] > 0 ? $plural((int)$k['logins'], 'login') : '<a class="cb-link" href="brand.php#kitchen-logins">Add login</a>'; ?></td>
+                        <td><?php echo (int)$k['logins'] > 0 ? $plural((int)$k['logins'], 'login') : '<a class="cb-link" href="users.php?kitchen=' . (int)$k['brand_id'] . '#new-login">Add login</a>'; ?></td>
                         <td class="num"><?php echo (int)$k['meals']; ?><?php if ((int)$k['sold_out'] > 0): ?><span class="cb-table-sub"><?php echo (int)$k['sold_out']; ?> sold out</span><?php endif; ?></td>
                         <td class="num"><?php echo (int)$k['active']; ?></td>
                         <td class="num"><?php echo (int)$k['orders']; ?></td>

@@ -19,7 +19,8 @@
 .cb-field{margin-bottom:16px;min-width:0}
 .cb-field-full{grid-column:1/-1}
 .cb-field label{display:block;font-size:12.5px;font-weight:500;margin-bottom:6px}
-.cb-field input,.cb-field select{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--ink)}
+.cb-field input,.cb-field select{width:100%;background:var(--paper);border:1px solid var(--field-line,#86898F);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--ink)}
+@media (max-width:860px){.cb-field input,.cb-field select,.cb-field textarea,.cb-inline-form select,.cb-money-range input,.cb-money-range select,.cb-order-filters select{font-size:16px}}
 .cb-field input:focus,.cb-field select:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
 /* Replace the browser's arrow, which ignores padding and hugs the edge, with one set in from the right */
 .cb-field select{-webkit-appearance:none;appearance:none;padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230F0F0F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 18px center;background-size:16px;cursor:pointer}

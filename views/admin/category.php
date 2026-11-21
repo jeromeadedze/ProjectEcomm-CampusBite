@@ -84,11 +84,13 @@ require_once __DIR__ . '/../layout/header.php';
                         <td>
                             <div class="cb-table-actions">
                                 <a href="category.php?edit_id=<?php echo (int)$category['cat_id']; ?>" aria-label="Edit <?php echo htmlspecialchars($category['cat_name']); ?>">Edit</a>
-                                <form action="<?php echo $ROOT_DIR; ?>/actions/delete_category_action.php" method="POST" <?php if ((int)$category['product_count'] === 0): ?>data-confirm="Delete <?php echo htmlspecialchars($category['cat_name']); ?>? This can't be undone."<?php endif; ?>>
-                                    <?php echo csrf_field(); ?>
-                                    <input type="hidden" name="cat_id" value="<?php echo (int)$category['cat_id']; ?>">
-                                    <button type="submit" aria-label="Delete <?php echo htmlspecialchars($category['cat_name']); ?>">Delete</button>
-                                </form>
+                                <?php if ((int)$category['product_count'] === 0): // a category with meals can't be deleted, so only empty ones offer it ?>
+                                    <form action="<?php echo $ROOT_DIR; ?>/actions/delete_category_action.php" method="POST" data-confirm="Delete <?php echo htmlspecialchars($category['cat_name']); ?>? This can't be undone.">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="cat_id" value="<?php echo (int)$category['cat_id']; ?>">
+                                        <button type="submit" aria-label="Delete <?php echo htmlspecialchars($category['cat_name']); ?>">Delete</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

@@ -293,7 +293,6 @@ class OrderController
         $f = [
             'q' => mb_substr(trim((string)($input['q'] ?? '')), 0, 100),
             'brand_id' => max(0, (int)($input['brand'] ?? 0)),
-            'customer_id' => max(0, (int)($input['customer'] ?? 0)),
             'from' => $readDate($input['from'] ?? ''),
             'to' => $readDate($input['to'] ?? ''),
             'status' => (array_key_exists($input['status'] ?? '', self::STATUSES) || ($input['status'] ?? '') === 'Cancelled') ? $input['status'] : '',
@@ -311,9 +310,35 @@ class OrderController
         return ['filters' => $f, 'orders' => $orders, 'counts' => $counts, 'total' => $total, 'page' => $page, 'pages' => $pages];
     }
 
-    public function getCustomerOrderStats($customerId)
+    const CUSTOMERS_PER_PAGE = 25;
+    const NEW_CUSTOMER_DAYS = 30;
+
+    /** A kitchen's customers: ?q= (name, email or phone) and ?page=, plus headline numbers. */
+    public function getKitchenCustomers($brandId, $input)
     {
-        return $this->orderModel->getCustomerOrderStats($customerId);
+        $q = mb_substr(trim((string)($input['q'] ?? '')), 0, 100);
+        $total = $this->orderModel->countKitchenCustomers($brandId, $q);
+        $pages = max(1, (int)ceil($total / self::CUSTOMERS_PER_PAGE));
+        $page = min(max(1, (int)($input['page'] ?? 1)), $pages);
+        return [
+            'q' => $q,
+            'customers' => $this->orderModel->getKitchenCustomers($brandId, $q, self::CUSTOMERS_PER_PAGE, ($page - 1) * self::CUSTOMERS_PER_PAGE),
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
+            'stats' => $this->orderModel->getKitchenCustomerStats($brandId, date('Y-m-d 00:00:00', strtotime('-' . self::NEW_CUSTOMER_DAYS . ' days'))),
+        ];
+    }
+
+    /** One customer as this kitchen knows them, with their orders from it; null if they've never ordered from it. */
+    public function getKitchenCustomer($brandId, $customerId)
+    {
+        $rows = $this->orderModel->getKitchenCustomers($brandId, '', 1, 0, (int)$customerId);
+        if (!$rows) {
+            return null;
+        }
+        $orders = $this->orderModel->searchOrders(['brand_id' => (int)$brandId, 'customer_id' => (int)$customerId], self::ORDERS_PER_PAGE, 0);
+        return ['customer' => $rows[0], 'orders' => $orders];
     }
 
     public function updateOrderStatus($orderId, $status)

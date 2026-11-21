@@ -2,6 +2,12 @@
  * CampusBite Client-Side JavaScript
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // On phones the nav row scrolls sideways; bring the current page's link into view
+    const activeNav = document.querySelector('.cb-nav a.is-active');
+    if (activeNav && activeNav.parentElement.scrollWidth > activeNav.parentElement.clientWidth) {
+        activeNav.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
+
     // Success messages clear themselves; errors stay until dismissed
     document.querySelectorAll('.cb-toast-success').forEach(toast => {
         setTimeout(() => toast.remove(), 4500);

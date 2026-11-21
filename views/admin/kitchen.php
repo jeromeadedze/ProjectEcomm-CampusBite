@@ -262,7 +262,7 @@ $facts = [$kitchen['zone'], $kitchen['location_desc'] ?: 'No location set', $kit
         <div class="cb-row"><h2>Staff logins</h2></div>
         <section class="cb-card">
             <?php if (empty($staff)): ?>
-                <p class="cb-muted">No staff login yet. <a class="cb-link" href="brand.php#kitchen-logins">Create one</a> so the kitchen can manage its menu and orders.</p>
+                <p class="cb-muted">No staff login yet. <a class="cb-link" href="users.php?kitchen=<?php echo $kitchenId; ?>#new-login">Create one</a> so the kitchen can manage its menu and orders.</p>
             <?php else: ?>
                 <ul class="cb-kitchen-best">
                     <?php foreach ($staff as $s): ?>

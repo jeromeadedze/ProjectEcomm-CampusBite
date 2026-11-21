@@ -238,59 +238,5 @@ class CustomerController
     {
         return $this->customerModel->getAllCustomers();
     }
-
-    const ACCOUNTS_PER_PAGE = 25;
-    // The account groups the admin can filter by, with their chip labels
-    const ACCOUNT_GROUPS = ['customers' => 'Customers', 'suspended' => 'Suspended', 'kitchen' => 'Kitchen staff', 'admin' => 'Admins'];
-
-    /**
-     * Admin account search: ?q= (name, email or phone), ?group= and ?page=. Returns one page of accounts,
-     * the per-group counts for the chips and paging details.
-     */
-    public function searchAccountsForAdmin($input)
-    {
-        $f = [
-            'q' => mb_substr(trim((string)($input['q'] ?? '')), 0, 100),
-            'group' => array_key_exists($input['group'] ?? '', self::ACCOUNT_GROUPS) ? $input['group'] : '',
-        ];
-        $counts = $this->customerModel->countAccountGroups($f);
-        $total = $f['group'] !== '' ? $counts[$f['group']] : $counts['all_accounts'];
-        $pages = max(1, (int)ceil($total / self::ACCOUNTS_PER_PAGE));
-        $page = min(max(1, (int)($input['page'] ?? 1)), $pages);
-        $accounts = $this->customerModel->searchAccounts($f, self::ACCOUNTS_PER_PAGE, ($page - 1) * self::ACCOUNTS_PER_PAGE);
-        return ['filters' => $f, 'accounts' => $accounts, 'counts' => $counts, 'total' => $total, 'page' => $page, 'pages' => $pages];
-    }
-
-    /**
-     * Suspends a customer account: it is signed out on its next page load and can't sign in again until
-     * reinstated. Only customer accounts (role 2) can be suspended. Returns an error message, or null.
-     */
-    public function suspendCustomer($id, $reason)
-    {
-        $account = $this->customerModel->getCustomerById($id);
-        $reason = trim((string)$reason);
-        if (!$account) {
-            return "That account doesn't exist.";
-        }
-        if ((int)$account['user_role'] !== 2) {
-            return 'Only customer accounts can be suspended. Remove kitchen access from the Kitchens tab instead.';
-        }
-        if (!empty($account['is_suspended'])) {
-            return "{$account['customer_name']} is already suspended.";
-        }
-        if (mb_strlen($reason) < 3 || mb_strlen($reason) > 255) {
-            return 'Give a reason for the suspension (3 to 255 characters). The customer sees it if they try to sign in.';
-        }
-        return $this->customerModel->setSuspended($id, true, $reason) ? null : "The account couldn't be suspended. Try again.";
-    }
-
-    public function reinstateCustomer($id)
-    {
-        $account = $this->customerModel->getCustomerById($id);
-        if (!$account || empty($account['is_suspended'])) {
-            return "That account isn't suspended.";
-        }
-        return $this->customerModel->setSuspended($id, false) ? null : "The account couldn't be reinstated. Try again.";
-    }
 }
 ?>
