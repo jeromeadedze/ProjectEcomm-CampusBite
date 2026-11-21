@@ -26,6 +26,7 @@ $toCheckout = ($_GET['redirect'] ?? '') === 'checkout';
         <div class="cb-field">
             <label for="customer_pass">Password</label>
             <input type="password" id="customer_pass" name="customer_pass" autocomplete="current-password" required>
+            <a class="cb-auth-forgot" href="<?php echo $ROOT_DIR; ?>/views/forgot_password.php">Forgot password?</a>
         </div>
         <button type="submit" class="cb-checkout">Sign in</button>
     </form>

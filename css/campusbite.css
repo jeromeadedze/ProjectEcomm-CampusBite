@@ -546,3 +546,9 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 @media (prefers-reduced-motion:reduce){.cb-cancel summary::after{transition:none}}
 .cb-ticket-reject{display:block;margin-top:10px;font-size:12.5px}
 .cb-ticket-cancelled{margin:12px 0 0;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* Kitchen payouts (Sprint 16) */
+.cb-payout-list{margin-top:6px}
+.cb-payout-list li b{flex-shrink:0;white-space:nowrap}
+.cb-payout-list li .cb-table-sub{white-space:normal;text-align:left}
+#record-payout{scroll-margin-top:90px}

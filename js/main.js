@@ -65,6 +65,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // A link to a form further down (#record-payout): the browser jumps there before the page has finished
+    // laying out, so jump again once it has loaded, and put the cursor in the first field
+    const jumpTarget = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
+    if (jumpTarget && jumpTarget.tagName === 'SECTION' && jumpTarget.querySelector('form')) {
+        window.addEventListener('load', () => {
+            jumpTarget.scrollIntoView({ block: 'start' });
+            const field = jumpTarget.querySelector('input:not([type=hidden]), select');
+            if (field) field.focus({ preventScroll: true });
+        });
+    }
+
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {
         form.addEventListener('submit', event => {

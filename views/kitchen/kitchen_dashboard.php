@@ -4,6 +4,7 @@ define('ROOT_DIR', '../..');
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
+require_once __DIR__ . '/../../controllers/PayoutController.php';
 
 require_kitchen();
 
@@ -19,6 +20,9 @@ $bestSellers = $orderCtrl->getKitchenBestSellers($kitchenId, 5);
 $meals = $productCtrl->getProductsForKitchen($kitchenId);
 $soldOut = count(array_filter($meals, function ($meal) { return !(int)$meal['is_available']; }));
 $commissionPercent = round($kitchen['commission_rate'] * 100);
+$payoutCtrl = new PayoutController();
+$balance = $payoutCtrl->getBalance($kitchen);
+$payouts = $payoutCtrl->getPayouts($kitchenId, 5);
 
 $pageHeading = $kitchen['brand_name'];
 require_once __DIR__ . '/../layout/header.php';
@@ -53,6 +57,28 @@ $pipeline = ['Placed' => 'New', 'Preparing' => 'Preparing', 'Ready' => 'Ready to
     </section>
 </div>
 <p class="cb-field-hint">Sales count meal prices only. You deliver your own orders, so you keep each order's delivery fee on top of what your meals earn.</p>
+
+<div class="cb-row"><h2>Payouts from CampusBite</h2></div>
+<section class="cb-card">
+    <dl class="cb-kpi-split cb-money-check">
+        <div><dt>Earned on delivered orders</dt><dd><?php echo $money($balance['earned']); ?></dd></div>
+        <div><dt>Paid to you so far</dt><dd>− <?php echo $money($balance['paid']); ?></dd></div>
+        <div class="is-total"><dt>CampusBite still owes you</dt><dd><?php echo $money($balance['balance']); ?></dd></div>
+    </dl>
+    <?php if (empty($payouts)): ?>
+        <p class="cb-muted">No payouts yet. CampusBite pays out what you're owed and each payment shows up here.</p>
+    <?php else: ?>
+        <ul class="cb-kitchen-best cb-payout-list">
+            <?php foreach ($payouts as $p): ?>
+                <li>
+                    <span><?php echo date('M j, Y', strtotime($p['paid_on'])); ?> · <?php echo htmlspecialchars($p['method']); ?><?php echo $p['reference'] ? ' · ' . htmlspecialchars($p['reference']) : ''; ?><?php if ($p['note']): ?><span class="cb-table-sub"><?php echo htmlspecialchars($p['note']); ?></span><?php endif; ?></span>
+                    <b><?php echo $money($p['amount']); ?></b>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+    <p class="cb-field-hint">You earn your meal sales minus CampusBite's commission, plus the delivery fee, once an order is delivered. Orders still in progress aren't counted yet<?php echo $balance['pending_value'] > 0 ? ' (' . $money($balance['pending_value']) . ' right now)' : ''; ?>.</p>
+</section>
 
 <div class="cb-row"><h2>Order queue</h2><a class="cb-viewall" href="kitchen_orders.php">All orders ›</a></div>
 <div class="cb-queue">

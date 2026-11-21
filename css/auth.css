@@ -50,3 +50,10 @@
 .cb-toast .cb-toast-actions button.cb-btn:hover{background:var(--ember);border-color:var(--ember);color:#fff}
 .cb-toast .cb-toast-actions button.cb-btn-quiet{background:var(--card);color:var(--ink);border-color:var(--dash)}
 .cb-toast .cb-toast-actions button.cb-btn-quiet:hover{background:var(--card);border-color:var(--ink);color:var(--ink)}
+
+/* Forgot password (Sprint 17) */
+.cb-auth-forgot{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;color:var(--ember-d)}
+.cb-auth-forgot:hover{color:var(--ink)}
+.cb-auth a.cb-checkout{display:flex;justify-content:center;text-decoration:none}
+.cb-dev-note{background:var(--ember-soft);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;margin:0 0 18px;overflow-wrap:anywhere}
+.cb-dev-note code{font-size:12px}

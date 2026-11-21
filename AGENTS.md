@@ -15,8 +15,8 @@ CampusBite is a campus food ordering site for Ashesi University and Berekuso kit
 
 | Folder | Purpose |
 |---|---|
-| `core/` | `core.php` (session, `is_logged_in`, `is_admin`, `require_login`, `require_admin`, `log_in_customer`), `db_class.php` (PDO `Database` base class), `db_cred.php` (credentials) |
-| `classes/` | Models extending `Database`: `CustomerClass`, `ProductClass` (kitchens, categories and meals), `CartClass`, `OrderClass` |
+| `core/` | `mailer.php` (email), `paystack.php`, `core.php` (session, `is_logged_in`, `is_admin`, `require_login`, `require_admin`, `log_in_customer`), `db_class.php` (PDO `Database` base class), `db_cred.php` (credentials) |
+| `classes/` | Models extending `Database`: `CustomerClass`, `ProductClass` (kitchens, categories and meals), `CartClass`, `OrderClass`, `PayoutClass` |
 | `controllers/` | Wrap the models and hold form checks, such as `ProductController::checkBrandForm()` and `CustomerController::HOSTELS` |
 | `actions/` | Form handlers. They check input, set `$_SESSION['success']` or `$_SESSION['error']`, then redirect |
 | `views/` | Pages. Admin pages are in `views/admin/`, shared parts in `views/layout/` |
@@ -61,10 +61,12 @@ Every page includes `views/layout/header.php` and `views/layout/footer.php`. The
 | 9 | Kitchen portal | Done, commit `a0794d0` |
 | 10 | Kitchens deliver (courier role dropped) and admin Money report | Done, commit `9406bac` |
 | 11 | UI revamp (top pill nav, dashed cards, round plates, phone tab bar), checkout/orders without Bootstrap, and kitchen direct messaging | Done, commit `dce5c8b` |
-| 12 | Paystack payment, payment result pages and verified-payment check on the Money page | Done |
-| 13 | Admin kitchen page (money, read-only menu, categories, orders, messages, staff); admin no longer edits meals; shorter admin nav | Done |
-| 14 | Admin oversight fixes, order search and filters, admin pause | Done |
-| 15 | Cancelling orders with Paystack refunds (customer cancel, kitchen reject, admin cancel) | Done |
+| 12 | Paystack payment, payment result pages and verified-payment check on the Money page | Done, commit `68f4abe` |
+| 13 | Admin kitchen page (money, read-only menu, categories, orders, messages, staff); admin no longer edits meals; shorter admin nav | Done, commit `189985f` |
+| 14 | Admin oversight fixes, order search and filters, admin pause | Done, commit `3052da1` |
+| 15 | Cancelling orders with Paystack refunds (customer cancel, kitchen reject, admin cancel) | Done, commit `db3f7c8` |
+| 16 | Kitchen payouts (record payouts, balances, payout history for admin and kitchen) | Done |
+| 17 | Email setup (SMTP or saved copies) and forgot password | Done |
 
 ### What's done
 
@@ -88,6 +90,12 @@ Every page includes `views/layout/header.php` and `views/layout/footer.php`. The
 
 **Money report.** `views/admin/money.php` (admin only) takes a date range (`?from=&to=`, Y-m-d, default this month) and shows, per kitchen: delivered orders, meal sales, CampusBite's commission, delivery fees and what the kitchen is owed (sales − commission + delivery fees), plus orders still in progress, which aren't owed yet. `?export=csv` downloads the same table. Each order stores the kitchen's commission rate when it's placed (`orders.commission_rate`), so changing a rate doesn't change past payouts. A payment check lists orders with no payment, more than one payment, or a payment that doesn't match the order total. The check also shows how much Paystack confirmed and flags payments it didn't (orders from before Sprint 12 were simulated).
 
+**Kitchen payouts (Sprint 16).** CampusBite collects every payment, so it owes each kitchen what its delivered orders earned (meal sales − commission + delivery fees, the Money page's "Kitchen is owed" over all time). `PayoutController` (`classes/PayoutClass.php`, table `payouts`) works out each kitchen's earned to date, paid out and balance. The admin pays the kitchen outside the site (Mobile Money, bank transfer or cash), then records it from the Payouts section of `views/admin/money.php` (`?pay=ID#record-payout` opens the form, filled in with the balance) through `actions/record_payout_action.php`: amount up to the balance, method, reference (required except for cash), date (not in the future) and an optional note. The kitchen's row is locked (`SELECT … FOR UPDATE`) while the balance is checked, so two admins can't pay out more than is owed. Payouts can't be edited or deleted. `?export=payouts` downloads every payout as CSV. The admin kitchen page and the kitchen's own dashboard show the balance and the latest payouts. Balances don't follow the Money page's date range. Delivered orders can't be cancelled, so a recorded payout is never undone by a refund.
+
+**Email and forgot password (Sprint 17).** `core/mailer.php` sends email: `send_email($to, $name, $subject, $html, $text)` with `email_html()` / `email_text()` for CampusBite's layout (white card, red pill button, no images) and `app_url($path)` for links. Settings go in `core/mail_config.php` (gitignored; copy `core/mail_config.example.php`). `MAIL_MODE` 'smtp' sends through any SMTP server (Gmail with an app password: smtp.gmail.com, 587, 'tls'; 'none' for a local test server) and needs `APP_URL`, so reset links never come from the request's Host header. With no config, or 'log', nothing is sent: each email is saved as an HTML file in `storage/mail/` (gitignored; the mailer writes `storage/.htaccess` so Apache refuses to serve it). A failed send is logged and never stops the page. The SMTP client is built in (STARTTLS or SSL, AUTH LOGIN), so there's no Composer dependency.
+
+Forgot password: "Forgot password?" on the sign-in page opens `views/forgot_password.php` → `actions/forgot_password_action.php`, which always gives the same answer, so it can't reveal which emails have accounts. `CustomerController::requestPasswordReset()` makes a 64-hex token, stores only its SHA-256 in `password_resets`, cancels older links and emails the link (works once, for 60 minutes). Limits: 3 links per account and 10 per IP address per hour; extra requests are quietly ignored. `views/reset_password.php?token=` (sent with `Referrer-Policy: no-referrer`) → `actions/reset_password_action.php` checks the password rules, claims the link with a conditional UPDATE so it works once, saves the password, closes every other link for the account, emails a "your password was changed" notice and signs the browser out. In log mode, when the site is opened from this computer (`mail_shows_links()`), the check-your-email page also shows the link so it can be tested without a mail server.
+
 **Cancelling and refunds (Sprint 15).** Orders can end as `Cancelled` (kept out of `OrderController::STATUSES`, so no status menu can set it). `OrderController::CANCELLABLE_FROM` decides who can cancel up to which stage: the customer while it's Placed (reason optional), the order's kitchen while it's Placed or Preparing (a reason from `KITCHEN_REJECT_REASONS` or its own words), and the admin until it's delivered (reason required). All go through `actions/cancel_order_action.php` and `OrderController::cancelOrder()`: the order is claimed with a conditional UPDATE (so it can't be cancelled twice or moved on meanwhile), then Paystack's `/refund` is called for the full amount paid; if Paystack refuses, the order is put back and nothing changes. Payments from before Paystack were simulated, so those orders are cancelled with a `not_needed` refund. Each cancelled order has one row in `refunds` (amount, Paystack refund id and status) plus `orders.cancelled_at`, `cancelled_by` and `cancel_reason`, and a timeline entry. The order page shows the refund status and asks Paystack for an update at most once a minute while it's pending. Cancelled orders count nowhere in sales, commission, payouts, best sellers or "in progress"; the Money page's payment check shows what was refunded and flags failed or missing refunds. There's no Paystack webhook yet, so refund status only updates when someone opens the order.
 
 **Admin kitchen page (Sprint 13).** `views/admin/kitchen.php?id=` opens from the Kitchens list, the admin dashboard and the admin preview of a meal. It is view-only: the kitchen's details, its money for a date range (This month, Last 7 days, All time; the same figures as its row on the Money page, from `OrderController::getMoneyReport()`), its categories with meal counts, its menu (view-only), recent orders, best sellers, support messages and staff logins.
@@ -100,14 +108,15 @@ Every page includes `views/layout/header.php` and `views/layout/footer.php`. The
 
 ### Database migrations
 
-Existing databases must run each file in `database/migrations/` once, in date order: `2026-11-08_phase1_phase2.sql`, `2026-11-09_kitchen_portal.sql`, `2026-11-17_kitchen_delivery.sql`, `2026-11-18_kitchen_support.sql` (adds `brands.brand_phone`, routes `support_messages` to `brand_id`), `2026-11-20_paystack.sql` (adds `payment.verified_at` and makes `transaction_reference` unique), `2026-11-20_admin_pause.sql` (adds `brands.admin_paused`), then `2026-11-21_cancel_refund.sql` (adds the cancel columns on `orders` and the `refunds` table). Fresh databases imported from `database/campusbite.sql` already include all tables, and it can now be re-imported over itself (it turns foreign key checks off while it rebuilds).
+Existing databases must run each file in `database/migrations/` once, in date order: `2026-11-08_phase1_phase2.sql`, `2026-11-09_kitchen_portal.sql`, `2026-11-17_kitchen_delivery.sql`, `2026-11-18_kitchen_support.sql` (adds `brands.brand_phone`, routes `support_messages` to `brand_id`), `2026-11-20_paystack.sql` (adds `payment.verified_at` and makes `transaction_reference` unique), `2026-11-20_admin_pause.sql` (adds `brands.admin_paused`), `2026-11-21_cancel_refund.sql` (adds the cancel columns on `orders` and the `refunds` table), `2026-11-21_kitchen_payouts.sql` (adds the `payouts` table), then `2026-11-22_password_resets.sql` (adds the `password_resets` table). Fresh databases imported from `database/campusbite.sql` already include all tables, and it can now be re-imported over itself (it turns foreign key checks off while it rebuilds).
 
 ### Open items & next steps
 
 - **Refund webhooks:** refund status is refreshed when the order page is opened; a Paystack webhook would keep it current without that (needs a public URL).
-- **Kitchen payouts:** the Money page shows what each kitchen is owed but there's no way yet to record a payout.
+- **Payout corrections:** a payout recorded by mistake can't be edited or removed from the site yet; fix it in the database, or add a reversal feature.
 - **Delivery fee policy:** The theme charges per kitchen (GH₵ 4 on campus, GH₵ 7 Berekuso), while `CartController::calculateDeliveryFee()` currently applies one flat fee per order. The team needs to settle on the final fee rule.
-- **Order receipts & notifications:** Email receipts (or SMS notifications) for placed orders and status updates.
+- **Order receipts & notifications:** email receipts and status emails, using `core/mailer.php` (Sprint 19).
+- **Support replies in the app:** kitchens and admins can only call, WhatsApp or mark a message resolved (Sprint 18).
 - **Store credit & coupons:** The original Shopify theme's order panel displayed coupon code input and store credit balance, but the database currently does not model them.
 
 ### Theme sections and their PHP pages

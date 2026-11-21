@@ -15,6 +15,8 @@ DROP TABLE IF EXISTS `support_messages`;
 DROP TABLE IF EXISTS `favorites`;
 DROP TABLE IF EXISTS `order_tracking`;
 DROP TABLE IF EXISTS `refunds`;
+DROP TABLE IF EXISTS `payouts`;
+DROP TABLE IF EXISTS `password_resets`;
 DROP TABLE IF EXISTS `payment`;
 DROP TABLE IF EXISTS `orderdetails`;
 DROP TABLE IF EXISTS `orders`;
@@ -171,6 +173,40 @@ CREATE TABLE `refunds` (
   KEY `pay_id` (`pay_id`),
   CONSTRAINT `refunds_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
   CONSTRAINT `refunds_p_fk` FOREIGN KEY (`pay_id`) REFERENCES `payment` (`pay_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Forgot-password links. Only a SHA-256 hash of each link's token is stored
+CREATE TABLE `password_resets` (
+  `reset_id` int(11) NOT NULL AUTO_INCREMENT,
+  `customer_id` int(11) NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `request_ip` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`reset_id`),
+  UNIQUE KEY `token_hash` (`token_hash`),
+  KEY `customer_id` (`customer_id`),
+  KEY `request_ip` (`request_ip`, `created_at`),
+  CONSTRAINT `password_resets_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Money CampusBite has paid out to kitchens. Balance = what delivered orders earned - payouts
+CREATE TABLE `payouts` (
+  `payout_id` int(11) NOT NULL AUTO_INCREMENT,
+  `brand_id` int(11) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `method` varchar(30) NOT NULL,            -- Mobile Money, Bank transfer, Cash
+  `reference` varchar(100) DEFAULT NULL,    -- MoMo transaction ID, bank reference, receipt number
+  `note` varchar(255) DEFAULT NULL,
+  `paid_on` date NOT NULL,
+  `recorded_by` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`payout_id`),
+  KEY `brand_id` (`brand_id`),
+  KEY `recorded_by` (`recorded_by`),
+  CONSTRAINT `payouts_b_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`),
+  CONSTRAINT `payouts_c_fk` FOREIGN KEY (`recorded_by`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 9. order_tracking (Live timeline tracking) ─────────────────────
