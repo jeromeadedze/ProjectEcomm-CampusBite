@@ -1,5 +1,5 @@
 <?php
-// Flips one of the kitchen's own meals between available and sold out
+// Flips one of the kitchen's own meals between available and sold out (kitchen admin and staff)
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
@@ -22,6 +22,6 @@ if (!$meal || (int)$meal['product_brand'] !== get_kitchen_id()) {
     $_SESSION['success'] = $meal['product_title'] . ($nowAvailable ? " is back in stock." : " is marked sold out.");
 }
 
-header("Location: ../views/kitchen/kitchen_menu.php");
-exit;
+// Back to wherever the button was: the menu page or the staff dashboard
+redirect_back('../views/kitchen/kitchen_menu.php');
 ?>

@@ -40,6 +40,8 @@ CREATE TABLE `cb_customer` (
   `customer_image` varchar(150) DEFAULT NULL,
   `user_role` int(11) NOT NULL DEFAULT 2, -- 1: Admin, 2: Customer (Student/Faculty), 4: Kitchen (role 3, courier, was retired: kitchens deliver their own orders)
   `brand_id` int(11) DEFAULT NULL, -- for kitchen accounts (role 4): the kitchen they run
+  `kitchen_role` varchar(10) DEFAULT NULL, -- kitchen accounts only: 'admin' (sales, staff, menu prices) or 'staff' (orders, messages)
+  `must_change_password` tinyint(1) NOT NULL DEFAULT 0, -- 1 = signed up with a starting password; must set their own at next sign-in
   `has_pass` tinyint(1) NOT NULL DEFAULT 0, -- 1 if customer subscribed to GH₵ 35 CampusBite Pass
   `pass_expiry` date DEFAULT NULL,
   PRIMARY KEY (`customer_id`),
@@ -128,6 +130,7 @@ CREATE TABLE `cb_orders` (
   `cancelled_by` varchar(20) DEFAULT NULL, -- customer, kitchen or admin
   `cancel_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
+  UNIQUE KEY `invoice_no` (`invoice_no`), -- every order gets its own invoice number (OrderClass::newInvoiceNo)
   KEY `customer_id` (`customer_id`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `cb_orders_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `cb_brands` (`brand_id`),
@@ -327,9 +330,10 @@ INSERT INTO `cb_products` (`product_id`, `product_cat`, `product_brand`, `produc
 
 -- Demo accounts, so a fresh import can be signed into straight away (passwords are in README.md: demo only, change
 -- or delete these on any real server). The kitchen login runs Munchees Grills. New sign-ups are customers (role 2).
-INSERT INTO `cb_customer` (`customer_id`, `customer_name`, `customer_email`, `customer_pass`, `customer_contact`, `user_role`, `brand_id`) VALUES
-(1, 'CampusBite Admin', 'admin@campusbite.com', '$2y$12$4n3JILZhgVDkN34KVB90huBwquGjeUQk5Z8e3mFYGJhtKVp.qoe6i', '0241000001', 1, NULL),
-(2, 'Munchees Kitchen', 'kitchen@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002003', 4, 3);
+INSERT INTO `cb_customer` (`customer_id`, `customer_name`, `customer_email`, `customer_pass`, `customer_contact`, `user_role`, `brand_id`, `kitchen_role`) VALUES
+(1, 'CampusBite Admin', 'admin@campusbite.com', '$2y$12$4n3JILZhgVDkN34KVB90huBwquGjeUQk5Z8e3mFYGJhtKVp.qoe6i', '0241000001', 1, NULL, NULL),
+(2, 'Munchees Kitchen', 'kitchen@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002003', 4, 3, 'admin'),
+(3, 'Munchees Staff', 'staff@campusbite.com', '$2y$10$pljQtJ7HI79D60r/zk5hEuC1DgYDmFC6PMn7YRe9JuoT5x2TKX6ES', '0241002013', 4, 3, 'staff');
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;

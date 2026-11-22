@@ -3,7 +3,7 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/SupportController.php';
 
 require_login();
-if (!is_admin() && !is_kitchen()) {
+if (!is_admin() && !is_kitchen_staff()) {
     header("Location: ../index.php");
     exit;
 }

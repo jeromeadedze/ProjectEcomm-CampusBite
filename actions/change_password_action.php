@@ -25,6 +25,7 @@ if ($error) {
     $_SESSION['success'] = "Your password was changed.";
 }
 
-header("Location: ../views/settings.php");
+// On a mistake, reopen the password form so it can be tried again straight away
+header("Location: ../views/settings.php" . ($error ? '?edit=password' : ''));
 exit;
 ?>

@@ -145,9 +145,74 @@ class OrderController
         return $this->orderModel->countKitchenOrdersByStatus($brandId);
     }
 
-    public function getKitchenBestSellers($brandId, $limit = 5)
+    public function getKitchenBestSellers($brandId, $limit = 5, $since = null)
     {
-        return $this->orderModel->getKitchenBestSellers($brandId, $limit);
+        return $this->orderModel->getKitchenBestSellers($brandId, $limit, $since);
+    }
+
+    public function getKitchenCategorySplit($brandId, $since)
+    {
+        return $this->orderModel->getKitchenCategorySplit($brandId, $since);
+    }
+
+    // Customers who ever ordered, how many came back more than once, and how many first ordered since $since
+    public function getKitchenCustomerStats($brandId, $since)
+    {
+        return $this->orderModel->getKitchenCustomerStats($brandId, $since);
+    }
+
+    /**
+     * Day-by-day and hour-by-hour figures for a kitchen, from its orders over the last $days days.
+     *  'days'           date => orders, cancelled, meals, sales (meal prices), commission, delivery, earnings, avg (meal sales per order)
+     *  'hoursToday'     hour => orders, earnings  (today only)
+     *  'hoursAll'       hour => orders            (over the whole period, for the busiest hour)
+     *  'cancelledToday' today's cancelled orders with their reasons
+     * Earnings are what the kitchen receives: meals minus CampusBite's commission, plus the delivery fee it keeps.
+     */
+    public function getKitchenTrend($brandId, $days = 30)
+    {
+        $today = date('Y-m-d');
+        $daily = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $daily[date('Y-m-d', strtotime("-$i days"))] = ['orders' => 0, 'cancelled' => 0, 'meals' => 0, 'sales' => 0.0, 'commission' => 0.0, 'delivery' => 0.0, 'earnings' => 0.0];
+        }
+        $hoursToday = array_fill(0, 24, ['orders' => 0, 'earnings' => 0.0]);
+        $hoursAll = array_fill(0, 24, 0);
+        $cancelledToday = [];
+
+        foreach ($this->orderModel->getKitchenOrderFacts($brandId, array_key_first($daily) . ' 00:00:00') as $o) {
+            $day = substr($o['order_date'], 0, 10);
+            $hour = (int)substr($o['order_date'], 11, 2);
+            if (!isset($daily[$day])) {
+                continue;
+            }
+            if ($o['order_status'] === 'Cancelled') {
+                $daily[$day]['cancelled']++;
+                if ($day === $today) {
+                    $cancelledToday[] = $o;
+                }
+                continue;
+            }
+            // Each order's own stored commission rate, so a later rate change doesn't rewrite history
+            $commission = (float)$o['items'] * (float)$o['rate'];
+            $earned = (float)$o['items'] - $commission + (float)$o['delivery_fee'];
+            $daily[$day]['orders']++;
+            $daily[$day]['meals'] += (int)$o['meals'];
+            $daily[$day]['sales'] += (float)$o['items'];
+            $daily[$day]['commission'] += $commission;
+            $daily[$day]['delivery'] += (float)$o['delivery_fee'];
+            $daily[$day]['earnings'] += $earned;
+            $hoursAll[$hour]++;
+            if ($day === $today) {
+                $hoursToday[$hour]['orders']++;
+                $hoursToday[$hour]['earnings'] += $earned;
+            }
+        }
+        foreach ($daily as &$d) {
+            $d['avg'] = $d['orders'] ? $d['sales'] / $d['orders'] : 0.0;
+        }
+        unset($d);
+        return ['days' => $daily, 'hoursToday' => $hoursToday, 'hoursAll' => $hoursAll, 'cancelledToday' => $cancelledToday];
     }
 
     public function beginTransaction()

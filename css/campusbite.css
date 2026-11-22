@@ -614,3 +614,307 @@ a.cb-checkout-signin,a.cb-checkout-link{display:flex;align-items:center;justify-
 .cb-nav-badge{background:var(--ember);color:#fff;border-radius:999px;min-width:20px;height:20px;padding:0 6px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .cb-nav-badge[hidden]{display:none}
 .cb-toast-order a{color:var(--ember-d);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+
+/* ── Kitchen admin & staff dashboards (ka-), in the customer view's style ── */
+.ka-pagehead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:-6px 0 18px}
+.cb-sub.ka-sub{margin:-10px 0 18px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ka-pagehead .cb-sub.ka-sub{margin:0}
+.ka-seg{display:inline-flex;background:var(--card);border-radius:999px;padding:4px;gap:2px}
+.ka-seg a,.ka-seg button{border:0;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--muted);padding:8px 16px;border-radius:999px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.ka-seg a:hover,.ka-seg button:hover{color:var(--ink)}
+.ka-seg a[aria-current="page"],.ka-seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.ka-seg-sm{background:var(--paper)}
+.ka-seg-sm button{padding:6px 13px;font-size:12.5px}
+.ka-seg a:focus-visible,.ka-seg button:focus-visible,.ka-hit:focus-visible,.ka-switch:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.ka-alert{display:flex;gap:8px;align-items:center;background:var(--ember-soft);color:var(--ember-d);border-radius:16px;padding:12px 16px;font-weight:600;font-size:14px;margin:0 0 18px}
+.ka-alert a{color:inherit;text-decoration:underline}
+
+/* KPI tiles */
+.ka-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.ka-kpi{background:var(--card);border-radius:20px;padding:18px 20px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ka-kpi.is-lead{background:var(--ember);color:#fff}
+.cb .ka-kpi h2{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.cb .ka-kpi.is-lead h2,.ka-kpi.is-lead .ka-vs,.ka-kpi.is-lead .ka-kpi-note{color:rgba(255,255,255,.82)}
+.ka-kpi-num{font-size:25px;font-weight:700;letter-spacing:-.3px;margin:4px 0 0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ka-kpi-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:2px 0 0;font-size:12px}
+.ka-change{font-weight:700;border-radius:999px;padding:2px 8px;background:var(--paper)}
+.ka-good{color:#16774A;background:#E6F6EE}
+.ka-bad{color:var(--ember-d)}
+.ka-change.ka-bad{background:var(--ember-soft)}
+.ka-flat{color:var(--muted)}
+.ka-kpi.is-lead .ka-change{background:rgba(255,255,255,.18);color:#fff}
+.ka-vs{color:var(--muted)}
+.ka-kpi-note{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.4}
+
+/* Cards and grids */
+.ka-grid{display:grid;gap:16px;margin-bottom:16px}
+.ka-grid-wide{grid-template-columns:minmax(0,1.65fr) minmax(0,1fr)}
+.ka-grid-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ka-two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+.ka-grid .cb-card,.ka-two .cb-card{margin-bottom:0;min-width:0}
+.cb .cb-card.ka-card{padding:22px}
+.ka-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.cb .cb-card .ka-card-head h2{margin:0;font-size:16px}
+.ka-card-sub{font-size:12.5px;color:var(--muted);margin:3px 0 0}
+.ka-link{font-size:13px;font-weight:600}
+.ka-empty{font-size:13px;color:var(--muted);border:1.5px dashed var(--dash);border-radius:16px;padding:16px;text-align:center;margin:0}
+.ka-empty-big{display:flex;flex-direction:column;align-items:center;gap:4px;padding:30px 16px}
+.ka-empty-big i{font-size:28px;color:var(--ember)}
+.ka-empty-big b{color:var(--ink);font-size:14px}
+.ka-fine{font-size:12px;color:var(--muted);margin:12px 0 0;line-height:1.5}
+.ka-btn-sm{padding:7px 14px;font-size:12.5px}
+
+/* Charts */
+.ka-chart svg{display:block;width:100%;height:auto}
+.ka-bar{fill:var(--ember);opacity:.85}
+.ka-bar.is-now{opacity:1;fill:var(--ember-d)}
+.ka-gridline{stroke:var(--line);stroke-width:1}
+.ka-axis{stroke:var(--dash);stroke-width:1}
+.ka-tick{fill:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.ka-hit{fill:transparent}
+.ka-hit.is-hover{fill:var(--ink);fill-opacity:.05}
+.ka-tooltip{position:absolute;z-index:80;background:var(--ink,#0F0F0F);color:#fff;border-radius:12px;padding:9px 12px;font:500 12.5px 'Poppins',system-ui,sans-serif;display:flex;flex-direction:column;gap:1px;pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.2);white-space:nowrap}
+.ka-tooltip[hidden]{display:none}
+.ka-tooltip b{font-weight:700}
+
+/* Top dishes */
+.ka-dishes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.ka-dishes li{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:12px}
+.ka-dish-img{position:relative;width:48px;height:48px;border-radius:14px;overflow:visible;background:var(--paper);display:flex;align-items:center;justify-content:center;color:var(--ember);font-size:20px}
+.ka-dish-img img{width:100%;height:100%;object-fit:cover;border-radius:14px}
+.ka-dish-img b{position:absolute;top:-6px;left:-6px;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid var(--card)}
+.ka-dish-name{display:flex;flex-direction:column;min-width:0}
+.ka-dish-name b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ka-dish-name small{font-size:12px;color:var(--muted)}
+.ka-dish-money{font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Category bars */
+.ka-hbars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:13px}
+.ka-hbars li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;font-size:13px}
+.ka-hbar-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ka-hbar-value{font-weight:600;font-variant-numeric:tabular-nums}
+.ka-hbar-track{grid-column:1/-1;height:8px;border-radius:999px;background:var(--paper);overflow:hidden}
+.ka-hbar-track span{display:block;height:100%;border-radius:999px;background:var(--ember)}
+
+/* Label / value lists */
+.ka-facts{margin:0;display:flex;flex-direction:column}
+.ka-facts div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-top:1.5px dashed var(--dash);font-size:13px}
+.ka-facts div:first-child{border-top:0;padding-top:0}
+.ka-facts dt{color:var(--muted)}
+.ka-facts dd{margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.ka-facts dd small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.ka-pay-to{display:flex;flex-direction:column;gap:2px;background:var(--paper);border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:13.5px}
+.ka-pay-to span{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* Staff: right-now tiles */
+.ka-now{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px;align-items:start}
+.ka-now-tile{background:var(--card);border:1.5px dashed var(--dash);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:3px;min-width:0;color:var(--ink);text-decoration:none;margin:0;min-height:118px}
+a.ka-now-tile:hover{border-color:var(--ember)}
+.ka-now-label{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ka-now-num{font-size:30px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.ka-now-ok{color:#16774A;font-size:26px}
+.ka-now-sub{font-size:12.5px;color:var(--muted)}
+.ka-now-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ka-now-state{font-size:22px;font-weight:700}
+.ka-now-tile.is-late{border:1.5px solid var(--ember);background:var(--ember-soft)}
+.ka-now-tile.is-late .ka-now-num,.ka-now-tile.is-late .ka-now-sub{color:var(--ember-d);font-weight:600}
+.ka-now-tile.is-attention{border:1.5px solid var(--ember)}
+.ka-now-tile.is-attention .ka-now-num{color:var(--ember)}
+.ka-switch{flex:none;width:48px;height:28px;border-radius:999px;border:0;background:var(--dash);position:relative;cursor:pointer;padding:0;transition:background .15s}
+.ka-switch span{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.ka-switch.is-on{background:#16774A}
+.ka-switch.is-on span{transform:translateX(20px)}
+.ka-now-soldout summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.ka-now-soldout summary::-webkit-details-marker{display:none}
+.ka-now-soldout[open] .ka-now-sub::after{content:" (hide)"}
+.ka-now-soldout ul{list-style:none;margin:10px 0 0;padding:10px 0 0;border-top:1.5px dashed var(--dash);display:flex;flex-direction:column;gap:8px}
+.ka-now-soldout li{display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-size:12.5px}
+.ka-now-soldout form{margin:0}
+
+/* Staff: queue */
+.ka-queue{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ka-queue a{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--paper);color:var(--ink);text-decoration:none}
+.ka-queue a:hover{background:var(--ember-soft)}
+.ka-queue li.is-late a{background:var(--ember-soft);box-shadow:inset 0 0 0 1.5px var(--ember)}
+.ka-queue .cb-status{min-width:78px;text-align:center}
+.ka-queue-main{display:flex;flex-direction:column;min-width:0}
+.ka-queue-main b{font-size:13.5px;font-weight:600}
+.ka-queue-main small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ka-queue-wait{font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ka-queue li.is-late .ka-queue-wait{color:var(--ember-d)}
+
+/* Staff: today */
+.ka-today{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.ka-today div{background:var(--paper);border-radius:14px;padding:12px 14px}
+.ka-today dt{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ka-today dd{margin:2px 0 0;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.ka-reasons{list-style:none;margin:10px 0 0;padding:0;font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.cb .cb-card h3.ka-minihead{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.ka-selling{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ka-selling li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1.5px dashed var(--dash);font-size:13px}
+.ka-selling li:first-child{border-top:0}
+.ka-selling span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ka-selling b{font-variant-numeric:tabular-nums}
+
+/* Staff page */
+.ka-people{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ka-people li{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 0;border-top:1.5px dashed var(--dash)}
+.ka-people li:first-child{border-top:0}
+.ka-people form{margin:0}
+.ka-avatar{width:42px;height:42px;border-radius:50%;background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.ka-avatar.is-admin{background:var(--ink);color:#fff}
+.ka-person{display:flex;flex-direction:column;min-width:0}
+.ka-person b{font-size:14px;font-weight:600}
+.ka-person small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb-admin-form.ka-form-one{grid-template-columns:minmax(0,1fr)}
+
+@media (max-width:1250px){ .ka-now{grid-template-columns:repeat(3,minmax(0,1fr))} .ka-grid-three{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:1000px){ .ka-grid-wide,.ka-two{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:640px){ .ka-now{grid-template-columns:repeat(2,minmax(0,1fr))} .ka-grid-three{grid-template-columns:minmax(0,1fr)} .ka-queue .cb-status{min-width:0} }
+@media (prefers-reduced-motion:reduce){ .ka-switch,.ka-switch span{transition:none} }
+
+/* ── Kitchen menu form (mf-): folded away until needed, grouped into Photo / Basics / Details ── */
+.mf-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:-6px 0 18px}
+.cb-sub.mf-sub{margin:0}
+.mf-bar .cb-btn i{font-size:14px}
+.cb .cb-card.mf-card{padding:24px}
+.mf-card[hidden]{display:none}
+.mf-head{margin-bottom:18px}
+.cb .cb-card .mf-head h2{margin:0;font-size:18px}
+.mf-lead{font-size:13px;color:var(--muted);margin:4px 0 0}
+.mf-form{display:grid;grid-template-columns:240px minmax(0,1fr);gap:20px 28px}
+.mf-label,.mf-section legend{display:block;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;padding:0}
+.mf-section legend span{text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px}
+.mf-photo-box{display:flex;flex-direction:column;gap:10px;cursor:pointer}
+.mf-photo-img{position:relative;aspect-ratio:4/3;border-radius:18px;border:1.5px dashed var(--dash);background:var(--paper);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:34px;transition:border-color .15s}
+.mf-photo-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mf-photo-box:hover .mf-photo-img{border-color:var(--ember)}
+.mf-photo-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--dash);background:var(--card);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600;color:var(--ink)}
+.mf-photo-box:hover .mf-photo-btn{border-color:var(--ink)}
+.mf-file{position:absolute;width:1px;height:1px;opacity:0}
+.mf-file:focus-visible+.cb-field-hint{outline:2px solid var(--ember);outline-offset:2px}
+.mf-photo:focus-within .mf-photo-img{border-color:var(--ember)}
+.mf-too-big{font-size:12px;color:var(--ember-d);padding:12px;text-align:center}
+.mf-main{display:flex;flex-direction:column;gap:6px;min-width:0}
+.mf-section{border:0;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;min-width:0}
+.mf-section+.mf-section{border-top:1.5px dashed var(--dash);padding-top:16px}
+.mf-section legend{grid-column:1/-1;float:left;width:100%}
+.mf-wide{grid-column:1/-1}
+.mf-form .cb-field textarea{width:100%;background:var(--paper);border:1px solid var(--field-line,#86898F);border-radius:14px;padding:12px 14px;font:inherit;font-size:14px;resize:vertical;color:var(--ink)}
+.mf-form .cb-field textarea:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
+.mf-affix{display:flex;align-items:stretch;background:var(--paper);border:1px solid var(--field-line,#86898F);border-radius:14px;overflow:hidden}
+.mf-affix:focus-within{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember)}
+.mf-affix span{display:flex;align-items:center;padding:0 12px;font-size:13px;font-weight:600;color:var(--muted);background:var(--card)}
+.cb .mf-form .mf-affix input{border:0;border-radius:0;outline:0;min-width:0;background:transparent}
+.mf-foot{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:18px}
+.mf-avail{display:flex;align-items:center;gap:12px;cursor:pointer}
+.mf-avail input[type=checkbox]{position:absolute;opacity:0;width:1px;height:1px}
+.mf-switch{flex:none;width:46px;height:26px;border-radius:999px;background:var(--dash);position:relative;transition:background .15s}
+.mf-switch span{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.mf-avail input:checked+.mf-switch{background:#16774A}
+.mf-avail input:checked+.mf-switch span{transform:translateX(20px)}
+.mf-avail input:focus-visible+.mf-switch{outline:2px solid var(--ember);outline-offset:2px}
+.mf-avail span:last-child{display:flex;flex-direction:column}
+.mf-avail b{font-size:13.5px;font-weight:600}
+.mf-avail small{font-size:12px;color:var(--muted)}
+.mf-actions{display:flex;gap:10px}
+@media (max-width:860px){ .mf-form{grid-template-columns:minmax(0,1fr)} .mf-photo-box{flex-direction:row;align-items:center} .mf-photo-img{width:140px;flex:none} }
+@media (max-width:520px){ .mf-section{grid-template-columns:minmax(0,1fr)} }
+@media (prefers-reduced-motion:reduce){ .mf-switch,.mf-switch span,.mf-photo-img{transition:none} }
+
+/* Staff form: the same folded form, one column, no photo */
+.mf-form.mf-form-single{grid-template-columns:minmax(0,1fr)}
+.mf-reveal{border:0;background:var(--card);padding:0 14px;color:var(--muted);cursor:pointer;font-size:15px}
+.mf-reveal:hover{color:var(--ink)}
+.mf-reveal:focus-visible,.mf-suggest:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.mf-suggest{border:0;background:transparent;padding:0;font:inherit;font-size:inherit;font-weight:600;color:var(--ember);cursor:pointer;text-decoration:underline}
+.mf-note{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:0}
+.mf-note i{color:var(--ember)}
+.mf-card + .cb-card{margin-top:0}
+
+/* ── Kitchen info (ki-): summaries with Edit, forms open in place ── */
+.ki-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.ki-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.ki-grid .cb-card{margin-bottom:0;min-width:0}
+.ki-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.cb .cb-card .ki-head h2{margin:0;font-size:17px}
+.ki-head .ka-btn-sm{flex:none}
+.ki-missing{color:var(--muted);font-weight:500}
+.ki-account{display:flex;align-items:center;gap:12px;background:var(--paper);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.ki-account-icon{width:42px;height:42px;border-radius:12px;background:var(--ember-soft);color:var(--ember);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.ki-account>span:nth-child(2){display:flex;flex-direction:column;min-width:0;flex:1}
+.ki-account b{font-size:14px;font-weight:600}
+.ki-account small{font-size:12px;color:var(--muted)}
+.ka-alert.ki-alert{margin-bottom:14px}
+.ki-grid .mf-form{margin-top:4px}
+@media (max-width:1000px){ .ki-grid{grid-template-columns:minmax(0,1fr)} }
+
+/* ── Settings (st-): profile header above the details and password cards ── */
+.st-profile{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:22px;padding:20px 22px;margin-bottom:16px;flex-wrap:wrap}
+.st-avatar{width:60px;height:60px;border-radius:50%;background:var(--ember);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex:none;letter-spacing:.02em}
+.st-who{flex:1;min-width:0}
+.cb .st-who h2{font-size:19px;font-weight:700;margin:0}
+.st-who p{font-size:13px;color:var(--muted);margin:2px 0 6px;overflow-wrap:anywhere}
+.st-role{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:var(--ember-soft);color:var(--ember-d)}
+.st-signout{flex:none}
+@media (max-width:520px){ .st-signout{width:100%} }
+
+/* ── Kitchen login forms: automatic sign-in details (lp-) and the one-time details card (nl-) ── */
+.lp{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.lp-label{font-size:13px;font-weight:500}
+.lp-auto{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.lp-auto[hidden]{display:none}
+.lp-auto div{background:var(--paper);border:1.5px dashed var(--dash);border-radius:14px;padding:11px 14px;min-width:0}
+.lp-auto span{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.lp-auto code{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;color:var(--ink);margin-top:3px;overflow-wrap:anywhere;background:none;padding:0}
+.lp .cb-field{margin-bottom:0}
+.lp .cb-field-hint{margin:0}
+.cb .cb-card.nl-card{border:1.5px solid #BFE6D1;background:#F3FBF6}
+.nl-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
+.nl-icon{width:42px;height:42px;border-radius:12px;background:#E0F3E8;color:#16774A;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+.cb .cb-card .nl-head h2{margin:0;font-size:16px}
+.nl-head p{font-size:12.5px;color:var(--muted);margin:3px 0 0}
+.nl-creds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.nl-creds div{background:var(--card);border-radius:14px;padding:12px 14px;min-width:0}
+.nl-creds dt{font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.nl-creds dd{margin:4px 0 0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nl-creds code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;color:var(--ink);background:none;padding:0;overflow-wrap:anywhere}
+.nl-copy{flex:none;border:1px solid var(--dash);background:var(--card);border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink)}
+.nl-copy:hover{border-color:var(--ink)}
+.nl-copy:focus-visible,.nl-copy-all:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+@media (max-width:640px){ .lp-auto,.nl-creds{grid-template-columns:minmax(0,1fr)} }
+
+/* ── Kitchen menu cards (kc-): the customer meal card, with an availability switch instead of "+" ── */
+.kc-row{margin-top:8px}
+.kc-count{font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:2px}
+.kc-card .cb-dish-img{display:flex}
+.kc-card.is-off .cb-dish-img img{filter:grayscale(1);opacity:.55}
+.kc-card.is-off .cb-dish-name{color:var(--muted)}
+.kc-card.is-editing{border-style:solid;border-color:var(--ember)}
+.kc-edit{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;text-decoration:none}
+.kc-edit:hover{background:var(--ember-soft);color:var(--ember-d)}
+.kc-edit:focus-visible,.kc-toggle:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.kc-off{position:absolute;top:14px;left:14px;background:var(--ink);color:#fff;font-size:11px;font-weight:600;border-radius:999px;padding:3px 10px;z-index:1}
+.kc-meta{font-size:12px;color:var(--muted);margin:0 0 4px}
+.kc-nophoto{color:var(--ember-d)}
+.kc-toggle-form{margin-left:auto}
+.kc-toggle{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;padding:0;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;white-space:nowrap}
+.kc-toggle .mf-switch{width:40px;height:24px}
+.kc-toggle .mf-switch span{width:18px;height:18px}
+.kc-toggle .mf-switch.is-on{background:#16774A}
+.kc-toggle .mf-switch.is-on span{transform:translateX(16px)}
+.kc-card.is-off .kc-toggle{color:var(--muted)}
+.kc-delete{margin-right:auto;border:0;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--ember-d);cursor:pointer;padding:8px 4px}
+.kc-delete:hover{text-decoration:underline}
+.kc-card .cb-price{white-space:nowrap}
+
+/* Search bar on list pages (kitchen Customers): a pill field with an icon, then the button */
+.cb-find{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:18px 0 16px}
+.cb-find-field{flex:1 1 260px;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:0 18px;height:48px;margin:0;cursor:text}
+.cb-find-field:focus-within{border-color:var(--ink);outline:2px solid var(--ember-soft)}
+.cb-find-field i{color:var(--muted);font-size:16px}
+.cb-find-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:14px;color:var(--ink);height:100%}
+.cb-find-field input::-webkit-search-cancel-button{display:none}
+.cb-find .cb-btn{height:48px;padding:0 24px}
+.cb-find-note{flex-basis:100%;margin:0;font-size:13px;color:var(--muted)}
+@media (max-width:860px){.cb-find-field input{font-size:16px}}

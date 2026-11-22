@@ -9,8 +9,30 @@ class OrderClass extends Database
      */
     const LINE_RATE = "CASE WHEN p.product_brand = o.brand_id AND o.commission_rate IS NOT NULL THEN o.commission_rate ELSE b.commission_rate END";
 
+    /**
+     * A 6-digit invoice number no other order has. Random, so it doesn't show how many orders there are;
+     * checked against existing orders first (a database error stops the page, so we can't insert and retry).
+     * cb_orders.invoice_no is UNIQUE as a backstop. Falls back to 1000000 + a counter in the unlikely case
+     * that many random picks in a row are taken.
+     */
+    public function newInvoiceNo()
+    {
+        for ($try = 0; $try < 20; $try++) {
+            $candidate = random_int(100000, 999999);
+            if (!$this->fetchOne("SELECT 1 FROM cb_orders WHERE invoice_no = ?", [$candidate])) {
+                return $candidate;
+            }
+        }
+        $row = $this->fetchOne("SELECT GREATEST(1000000, COALESCE(MAX(invoice_no), 0)) + 1 AS next FROM cb_orders");
+        return (int)$row['next'];
+    }
+
+    // $invoiceNo null = pick a new unused one
     public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null)
     {
+        if ($invoiceNo === null) {
+            $invoiceNo = $this->newInvoiceNo();
+        }
         // The commission rate is copied onto the order, so changing a rate later doesn't change past orders.
         // $commissionRate is the rate the Paystack split was made with; without it, the kitchen's current rate.
         $sql = "INSERT INTO cb_orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions, commission_rate)
@@ -458,18 +480,55 @@ class OrderClass extends Database
         return array_column($rows, 'total', 'order_status');
     }
 
-    public function getKitchenBestSellers($brandId, $limit = 5)
+    // $since limits it to orders from that date on (null = all time)
+    public function getKitchenBestSellers($brandId, $limit = 5, $since = null)
     {
-        $sql = "SELECT p.product_id, p.product_title, SUM(od.qty) AS meals,
+        $sql = "SELECT p.product_id, p.product_title, p.product_image, SUM(od.qty) AS meals,
                        SUM(od.qty * COALESCE(od.price, p.product_price)) AS sales
                 FROM cb_orderdetails od
                 JOIN cb_orders o ON od.order_id = o.order_id
                 JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
-                WHERE o.brand_id = ? AND o.order_status <> 'Cancelled'
-                GROUP BY p.product_id, p.product_title
+                WHERE o.brand_id = ? AND o.order_status <> 'Cancelled'" . ($since ? " AND o.order_date >= ?" : "") . "
+                GROUP BY p.product_id, p.product_title, p.product_image
                 ORDER BY meals DESC, sales DESC
                 LIMIT " . intval($limit);
-        return $this->fetchAll($sql, [$brandId]);
+        return $this->fetchAll($sql, $since ? [$brandId, $since] : [$brandId]);
+    }
+
+    /**
+     * Every order a kitchen received since a date: its time, status, delivery fee, commission rate and meal total.
+     * The dashboards build their day-by-day and hour-by-hour figures from these. Meals from other kitchens
+     * (older mixed orders) are left out of the meal total.
+     */
+    public function getKitchenOrderFacts($brandId, $since)
+    {
+        $sql = "SELECT o.order_id, o.order_date, o.order_status, o.delivery_fee, o.cancel_reason,
+                       COALESCE(o.commission_rate, b.commission_rate) AS rate,
+                       (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0)
+                        FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                        WHERE od.order_id = o.order_id) AS items,
+                       (SELECT COALESCE(SUM(od.qty), 0)
+                        FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                        WHERE od.order_id = o.order_id) AS meals
+                FROM cb_orders o
+                JOIN cb_brands b ON b.brand_id = o.brand_id
+                WHERE o.brand_id = ? AND o.order_date >= ?
+                ORDER BY o.order_date ASC";
+        return $this->fetchAll($sql, [$brandId, $since]);
+    }
+
+    // Meals sold per menu category since a date, most ordered first
+    public function getKitchenCategorySplit($brandId, $since)
+    {
+        $sql = "SELECT c.cat_name, SUM(od.qty) AS meals, SUM(od.qty * COALESCE(od.price, p.product_price)) AS sales
+                FROM cb_orders o
+                JOIN cb_orderdetails od ON od.order_id = o.order_id
+                JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                JOIN cb_categories c ON c.cat_id = p.product_cat
+                WHERE o.brand_id = ? AND o.order_status <> 'Cancelled' AND o.order_date >= ?
+                GROUP BY c.cat_id, c.cat_name
+                ORDER BY meals DESC, sales DESC";
+        return $this->fetchAll($sql, [$brandId, $since]);
     }
 
     public function addTrackingUpdate($orderId, $status, $message)

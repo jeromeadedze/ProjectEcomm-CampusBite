@@ -70,7 +70,10 @@ class CustomerController
             'customer_name' => trim($input['customer_name'] ?? ''),
             'customer_contact' => trim($input['customer_contact'] ?? ''),
             'campus_hostel' => $needsHostel ? trim($input['campus_hostel'] ?? '') : ($account['campus_hostel'] ?? null),
+            'customer_email' => trim($input['customer_email'] ?? '') ?: $account['customer_email'],
         ];
+        // A new sign-in email needs the current password, so nobody at an unlocked screen can take the account over
+        $emailChanged = strcasecmp($values['customer_email'], $account['customer_email']) !== 0;
 
         $error = null;
         if (mb_strlen($values['customer_name']) < 2 || mb_strlen($values['customer_name']) > 100) {
@@ -79,11 +82,35 @@ class CustomerController
             $error = 'Enter a valid phone number, such as 0241234567.';
         } elseif ($needsHostel && !array_key_exists($values['campus_hostel'], self::HOSTELS)) {
             $error = 'Choose your delivery spot from the list.';
-        } elseif (!$this->customerModel->updateProfile($id, $values['customer_name'], $values['customer_contact'], $values['campus_hostel'])) {
+        } elseif ($emailChanged && (!filter_var($values['customer_email'], FILTER_VALIDATE_EMAIL) || mb_strlen($values['customer_email']) > 100)) {
+            $error = 'Enter a valid email address.';
+        } elseif ($emailChanged && $this->customerModel->emailExists($values['customer_email'])) {
+            $error = 'That email already has a CampusBite account. Use a different one.';
+        } elseif ($emailChanged && !password_verify($input['email_pass'] ?? '', $account['customer_pass'])) {
+            $error = 'Enter your current password to change your sign-in email.';
+        } elseif (!$this->customerModel->updateProfile($id, $values['customer_name'], $values['customer_contact'], $values['campus_hostel'], $values['customer_email'])) {
             $error = "Your details couldn't be saved. Try again.";
         }
 
-        return ['values' => $values, 'error' => $error];
+        return ['values' => $values, 'error' => $error, 'emailChanged' => $emailChanged && $error === null];
+    }
+
+    /**
+     * Emails a new kitchen login its sign-in details, at the person's own email address.
+     * Returns true when the email was sent (or saved, in log mode).
+     */
+    public function sendKitchenWelcome($toEmail, $name, $kitchenName, $loginEmail, $password, $kitchenRole)
+    {
+        $first = explode(' ', trim($name))[0];
+        $what = $kitchenRole === 'staff'
+            ? "You've been added to the $kitchenName team on CampusBite. You'll take orders, reply to customers and mark meals sold out."
+            : "You're now the kitchen admin for $kitchenName on CampusBite. You'll see your sales, manage your menu and prices, and add your staff.";
+        $lines = ["Hi $first,", $what, "Sign in with the details below. You'll choose your own password the first time you sign in."];
+        $rows = [['Sign-in email', $loginEmail], ['Starting password', $password]];
+        $foot = "You can change your sign-in email to this address under Settings, so CampusBite alerts reach you here.";
+        return send_email($toEmail, $name, "Your CampusBite kitchen sign-in",
+            email_html('Welcome to CampusBite', $lines, 'Sign in', app_url('views/login.php'), $foot, $rows),
+            email_text('Welcome to CampusBite', $lines, 'Sign in', app_url('views/login.php'), $foot, $rows));
     }
 
     /**
@@ -194,7 +221,55 @@ class CustomerController
     /**
      * Creates a sign-in for a kitchen's staff. Returns ['values' => form values (no password), 'error' => message or null].
      */
-    public function createKitchenAccount($input, $kitchenExists)
+    /**
+     * Creates a kitchen login. The CampusBite admin creates each kitchen's admin; a kitchen admin creates their own staff.
+     * $kitchenRole: 'admin' or 'staff'.
+     */
+    // ---------- Kitchen logins made for you: email and starting password ----------
+
+    const LOGIN_DOMAIN = 'campusbite.com';
+    // Words left out of the kitchen part of the email, so "Munchees Grills" gives "munchees"
+    const KITCHEN_FILLER_WORDS = ['cafeteria', 'kitchen', 'kitchens', 'grill', 'grills', 'spot', 'lounge', 'berekuso', 'restaurant',
+                                  'canteen', 'cafe', 'the', 'and', 'of'];
+
+    // "Eat Healthy Spot" -> "eathealthy", "Hi5 Lounge & Kitchen" -> "hi5"
+    public static function kitchenSlug($brandName)
+    {
+        $words = array_values(array_filter(preg_split('/[^a-z0-9]+/', strtolower($brandName))));
+        $kept = array_values(array_filter($words, function ($w) { return !in_array($w, self::KITCHEN_FILLER_WORDS, true); }));
+        return substr(implode('', $kept ?: $words) ?: 'kitchen', 0, 20);
+    }
+
+    // "Kwame Boateng" -> "kwame"
+    public static function firstNameSlug($fullName)
+    {
+        $first = preg_split('/\s+/', trim($fullName))[0] ?? '';
+        return substr(preg_replace('/[^a-z0-9]/', '', strtolower($first)) ?: 'staff', 0, 20);
+    }
+
+    // kitchen.firstname@campusbite.com, with a number added if that address is taken
+    public function suggestKitchenEmail($brandName, $fullName)
+    {
+        $base = self::kitchenSlug($brandName) . '.' . self::firstNameSlug($fullName);
+        $email = $base . '@' . self::LOGIN_DOMAIN;
+        for ($n = 2; $this->customerModel->emailExists($email); $n++) {
+            $email = $base . $n . '@' . self::LOGIN_DOMAIN;
+        }
+        return $email;
+    }
+
+    // "Munchees@Kwame47": easy to read out, and meets the password rules (upper, lower, number, symbol, 8+).
+    // Easy to guess too, which is why these accounts must set their own password at first sign-in.
+    public static function startingPassword($brandName, $fullName)
+    {
+        return ucfirst(self::kitchenSlug($brandName)) . '@' . ucfirst(self::firstNameSlug($fullName)) . random_int(10, 99);
+    }
+
+    /**
+     * Creates a kitchen login. The CampusBite admin creates each kitchen's admin; a kitchen admin creates their own staff.
+     * $kitchenRole: 'admin' or 'staff'. $mustChange: the password was made for them, so they set their own at first sign-in.
+     */
+    public function createKitchenAccount($input, $kitchenExists, $kitchenRole = 'admin', $mustChange = false)
     {
         $values = [
             'brand_id' => (int)($input['brand_id'] ?? 0),
@@ -217,7 +292,7 @@ class CustomerController
             $error = 'Enter a valid phone number, such as 0241234567.';
         } elseif (!preg_match(self::PASSWORD_RULE, $pass)) {
             $error = 'The starting password needs at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.';
-        } elseif (!$this->customerModel->createKitchenAccount($values['customer_name'], $values['customer_email'], $pass, $values['customer_contact'], $values['brand_id'])) {
+        } elseif (!$this->customerModel->createKitchenAccount($values['customer_name'], $values['customer_email'], $pass, $values['customer_contact'], $values['brand_id'], $kitchenRole, $mustChange)) {
             $error = "The kitchen login couldn't be created. Try again.";
         }
 
@@ -232,6 +307,17 @@ class CustomerController
     public function removeKitchenAccess($id)
     {
         return $this->customerModel->removeKitchenAccess($id);
+    }
+
+    public function getKitchenTeam($brandId)
+    {
+        return $this->customerModel->getKitchenTeam($brandId);
+    }
+
+    // Returns true if a staff login of this kitchen was removed
+    public function removeKitchenStaff($id, $brandId)
+    {
+        return (int)$this->customerModel->removeKitchenStaff($id, $brandId) > 0;
     }
 
     public function getAllCustomers()

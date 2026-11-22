@@ -22,16 +22,18 @@ function sync_account_session() {
         return;
     }
     require_once __DIR__ . '/db_class.php';
-    $row = (new Database())->fetchOne("SELECT user_role, brand_id FROM cb_customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
+    $row = (new Database())->fetchOne("SELECT user_role, brand_id, kitchen_role, must_change_password FROM cb_customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
     if (!$row) {
         // The account was deleted while signed in
         $_SESSION = [];
         session_regenerate_id(true);
         return;
     }
+    $_SESSION['must_change_password'] = (int)$row['must_change_password'];
     if ((int)($_SESSION['user_role'] ?? 0) === 4) {
         $_SESSION['user_role'] = (int)$row['user_role'];
         $_SESSION['brand_id'] = (int)$row['user_role'] === 4 ? (int)$row['brand_id'] : null;
+        $_SESSION['kitchen_role'] = (int)$row['user_role'] === 4 ? ($row['kitchen_role'] ?: 'admin') : null;
     }
 }
 sync_account_session();
@@ -58,6 +60,9 @@ function log_in_customer($user) {
     $_SESSION['has_pass'] = has_active_pass($user) ? 1 : 0;
     // Kitchen accounts (role 4) work on one kitchen
     $_SESSION['brand_id'] = (int)$user['user_role'] === 4 ? (int)$user['brand_id'] : null;
+    // Kitchen accounts are the kitchen's admin (sales, staff, prices) or its staff (orders, messages)
+    $_SESSION['kitchen_role'] = (int)$user['user_role'] === 4 ? (($user['kitchen_role'] ?? null) ?: 'admin') : null;
+    $_SESSION['must_change_password'] = (int)($user['must_change_password'] ?? 0);
 }
 
 /**
@@ -104,7 +109,7 @@ function can_order() {
  */
 function home_path_for_role() {
     if (is_kitchen()) {
-        return '/views/kitchen/kitchen_dashboard.php';
+        return is_kitchen_admin() ? '/views/kitchen/kitchen_sales.php' : '/views/kitchen/kitchen_dashboard.php';
     }
     return is_admin() ? '/views/admin/admin_dashboard.php' : '/index.php';
 }
@@ -114,7 +119,51 @@ function home_path_for_role() {
  * (orders belong to the kitchens; the admin has no order list)
  */
 function staff_orders_path() {
-    return is_kitchen() ? '/views/kitchen/kitchen_orders.php' : '/views/admin/admin_dashboard.php';
+    if (is_kitchen()) {
+        return is_kitchen_staff() ? '/views/kitchen/kitchen_orders.php' : '/views/kitchen/kitchen_sales.php';
+    }
+    return '/views/admin/admin_dashboard.php';
+}
+
+/**
+ * Kitchen admin: the kitchen's owner or manager. Sees sales, manages staff logins, the menu, prices and payouts.
+ * Older kitchen logins with no kitchen_role count as admins.
+ */
+function is_kitchen_admin() {
+    return is_kitchen() && ($_SESSION['kitchen_role'] ?? 'admin') !== 'staff';
+}
+
+/**
+ * Kitchen staff: works the shift. Handles orders and customer messages and marks meals sold out. Never sees money.
+ */
+function is_kitchen_staff() {
+    return is_kitchen() && ($_SESSION['kitchen_role'] ?? 'admin') === 'staff';
+}
+
+/**
+ * Pages and actions only a kitchen admin may use (sales, staff, prices, payouts)
+ */
+function require_kitchen_admin() {
+    require_kitchen();
+    if (!is_kitchen_admin()) {
+        $_SESSION['error'] = "Only your kitchen's admin can open that page.";
+        $root = defined('ROOT_DIR') ? ROOT_DIR : '..';
+        header("Location: " . $root . home_path_for_role());
+        exit;
+    }
+}
+
+/**
+ * Pages and actions only kitchen staff use (orders, customer messages)
+ */
+function require_kitchen_staff() {
+    require_kitchen();
+    if (!is_kitchen_staff()) {
+        $_SESSION['error'] = "Orders and messages are handled by your kitchen staff.";
+        $root = defined('ROOT_DIR') ? ROOT_DIR : '..';
+        header("Location: " . $root . home_path_for_role());
+        exit;
+    }
 }
 
 /**
@@ -247,4 +296,23 @@ function phone_wa_url($phone, $text = '') {
     }
     return $url;
 }
+
+/**
+ * An account still on the starting password it was given (like Munchees@Kwame47) must set its own before doing
+ * anything else: every page except Settings, the password change itself and signing out sends it to the password form.
+ */
+function require_own_password() {
+    if (empty($_SESSION['customer_id']) || empty($_SESSION['must_change_password'])) {
+        return;
+    }
+    $allowed = ['settings.php', 'change_password_action.php', 'logout.php'];
+    if (in_array(basename($_SERVER['SCRIPT_NAME'] ?? ''), $allowed, true)) {
+        return;
+    }
+    $_SESSION['error'] = "Set your own password to continue. The one you were given is only for your first sign-in.";
+    $root = defined('ROOT_DIR') ? ROOT_DIR : '..';
+    header("Location: " . $root . "/views/settings.php?edit=password");
+    exit;
+}
+require_own_password();
 ?>

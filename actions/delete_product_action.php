@@ -4,7 +4,7 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
-require_kitchen();
+require_kitchen_admin();
 
 $back = '../views/kitchen/kitchen_menu.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
