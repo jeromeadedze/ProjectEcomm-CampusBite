@@ -52,7 +52,8 @@ require_once __DIR__ . '/layout/header.php';
 
 if ($kitchen) {
     $inZoneB = $kitchen['zone'] === 'Zone B';
-    $fee = $controller->deliveryFeeForZone($kitchen['zone']);
+    require_once __DIR__ . '/../controllers/DeliveryController.php';
+    $fee = DeliveryController::feeTag($kitchen);
     $kitchenDishTotal = $controller->countAvailableProducts($brandId, 0);
 }
 ?>
@@ -67,7 +68,7 @@ if ($kitchen) {
             <?php endif; ?>
             <div class="cb-hero-tags">
                 <span><?php echo $inZoneB ? 'Off-campus' : 'On campus'; ?></span>
-                <span>Delivery GH₵ <?php echo number_format($fee, 2); ?></span>
+                <span><?php echo htmlspecialchars($fee['text']); ?></span>
                 <span><?php echo $kitchenDishTotal; ?> dish<?php echo $kitchenDishTotal === 1 ? '' : 'es'; ?></span>
             </div>
         </div>

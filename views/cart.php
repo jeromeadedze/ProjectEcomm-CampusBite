@@ -12,9 +12,10 @@ if (!can_order()) {
 $cartCtrl = new CartController();
 $cartItems = $cartCtrl->getCartItems(get_cart_token(), get_user_id());
 $subtotal = $cartCtrl->getCartTotal(get_cart_token(), get_user_id());
-$deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems);
-$deliveryZone = $cartCtrl->deliveryZoneFor($cartItems);
-$grandTotal = $subtotal + $deliveryFee;
+// Delivery depends on the drop point: shown for the customer's saved one, otherwise as a range until checkout
+$billDropPoint = DeliveryController::viewerDropPoint();
+$deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, false, $billDropPoint);
+$grandTotal = $subtotal + (float)$deliveryFee;
 $hasUnavailable = !empty($cartCtrl->unavailableItems($cartItems));
 $hasMixedKitchens = count($cartCtrl->kitchenIds($cartItems)) > 1;
 // A kitchen without a payout account can't be paid through Paystack yet
@@ -115,12 +116,18 @@ foreach ($cartItems as $item) {
             <h2>Order summary</h2>
             <div class="cb-totals">
                 <div><span>Meals (<?php echo $mealCount; ?>)</span><span>GH₵ <?php echo number_format($subtotal, 2); ?></span></div>
-                <div><span>Delivery (<?php echo htmlspecialchars($deliveryZone); ?>)</span><span>GH₵ <?php echo number_format($deliveryFee, 2); ?></span></div>
-                <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
+                <?php if ($deliveryFee !== null): ?>
+                    <div><span>Delivery to <?php echo htmlspecialchars($billDropPoint); ?></span><span>GH₵ <?php echo number_format($deliveryFee, 2); ?></span></div>
+                    <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
+                <?php else: ?>
+                    <div><span>Delivery</span><span>GH₵ <?php echo DeliveryController::FEE_NEAR; ?>–<?php echo DeliveryController::FEE_FAR; ?></span></div>
+                    <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($subtotal, 2); ?> + delivery</span></div>
+                <?php endif; ?>
             </div>
             <p class="cb-field-hint">
-                Each order comes from one kitchen. Delivery is GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone A'], 2); ?> from on-campus kitchens
-                and GH₵ <?php echo number_format(ProductController::DELIVERY_FEES['Zone B'], 2); ?> from Berekuso kitchens.
+                Each order comes from one kitchen. Delivery is GH₵ <?php echo DeliveryController::FEE_NEAR; ?> when the kitchen is near your drop point
+                (campus kitchens to the campus halls, Berekuso kitchens to the town hostels) and GH₵ <?php echo DeliveryController::FEE_FAR; ?> otherwise.
+                You pick your drop point at checkout.
             </p>
 
             <?php if ($hasMixedKitchens): ?>

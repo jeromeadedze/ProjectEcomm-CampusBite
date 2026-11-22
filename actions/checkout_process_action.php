@@ -33,24 +33,35 @@ if (empty($cartItems)) {
     exit;
 }
 
-// Zone and fee are worked out here from the cart, never taken from the form
-$user = (new CustomerController())->getCustomerById($userId);
-$deliveryZone = $cartCtrl->deliveryZoneFor($cartItems);
-$deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, has_active_pass($user));
-
-$dropLocation = trim($_POST['drop_location'] ?? '');
+// The drop point must be one on the list; the fee is worked out here from it and the cart, never taken from the form
+$custCtrl = new CustomerController();
+$user = $custCtrl->getCustomerById($userId);
+$dropPoint = trim($_POST['drop_point'] ?? '');
+$dropDetail = trim(preg_replace('/\s+/', ' ', $_POST['drop_detail'] ?? ''));
 $notes = trim($_POST['notes'] ?? '');
 
 $formError = null;
-if ($dropLocation === '' || mb_strlen($dropLocation) > 150) {
-    $formError = "Enter a drop point of up to 150 characters.";
+if (!DeliveryController::isDropPoint($dropPoint)) {
+    $formError = "Choose your drop point from the list.";
+} elseif (mb_strlen($dropDetail) > 80) {
+    $formError = "Keep the room or landmark to 80 characters or fewer.";
 } elseif (mb_strlen($notes) > 255) {
     $formError = "Keep delivery instructions to 255 characters or fewer.";
 }
 if ($formError) {
     $_SESSION['error'] = $formError;
+    $_SESSION['checkout_form'] = ['drop_point' => $dropPoint, 'drop_detail' => $dropDetail, 'notes' => $notes];
     header("Location: ../views/checkout.php");
     exit;
+}
+
+$deliveryZone = $cartCtrl->deliveryZoneFor($cartItems);
+$deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, has_active_pass($user), $dropPoint);
+// What the kitchen sees: "Sisulu Hall · Room 208"
+$dropLocation = $dropPoint . ($dropDetail !== '' ? ' · ' . $dropDetail : '');
+
+if (!empty($_POST['save_drop_point']) && ($user['campus_hostel'] ?? '') !== $dropPoint) {
+    $custCtrl->updateDropPoint($userId, $dropPoint);
 }
 
 // One kitchen per order (bills from before this rule may still mix kitchens)
@@ -101,6 +112,7 @@ $metadata = [
     'delivery_zone' => $deliveryZone,
     'delivery_fee' => (float)$deliveryFee,
     'drop_location' => $dropLocation,
+    'drop_point' => $dropPoint,
     'notes' => $notes,
     // The split this payment was made with, so the order keeps the same commission rate
     'commission_rate' => (float)$kitchen['commission_rate'],

@@ -11,7 +11,9 @@ if (empty($showPanel)) {
 require_once __DIR__ . '/../../controllers/CustomerController.php';
 
 $panelSubtotal = $headerCart->getCartTotal(get_cart_token(), get_user_id());
-$panelDelivery = $headerCart->calculateDeliveryFee($panelItems);
+require_once __DIR__ . '/../../controllers/DeliveryController.php';
+$panelDropPoint = DeliveryController::viewerDropPoint();
+$panelDelivery = $headerCart->calculateDeliveryFee($panelItems, false, $panelDropPoint);
 
 // Group the tray by kitchen, keeping each kitchen's zone for its badge
 $panelTray = [];
@@ -20,8 +22,6 @@ foreach ($panelItems as $panelItem) {
     $panelTray[$panelItem['brand_name']]['items'][] = $panelItem;
 }
 
-$panelCustomer = is_logged_in() ? (new CustomerController())->getCustomerById(get_user_id()) : null;
-$panelHostel = $panelCustomer['campus_hostel'] ?? '';
 ?>
 <aside class="cb-panel" id="cb-panel" aria-label="Your order">
     <div class="cb-panel-head">
@@ -71,13 +71,18 @@ $panelHostel = $panelCustomer['campus_hostel'] ?? '';
 
     <div class="cb-addr">
         <span>Deliver to</span>
-        <strong><?php echo htmlspecialchars($panelHostel !== '' ? $panelHostel : 'Ashesi main campus'); ?></strong>
+        <strong><?php echo htmlspecialchars($panelDropPoint ?? 'Pick a drop point at checkout'); ?></strong>
     </div>
 
     <div class="cb-totals">
         <div><span>Meals</span><span>GH₵ <?php echo number_format($panelSubtotal, 2); ?></span></div>
-        <div><span>Delivery</span><span>GH₵ <?php echo number_format($panelDelivery, 2); ?></span></div>
-        <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($panelSubtotal + $panelDelivery, 2); ?></span></div>
+        <?php if ($panelDelivery !== null): ?>
+            <div><span>Delivery</span><span>GH₵ <?php echo number_format($panelDelivery, 2); ?></span></div>
+            <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($panelSubtotal + $panelDelivery, 2); ?></span></div>
+        <?php else: ?>
+            <div><span>Delivery</span><span>GH₵ <?php echo DeliveryController::FEE_NEAR; ?>–<?php echo DeliveryController::FEE_FAR; ?></span></div>
+            <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($panelSubtotal, 2); ?> + delivery</span></div>
+        <?php endif; ?>
     </div>
 
     <?php if (!is_logged_in()): ?>

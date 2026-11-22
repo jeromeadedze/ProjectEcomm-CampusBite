@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . "/../classes/CartClass.php";
 require_once __DIR__ . "/ProductController.php";
+require_once __DIR__ . "/DeliveryController.php";
 
 class CartController
 {
@@ -95,23 +96,21 @@ class CartController
     }
 
     /**
-     * Determines delivery fee based on vendor zones present in cart
-     * One fee per order, from ProductController::DELIVERY_FEES:
-     * the Zone B fee if any item is from a Zone B (Berekuso) kitchen, otherwise the Zone A fee
+     * The delivery fee for this bill to $dropPoint (DeliveryController: GH₵ 5 to the kitchen's own area, GH₵ 10 elsewhere).
+     * One fee per order. Returns null when the drop point isn't known yet, so pages can show the range instead.
+     * Bills from before the one-kitchen rule may still mix kitchens: the dearest fee applies.
      */
-    public function calculateDeliveryFee($items, $hasPass = false)
+    public function calculateDeliveryFee($items, $hasPass = false, $dropPoint = null)
     {
         if (empty($items)) return 0.00;
-        if ($hasPass) return 0.00; // Free Zone A deliveries with Pass
+        if ($hasPass) return 0.00; // CampusBite Pass (switched off for now)
+        if (!DeliveryController::isDropPoint($dropPoint)) return null;
 
-        $hasZoneB = false;
+        $fee = 0.0;
         foreach ($items as $item) {
-            if (isset($item['zone']) && $item['zone'] === 'Zone B') {
-                $hasZoneB = true;
-                break;
-            }
+            $fee = max($fee, DeliveryController::feeFor($item, $dropPoint)); // the item carries its kitchen's zone and near_drop_points
         }
-        return (float)ProductController::DELIVERY_FEES[$hasZoneB ? 'Zone B' : 'Zone A'];
+        return $fee;
     }
 }
 ?>

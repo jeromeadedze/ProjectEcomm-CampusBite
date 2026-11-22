@@ -169,7 +169,7 @@ class ProductClass extends Database
 
     public function getProductById($id)
     {
-        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.location_desc, b.is_active AS brand_active
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.near_drop_points, b.location_desc, b.is_active AS brand_active
                 FROM cb_products p
                 JOIN cb_categories c ON p.product_cat = c.cat_id
                 JOIN cb_brands b ON p.product_brand = b.brand_id

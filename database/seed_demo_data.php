@@ -15,6 +15,7 @@ if (PHP_SAPI !== 'cli') {
 require_once __DIR__ . '/../core/db_class.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
+require_once __DIR__ . '/../controllers/DeliveryController.php';
 
 const DEMO_DOMAIN = '@demo.campusbite.app';
 const DAYS = 60;
@@ -60,7 +61,7 @@ if (in_array('--remove', $argv, true)) {
 }
 
 // ---------- Kitchens and their meals ----------
-$kitchens = $db->query("SELECT brand_id, brand_name, zone, commission_rate FROM cb_brands")->fetchAll(PDO::FETCH_ASSOC);
+$kitchens = $db->query("SELECT brand_id, brand_name, zone, near_drop_points, commission_rate FROM cb_brands")->fetchAll(PDO::FETCH_ASSOC);
 $mealsByKitchen = [];
 foreach ($db->query("SELECT p.product_id, p.product_brand, p.product_price, p.prep_time_minutes, c.cat_name
                      FROM cb_products p JOIN cb_categories c ON c.cat_id = p.product_cat")->fetchAll(PDO::FETCH_ASSOC) as $m) {
@@ -87,7 +88,7 @@ $first = ['Ama', 'Kofi', 'Akosua', 'Kwame', 'Abena', 'Yaw', 'Efua', 'Kojo', 'Adw
 $last = ['Mensah', 'Owusu', 'Boateng', 'Asante', 'Osei', 'Agyeman', 'Appiah', 'Darko', 'Ofori', 'Amoah', 'Addo', 'Quaye', 'Tetteh',
          'Lartey', 'Adjei', 'Antwi', 'Nyarko', 'Sarpong', 'Frimpong', 'Kumi', 'Ansah', 'Acheampong', 'Bonsu', 'Gyamfi', 'Danso',
          'Agbeko', 'Dogbe', 'Kpodo', 'Amedzro', 'Tsikata'];
-$hostels = array_keys(CustomerController::HOSTELS);
+$hostels = array_keys(DeliveryController::DROP_POINTS);
 $demoPass = password_hash('Demo123!', PASSWORD_DEFAULT);
 $insCustomer = $db->prepare("INSERT INTO cb_customer (customer_name, customer_email, customer_pass, customer_contact, campus_hostel, user_role)
                              VALUES (?, ?, ?, ?, ?, 2)");
@@ -103,8 +104,8 @@ $customerWeights = array_map(function ($c) { return $c['weight']; }, $customers)
 
 // ---------- Orders ----------
 $insOrder = $db->prepare("INSERT INTO cb_orders (customer_id, brand_id, invoice_no, order_date, order_status, delivery_zone, delivery_fee,
-                                             drop_location, special_instructions, commission_rate, cancelled_at, cancelled_by, cancel_reason)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                             drop_point, drop_location, special_instructions, commission_rate, cancelled_at, cancelled_by, cancel_reason)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 $insLine = $db->prepare("INSERT INTO cb_orderdetails (order_id, product_id, qty, price, notes) VALUES (?, ?, ?, ?, ?)");
 $insPay = $db->prepare("INSERT INTO cb_payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, payment_date, verified_at,
                                             kitchen_share, campusbite_share)
@@ -121,7 +122,6 @@ $stepMessages = ['Placed' => 'Order placed successfully and received by kitchen.
                  'Ready' => 'Your meal is packed and ready to go.', 'In Transit' => 'Your meal is on its way.', 'Delivered' => 'Delivered. Enjoy your meal!'];
 $usedInvoices = array_flip($db->query("SELECT invoice_no FROM cb_orders")->fetchAll(PDO::FETCH_COLUMN));
 $now = time();
-$fees = ProductController::DELIVERY_FEES;
 $orderCount = 0;
 $todayOrders = [];
 
@@ -169,7 +169,7 @@ for ($back = DAYS - 1; $back >= 0; $back--) {
             $qty[] = $q;
             $items += $q * (float)$m['product_price'];
         }
-        $fee = (float)($fees[$kitchen['zone']] ?? $fees['Zone A']);
+        $fee = DeliveryController::feeFor($kitchen, $customers[$customerId]['hostel']);
         $rate = (float)$kitchen['commission_rate'];
         $commission = round($items * $rate, 2);
 
@@ -190,7 +190,7 @@ for ($back = DAYS - 1; $back >= 0; $back--) {
         $usedInvoices[$invoice] = true;
         $ts = date('Y-m-d H:i:s', $when);
         $cancelAt = $cancelledBy ? date('Y-m-d H:i:s', $when + mt_rand(3, 15) * 60) : null;
-        $insOrder->execute([$customerId, $kitchenId, $invoice, $ts, $status, $kitchen['zone'], $fee, $customers[$customerId]['hostel'],
+        $insOrder->execute([$customerId, $kitchenId, $invoice, $ts, $status, $kitchen['zone'], $fee, $customers[$customerId]['hostel'], $customers[$customerId]['hostel'],
                             mt_rand(1, 100) <= 15 ? 'Call when you get to the gate' : null, $rate, $cancelAt, $cancelledBy,
                             $cancelledBy ? $reasons[$cancelledBy][array_rand($reasons[$cancelledBy])] : null]);
         $orderId = (int)$db->lastInsertId();

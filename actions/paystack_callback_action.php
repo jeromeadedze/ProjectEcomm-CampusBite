@@ -100,7 +100,7 @@ try {
     $orderCtrl->beginTransaction();
 
     $orderId = $orderCtrl->createOrder($userId, (int)$meta['brand_id'], null, $meta['delivery_zone'],
-        (float)$meta['delivery_fee'], $meta['drop_location'], $meta['notes'] ?? '', $commissionRate);
+        (float)$meta['delivery_fee'], $meta['drop_location'], $meta['notes'] ?? '', $commissionRate, $meta['drop_point'] ?? null);
     if (!$orderId) {
         throw new RuntimeException('Order row was not created');
     }

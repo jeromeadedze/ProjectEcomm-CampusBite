@@ -38,7 +38,8 @@ if (is_admin()) {
 $nameParts = preg_split('/\s+/', trim($user['customer_name']));
 $initials = strtoupper(mb_substr($nameParts[0] ?? '', 0, 1) . (count($nameParts) > 1 ? mb_substr(end($nameParts), 0, 1) : ''));
 $showHostel = !is_kitchen();
-$hostelLabel = CustomerController::HOSTELS[$user['campus_hostel'] ?? ''] ?? '';
+$hostelLabel = DeliveryController::isDropPoint($user['campus_hostel'] ?? null)
+    ? $user['campus_hostel'] . ' (' . DeliveryController::AREAS[DeliveryController::DROP_POINTS[$user['campus_hostel']]] . ')' : '';
 ?>
 
 <section class="st-profile">
@@ -90,11 +91,16 @@ $hostelLabel = CustomerController::HOSTELS[$user['campus_hostel'] ?? ''] ?? '';
                         <div class="cb-field">
                             <label for="campus_hostel">Default drop point</label>
                             <select id="campus_hostel" name="campus_hostel" required>
-                                <option value="">Choose a drop point</option>
-                                <?php foreach (CustomerController::HOSTELS as $hostelValue => $hostelText): ?>
-                                    <option value="<?php echo htmlspecialchars($hostelValue); ?>" <?php echo $form['campus_hostel'] === $hostelValue ? 'selected' : ''; ?>><?php echo htmlspecialchars($hostelText); ?></option>
+                                <option value="">Choose your hall or hostel</option>
+                                <?php foreach (DeliveryController::grouped() as $area => $points): ?>
+                                    <optgroup label="<?php echo htmlspecialchars(DeliveryController::AREAS[$area]); ?>">
+                                        <?php foreach ($points as $point): ?>
+                                            <option value="<?php echo htmlspecialchars($point); ?>" <?php echo $form['campus_hostel'] === $point ? 'selected' : ''; ?>><?php echo htmlspecialchars($point); ?></option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
                                 <?php endforeach; ?>
                             </select>
+                            <p class="cb-field-hint">Used to show your delivery fee and filled in at checkout.</p>
                         </div>
                     <?php endif; ?>
                     <div class="cb-field mf-wide">

@@ -1,19 +1,11 @@
 <?php
 require_once __DIR__ . "/../classes/CustomerClass.php";
 require_once __DIR__ . "/../core/mailer.php";
+require_once __DIR__ . "/DeliveryController.php";
 
 class CustomerController
 {
-    // Drop points offered at sign-up. The form and the server check both read this list.
-    public const HOSTELS = [
-        'Walter Sisulu Hall' => 'Walter Sisulu Hall (On-Campus)',
-        'Wangari Maathai Hall' => 'Wangari Maathai Hall (On-Campus)',
-        'Charlotte Court' => 'Charlotte Court (Berekuso)',
-        'Masere Hostel' => 'Masere Hostel (Berekuso)',
-        'Dufie Hostel' => 'Dufie Hostel (Berekuso)',
-        'Engineering & FabLab Complex' => 'Engineering & FabLab Complex',
-        'Faculty / Admin Office' => 'Faculty / Admin Office',
-    ];
+    // Drop points (the customer's saved one is campus_hostel) come from DeliveryController::DROP_POINTS
 
     private $customerModel;
 
@@ -80,7 +72,7 @@ class CustomerController
             $error = 'Enter your full name.';
         } elseif (!preg_match(self::PHONE_RULE, $values['customer_contact'])) {
             $error = 'Enter a valid phone number, such as 0241234567.';
-        } elseif ($needsHostel && !array_key_exists($values['campus_hostel'], self::HOSTELS)) {
+        } elseif ($needsHostel && !DeliveryController::isDropPoint($values['campus_hostel'])) {
             $error = 'Choose your delivery spot from the list.';
         } elseif ($emailChanged && (!filter_var($values['customer_email'], FILTER_VALIDATE_EMAIL) || mb_strlen($values['customer_email']) > 100)) {
             $error = 'Enter a valid email address.';
@@ -93,6 +85,12 @@ class CustomerController
         }
 
         return ['values' => $values, 'error' => $error, 'emailChanged' => $emailChanged && $error === null];
+    }
+
+    // Saves the customer's usual drop point (ticked at checkout); only drop points on the list
+    public function updateDropPoint($id, $dropPoint)
+    {
+        return DeliveryController::isDropPoint($dropPoint) && $this->customerModel->updateDropPoint($id, $dropPoint);
     }
 
     /**
