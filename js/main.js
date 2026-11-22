@@ -534,13 +534,19 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch {
         updateHeart(wasSaved);
 
+        // Same look as the site's other pop-ups: icon, text, close button
         const notice = document.createElement('div');
         notice.className = 'cb-toast cb-toast-error';
         notice.setAttribute('role', 'alert');
-        notice.textContent =
-            'Could not confirm your favourite. Check your connection or sign in again.';
+        notice.innerHTML = '<i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><p></p>'
+            + '<button type="button" aria-label="Dismiss message"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
+        notice.querySelector('p').textContent =
+            "Couldn't save your favourite. Check your connection or sign in again.";
+        notice.querySelector('button').addEventListener('click', () => notice.remove());
 
-        document.querySelector('.cb-toasts').append(notice);
+        let toasts = document.querySelector('.cb-toasts');
+        if (!toasts) { toasts = document.createElement('div'); toasts.className = 'cb-toasts'; document.getElementById('cb-app').prepend(toasts); }
+        toasts.append(notice);
         setTimeout(() => notice.remove(), 6500);
     } finally {
         button.disabled = false;
