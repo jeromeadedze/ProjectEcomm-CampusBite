@@ -282,9 +282,9 @@ class ProductClass extends Database
         return $this->fetchAll($sql, $params);
     }
 
-    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '')
+    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '', $maxPrice = 0)
     {
-        [$where, $params] = $this->availableFilter($brandId, $catId, $label);
+        [$where, $params] = $this->availableFilter($brandId, $catId, $label, $maxPrice);
         $sql = "SELECT COUNT(*) AS total
                 FROM cb_products p
                 JOIN cb_brands b ON p.product_brand = b.brand_id
@@ -293,21 +293,35 @@ class ProductClass extends Database
         return (int)$row['total'];
     }
 
-    public function getAvailableProductsPage($brandId, $catId, $limit, $offset, $label = '')
+    // Menu sort orders. Only these fixed SQL pieces are ever used; $sort is a key checked by the controller.
+    // Each ends with the newest meal first, so meals with the same price or prep time keep a steady order across pages.
+    const SORT_ORDERS = [
+        '' => 'p.product_id DESC',
+        'price_low' => 'p.product_price ASC, p.product_id DESC',
+        'price_high' => 'p.product_price DESC, p.product_id DESC',
+        'quickest' => 'p.prep_time_minutes ASC, p.product_id DESC',
+        // Meals sold in orders that weren't cancelled
+        'popular' => "(SELECT COALESCE(SUM(od.qty), 0) FROM cb_orderdetails od JOIN cb_orders o ON o.order_id = od.order_id
+                       WHERE od.product_id = p.product_id AND o.order_status <> 'Cancelled') DESC, p.product_id DESC",
+    ];
+
+    public function getAvailableProductsPage($brandId, $catId, $limit, $offset, $label = '', $sort = '', $maxPrice = 0)
     {
-        [$where, $params] = $this->availableFilter($brandId, $catId, $label);
+        [$where, $params] = $this->availableFilter($brandId, $catId, $label, $maxPrice);
+        $orderBy = self::SORT_ORDERS[$sort] ?? self::SORT_ORDERS[''];
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone
                 FROM cb_products p
                 JOIN cb_categories c ON p.product_cat = c.cat_id
                 JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE $where
-                ORDER BY p.product_id DESC
+                ORDER BY $orderBy
                 LIMIT " . intval($limit) . " OFFSET " . intval($offset);
         return $this->fetchAll($sql, $params);
     }
 
-    // $label is one key of ProductController::LABEL_FILTERS, already checked by the controller
-    private function availableFilter($brandId, $catId, $label = '')
+    // $label is one key of ProductController::LABEL_FILTERS and $maxPrice one of PRICE_LIMITS (or 0 for any price),
+    // both already checked by the controller
+    private function availableFilter($brandId, $catId, $label = '', $maxPrice = 0)
     {
         $where = "p.is_available = 1 AND b.is_active = 1";
         $params = [];
@@ -329,6 +343,10 @@ class ProductClass extends Database
         } elseif ($label !== '') {
             $where .= " AND FIND_IN_SET(?, p.labels)";
             $params[] = $label;
+        }
+        if ($maxPrice > 0) {
+            $where .= " AND p.product_price <= ?";
+            $params[] = $maxPrice;
         }
         return [$where, $params];
     }

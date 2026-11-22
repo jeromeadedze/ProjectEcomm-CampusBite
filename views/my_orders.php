@@ -9,7 +9,10 @@ if (!can_order()) {
 }
 
 require_once __DIR__ . '/../controllers/OrderController.php';
+require_once __DIR__ . '/../controllers/CartController.php';
 $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
+// "Order again" asks first when the basket already holds another kitchen's meals (a basket is one kitchen's)
+$basket = (new CartController())->basketKitchen(get_cart_token(), get_user_id());
 $liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/layout/header.php';
 ?>
@@ -25,6 +28,8 @@ require_once __DIR__ . '/layout/header.php';
     <p class="cb-sub"><?php echo count($myOrders); ?> order<?php echo count($myOrders) === 1 ? '' : 's'; ?></p>
     <div class="cb-order-cards">
         <?php foreach ($myOrders as $ord): ?>
+            <?php $otherKitchen = $basket && $basket['id'] !== (int)$ord['brand_id']; ?>
+            <div class="cb-order-item">
             <a class="cb-order-card" href="<?php echo $ROOT_DIR; ?>/views/order_tracking.php?order_id=<?php echo (int)$ord['order_id']; ?>">
                 <div class="cb-order-card-head">
                     <b>#<?php echo htmlspecialchars($ord['invoice_no']); ?></b>
@@ -38,6 +43,14 @@ require_once __DIR__ . '/layout/header.php';
                     <span class="cb-order-card-go">Track ›</span>
                 </div>
             </a>
+            <form class="cb-order-again" action="<?php echo $ROOT_DIR; ?>/actions/reorder_action.php" method="POST"
+                <?php if ($otherKitchen): ?>data-confirm="Start a new basket? Your <?php echo htmlspecialchars($basket['name']); ?> basket will be emptied to order again from <?php echo htmlspecialchars($ord['brand_name'] ?? 'this kitchen'); ?>."<?php endif; ?>>
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="order_id" value="<?php echo (int)$ord['order_id']; ?>">
+                <?php if ($otherKitchen): ?><input type="hidden" name="replace" value="1"><?php endif; ?>
+                <button type="submit" class="cb-btn cb-btn-quiet" aria-label="Order again: the meals from order #<?php echo htmlspecialchars($ord['invoice_no']); ?>"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Order again</button>
+            </form>
+            </div>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>

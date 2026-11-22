@@ -1032,3 +1032,27 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 /* Menu chips and pages land at the filters, clear of the sticky top bar */
 .cb-filter-anchor{scroll-margin-top:110px}
 .cb-filter-anchor.is-loading .cb-grid,.cb-filter-anchor.is-loading .cb-empty{opacity:.5;transition:opacity .15s}
+
+/* ---------- Menu sort and price (Sprint 33) ---------- */
+.cb-menu-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;margin:-6px 0 20px}
+.cb-sortbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.cb-tools-label{font-size:12px;font-weight:600;color:var(--muted);margin-right:6px}
+.cb-sort{font-size:13px;font-weight:500;color:var(--ink);padding:5px 12px;border-radius:999px;transition:background .15s,color .15s}
+.cb-sort.is-on{background:var(--ink);color:#fff}
+@media (hover:hover){.cb-sort:not(.is-on):hover{background:var(--paper)}}
+.cb-sort:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+/* Phones: Price and Sort each stay on one line that scrolls sideways, like the chip rows above */
+@media (max-width:860px){
+  .cb-menu-tools{flex-direction:column;align-items:stretch;gap:8px;margin-top:-8px}
+  .cb-sortbar{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+  .cb-sortbar::-webkit-scrollbar{display:none}
+  .cb-sort,.cb-tools-label{flex:none}
+  .cb-tools-label{min-width:38px}
+}
+
+/* ---------- Order again (Sprint 33): a button under each past order ---------- */
+.cb-order-item{display:flex;flex-direction:column;gap:8px}
+.cb-order-item .cb-order-card{flex:1}
+.cb-order-again{margin:0}
+.cb-order-again .cb-btn{width:100%;padding:9px 18px}
+.cb-bill-summary .cb-order-again{margin-top:14px}

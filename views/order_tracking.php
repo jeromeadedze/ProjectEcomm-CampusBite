@@ -237,6 +237,19 @@ foreach ($items as $it) {
                 <div class="cb-refund-row"><span>Refunded</span><span>− GH₵ <?php echo number_format((float)$order['refund_amount'], 2); ?></span></div>
             <?php endif; ?>
         </div>
+        <?php if ($cancelAs === 'customer'): // the shopper's own order: put the same meals back in the basket ?>
+            <?php require_once __DIR__ . '/../controllers/CartController.php';
+            $basket = (new CartController())->basketKitchen(get_cart_token(), get_user_id());
+            $otherKitchen = $basket && $basket['id'] !== (int)$order['brand_id']; ?>
+            <form class="cb-order-again" action="<?php echo $ROOT_DIR; ?>/actions/reorder_action.php" method="POST"
+                <?php if ($otherKitchen): ?>data-confirm="Start a new basket? Your <?php echo htmlspecialchars($basket['name']); ?> basket will be emptied to order again from <?php echo htmlspecialchars($order['brand_name'] ?? 'this kitchen'); ?>."<?php endif; ?>>
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
+                <input type="hidden" name="from" value="tracking">
+                <?php if ($otherKitchen): ?><input type="hidden" name="replace" value="1"><?php endif; ?>
+                <button type="submit" class="cb-btn cb-btn-quiet"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Order again</button>
+            </form>
+        <?php endif; ?>
     </aside>
 </div>
 
