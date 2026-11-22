@@ -112,3 +112,4 @@ $cssVersion = function ($file) {
                 <h1><?php echo htmlspecialchars($pageHeadingText); ?></h1>
             </div>
             <?php endif; ?>
+            <?php require __DIR__ . '/page_message.php'; ?>

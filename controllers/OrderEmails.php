@@ -50,12 +50,10 @@ class OrderEmails
         return $rows;
     }
 
-    // The kitchen's staff logins, to tell them about new and cancelled orders
+    // The kitchen's staff logins (its admin if it has no staff yet), to tell them about new and cancelled orders
     private function kitchenStaff($brandId)
     {
-        return array_filter((new CustomerClass())->getKitchenAccounts(), function ($a) use ($brandId) {
-            return (int)$a['brand_id'] === (int)$brandId;
-        });
+        return (new CustomerClass())->getKitchenAlertLogins((int)$brandId);
     }
 
     private function send($to, $name, $subject, $heading, $lines, $button, $link, $foot = null, $rows = [])

@@ -48,8 +48,16 @@ require_once __DIR__ . '/layout/header.php';
 </div>
 
 <?php if (!empty($kitchens)): ?>
-    <div class="cb-row"><h2>Kitchens</h2><a class="cb-viewall" href="<?php echo $ROOT_DIR; ?>/views/menu.php">All dishes ›</a></div>
-    <div class="cb-vendors">
+    <div class="cb-row">
+        <h2 id="kitchens-title">Kitchens</h2>
+        <div class="cb-row-end">
+            <a class="cb-viewall" href="<?php echo $ROOT_DIR; ?>/views/menu.php">All dishes ›</a>
+            <?php // Arrows for mouse users on wide screens; phones swipe (js/main.js hides them when everything fits) ?>
+            <button type="button" class="cb-car-btn" data-carousel-prev="kitchens" aria-label="Previous kitchens" hidden><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+            <button type="button" class="cb-car-btn" data-carousel-next="kitchens" aria-label="More kitchens" hidden><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+        </div>
+    </div>
+    <div class="cb-vendors cb-carousel" data-carousel="kitchens" role="region" aria-labelledby="kitchens-title" tabindex="0">
         <?php foreach ($kitchens as $kitchen): ?>
             <?php require __DIR__ . '/layout/kitchen_card.php'; ?>
         <?php endforeach; ?>

@@ -124,6 +124,32 @@ class SupportController
     }
 
     /**
+     * A customer replied: tell whoever answers the conversation, so it isn't missed. The kitchen's staff
+     * for a message to a kitchen or about its order; CampusBite's admins otherwise. A failed email never stops the reply.
+     */
+    private function emailStaffAboutReply($msg, $body)
+    {
+        require_once __DIR__ . '/../classes/CustomerClass.php';
+        $customers = new CustomerClass();
+        $kitchenId = (int)($msg['brand_id'] ?: ($msg['order_brand_id'] ?? 0));
+        if ($kitchenId) {
+            $people = $customers->getKitchenAlertLogins($kitchenId);
+            $link = app_url('views/kitchen/kitchen_messages.php#message-' . (int)$msg['message_id']);
+        } else {
+            $people = $customers->getAdminLogins();
+            $link = app_url('views/admin/messages.php#message-' . (int)$msg['message_id']);
+        }
+        $about = $msg['topic'] . (!empty($msg['invoice_no']) ? ' (order #' . $msg['invoice_no'] . ')' : '');
+        foreach ($people as $person) {
+            $first = explode(' ', trim($person['customer_name']))[0];
+            $lines = ["Hi $first,", "{$msg['customer_name']} replied to their message about $about:", $body];
+            send_email($person['customer_email'], $person['customer_name'], "{$msg['customer_name']} replied to their message",
+                email_html('New reply from ' . $msg['customer_name'], $lines, 'View and reply', $link, 'Reply on CampusBite, not to this email.'),
+                email_text('New reply from ' . $msg['customer_name'], $lines, 'View and reply', $link, 'Reply on CampusBite, not to this email.'));
+        }
+    }
+
+    /**
      * Adds a reply. A customer's reply reopens a resolved conversation; staff can resolve it as they reply.
      * When a kitchen or admin replies, the customer gets an email. Returns an error message, or null.
      */
@@ -147,6 +173,7 @@ class SupportController
 
         if ($role === 'customer') {
             $this->supportModel->setStatus($messageId, 'Open');
+            $this->emailStaffAboutReply($msg, $body);
             return null;
         }
         $this->supportModel->setStatus($messageId, $resolve ? 'Resolved' : 'Open');

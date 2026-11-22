@@ -305,6 +305,26 @@ class OrderClass extends Database
         return $this->execute("UPDATE cb_refunds SET status = ?, updated_at = NOW() WHERE refund_id = ?", [$status, $refundId]);
     }
 
+    /**
+     * Paystack's webhook told us a refund changed: find it by Paystack's refund id, or else by the payment's reference
+     * (one refund per order). Returns how many refunds were updated (0 if it isn't ours).
+     */
+    public function updateRefundFromPaystack($paystackRefundId, $transactionReference, $status)
+    {
+        if ($paystackRefundId !== '') {
+            $n = $this->executeCount("UPDATE cb_refunds SET status = ?, updated_at = NOW() WHERE paystack_refund_id = ?", [$status, $paystackRefundId]);
+            if ($n > 0) {
+                return $n;
+            }
+        }
+        if ($transactionReference === '') {
+            return 0;
+        }
+        return $this->executeCount("UPDATE cb_refunds r JOIN cb_payment p ON p.order_id = r.order_id
+                                    SET r.status = ?, r.updated_at = NOW()
+                                    WHERE p.transaction_reference = ? AND r.status NOT IN ('not_needed')", [$status, $transactionReference]);
+    }
+
     // ---------- Admin dashboard (whole platform) ----------
 
     /**

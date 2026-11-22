@@ -13,6 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.remove(), 4500);
     });
 
+    // A message from the last action sits under the page title. If the page opened at a section (#payout,
+    // #message-12), show it at the top of that section instead, where the person is looking.
+    document.querySelectorAll('[data-page-msg]').forEach(msg => {
+        let target = null;
+        try { target = location.hash.length > 1 ? document.querySelector(location.hash) : null; } catch (e) {}
+        if (target && !target.contains(msg)) target.prepend(msg);
+        const close = msg.querySelector('[data-page-msg-close]');
+        if (close) close.addEventListener('click', () => msg.remove());
+    });
+
     // Escape closes the newest message
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
@@ -406,6 +416,29 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(check, 20000);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
     }
+
+    // Carousels (home page kitchens): the ‹ › buttons scroll by most of a screen; they hide when everything fits
+    // and grey out at either end
+    document.querySelectorAll('[data-carousel]').forEach(track => {
+        const name = track.dataset.carousel;
+        const prev = document.querySelector('[data-carousel-prev="' + name + '"]');
+        const next = document.querySelector('[data-carousel-next="' + name + '"]');
+        if (!prev || !next) return;
+        const update = () => {
+            const fits = track.scrollWidth <= track.clientWidth + 2;
+            prev.hidden = next.hidden = fits;
+            prev.disabled = track.scrollLeft <= 2;
+            next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+        };
+        const step = () => Math.max(track.clientWidth * 0.8, 200);
+        // Refresh the buttons after the scroll settles too, in case scroll events are skipped
+        const go = (dir) => { track.scrollBy({ left: dir * step() }); setTimeout(update, 450); };
+        prev.addEventListener('click', () => go(-1));
+        next.addEventListener('click', () => go(1));
+        track.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        update();
+    });
 
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {

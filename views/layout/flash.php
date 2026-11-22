@@ -1,11 +1,9 @@
 <?php
 /**
- * One-time success and error messages set by the action files.
+ * The "Start a new basket?" sheet (without JavaScript), and the holder for pop-up alerts that js/main.js shows
+ * (a new order in the kitchen portal, a connection problem). One-time messages from actions
+ * ($_SESSION['success'] / ['error']) are shown inside the page instead: views/layout/page_message.php.
  */
-$flashMessages = [
-    'error' => ['role' => 'alert', 'icon' => 'bi-exclamation-circle-fill'],
-    'success' => ['role' => 'status', 'icon' => 'bi-check-circle-fill'],
-];
 ?>
 <?php if (!empty($_SESSION['cart_conflict'])): ?>
     <?php $conflict = $_SESSION['cart_conflict']; unset($_SESSION['cart_conflict']); ?>
@@ -28,15 +26,4 @@ $flashMessages = [
         </div>
     </div>
 <?php endif; ?>
-<div class="cb-toasts">
-    <?php foreach ($flashMessages as $flashType => $flashStyle): ?>
-        <?php if (!empty($_SESSION[$flashType])): ?>
-            <div class="cb-toast cb-toast-<?php echo $flashType; ?>" role="<?php echo $flashStyle['role']; ?>">
-                <i class="bi <?php echo $flashStyle['icon']; ?>" aria-hidden="true"></i>
-                <p><?php echo htmlspecialchars($_SESSION[$flashType]); ?></p>
-                <button type="button" aria-label="Dismiss message" onclick="this.closest('.cb-toast').remove();"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
-            </div>
-            <?php unset($_SESSION[$flashType]); ?>
-        <?php endif; ?>
-    <?php endforeach; ?>
-</div>
+<div class="cb-toasts"></div>
