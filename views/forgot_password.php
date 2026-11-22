@@ -44,6 +44,7 @@ require_once __DIR__ . '/layout/header.php';
             </div>
             <button type="submit" class="cb-checkout">Send reset link</button>
         </form>
+        <p class="cb-auth-switch"><i class="bi bi-shop" aria-hidden="true"></i> Kitchen staff: ask your kitchen admin to reset your password from their Staff page. Kitchen admins: ask CampusBite.</p>
 
         <p class="cb-auth-switch">Remembered it? <a href="<?php echo $ROOT_DIR; ?>/views/login.php">Sign in</a></p>
     <?php endif; ?>

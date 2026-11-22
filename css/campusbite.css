@@ -1010,3 +1010,8 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 .cb-page-msg span{flex:1}
 .cb-page-msg-x{border:0;background:none;color:inherit;opacity:.7;cursor:pointer;padding:2px 4px;border-radius:8px;font-size:12px}
 @media (hover:hover){.cb-page-msg-x:hover{opacity:1}}
+/* Staff page: Reset password and Remove side by side; Users table: a non-destructive action */
+.ka-person-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.ka-person-actions form{margin:0}
+.cb-table-actions button.is-plain{color:var(--ink)}
+@media (hover:hover){.cb-table-actions button.is-plain:hover{color:var(--ember-d)}}

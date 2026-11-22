@@ -142,10 +142,18 @@ class CustomerController
      * in local test mode) or null. The page says the same thing either way, so nobody can use it to find out
      * which emails have accounts.
      */
+    // Sign-in emails made for kitchen logins (kitchen.name@campusbite.com). Not real inboxes, and not allowed for sign-ups.
+    public static function isMadeUpEmail($email)
+    {
+        return (bool)preg_match('/@' . preg_quote(self::LOGIN_DOMAIN, '/') . '$/i', (string)$email);
+    }
+
     public function requestPasswordReset($email, $ip)
     {
         $user = filter_var($email, FILTER_VALIDATE_EMAIL) ? $this->customerModel->getCustomerByEmail($email) : null;
-        if (!$user
+        // Kitchen logins' @campusbite.com sign-in emails have no inbox: their admin resets them instead (Staff / Users page).
+        // The page gives the same answer either way, so it still can't be used to find out who has an account.
+        if (!$user || self::isMadeUpEmail($user['customer_email'])
             || $this->customerModel->countRecentResets('customer_id', $user['customer_id'], 60) >= self::RESETS_PER_ACCOUNT_HOUR
             || $this->customerModel->countRecentResets('request_ip', $ip, 60) >= self::RESETS_PER_IP_HOUR) {
             return null;
@@ -316,6 +324,29 @@ class CustomerController
     public function removeKitchenStaff($id, $brandId)
     {
         return (int)$this->customerModel->removeKitchenStaff($id, $brandId) > 0;
+    }
+
+    /**
+     * Kitchen logins don't reset their own passwords by email (their sign-in emails are made up): the kitchen admin
+     * resets a staff member's from the Staff page, and the CampusBite admin resets any kitchen login from Users.
+     * $brandId = the kitchen admin's kitchen (staff of that kitchen only), or null for the CampusBite admin.
+     * Returns ['error' => message|null, 'person' => row, 'password' => the new starting password].
+     */
+    public function resetKitchenPassword($id, $brandId = null)
+    {
+        $person = $this->customerModel->getCustomerById((int)$id);
+        if (!$person || (int)$person['user_role'] !== 4) {
+            return ['error' => "That kitchen login doesn't exist.", 'person' => null, 'password' => null];
+        }
+        require_once __DIR__ . '/ProductController.php';
+        $kitchen = (new ProductController())->getBrandById((int)$person['brand_id']);
+        $password = self::startingPassword($kitchen['brand_name'] ?? 'Campus', $person['customer_name']);
+        $changed = $this->customerModel->resetKitchenPassword((int)$id, $password, $brandId, $brandId !== null);
+        if (!$changed) {
+            return ['error' => $brandId !== null ? "You can only reset passwords for your own staff." : "That password couldn't be reset. Try again.",
+                    'person' => $person, 'password' => null];
+        }
+        return ['error' => null, 'person' => $person, 'password' => $password];
     }
 
     public function getAllCustomers()

@@ -133,15 +133,37 @@ class CustomerClass extends Database
      */
     public function getKitchenAlertLogins($brandId)
     {
-        $team = $this->getKitchenTeam($brandId);
+        // Made-up @campusbite.com addresses (older kitchen logins) have no inbox: emailing them would only bounce
+        $team = array_values(array_filter($this->getKitchenTeam($brandId), function ($m) {
+            return !preg_match('/@campusbite\.com$/i', $m['customer_email']);
+        }));
         $staff = array_values(array_filter($team, function ($m) { return $m['kitchen_role'] === 'staff'; }));
         return $staff ?: $team;
+    }
+
+    /**
+     * A forgotten kitchen password: gives the login a new starting password, which it must replace at its next
+     * sign-in. $brandId / $staffOnly limit it to one kitchen's staff (a kitchen admin resetting their own staff).
+     * Returns how many logins changed (0 = not allowed or not found).
+     */
+    public function resetKitchenPassword($id, $pass, $brandId = null, $staffOnly = false)
+    {
+        $sql = "UPDATE cb_customer SET customer_pass = ?, must_change_password = 1 WHERE customer_id = ? AND user_role = 4";
+        $params = [password_hash($pass, PASSWORD_DEFAULT), $id];
+        if ($brandId !== null) {
+            $sql .= " AND brand_id = ?";
+            $params[] = $brandId;
+        }
+        if ($staffOnly) {
+            $sql .= " AND kitchen_role = 'staff'";
+        }
+        return $this->executeCount($sql, $params);
     }
 
     // CampusBite admins, for customer replies to messages sent to CampusBite rather than a kitchen
     public function getAdminLogins()
     {
-        return $this->fetchAll("SELECT customer_id, customer_name, customer_email FROM cb_customer WHERE user_role = 1");
+        return $this->fetchAll("SELECT customer_id, customer_name, customer_email FROM cb_customer WHERE user_role = 1 AND customer_email NOT LIKE '%@campusbite.com'");
     }
 
     public function getKitchenAccounts()

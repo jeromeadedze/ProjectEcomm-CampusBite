@@ -99,11 +99,19 @@ $initials = function ($name) {
                 <li>
                     <span class="ka-avatar" aria-hidden="true"><?php echo htmlspecialchars($initials($p['customer_name'])); ?></span>
                     <span class="ka-person"><b><?php echo htmlspecialchars($p['customer_name']); ?></b><small><?php echo htmlspecialchars($p['customer_email']); ?> · <?php echo htmlspecialchars($p['customer_contact']); ?></small></span>
-                    <form action="<?php echo $ROOT_DIR; ?>/actions/kitchen_remove_staff_action.php" method="POST" data-confirm="Remove <?php echo htmlspecialchars($p['customer_name']); ?>'s access to the kitchen? They can still sign in to order food.">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="customer_id" value="<?php echo (int)$p['customer_id']; ?>">
-                        <button type="submit" class="cb-btn cb-btn-quiet ka-btn-sm" aria-label="Remove <?php echo htmlspecialchars($p['customer_name']); ?>">Remove</button>
-                    </form>
+                    <div class="ka-person-actions">
+                        <?php // Staff can't reset by email (their sign-in email is made up), so the kitchen admin does it here ?>
+                        <form action="<?php echo $ROOT_DIR; ?>/actions/reset_kitchen_password_action.php" method="POST" data-confirm="Reset <?php echo htmlspecialchars($p['customer_name']); ?>'s password? Their current password stops working, and you'll get a new one to give them.">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="customer_id" value="<?php echo (int)$p['customer_id']; ?>">
+                            <button type="submit" class="cb-btn cb-btn-quiet ka-btn-sm" aria-label="Reset <?php echo htmlspecialchars($p['customer_name']); ?>'s password"><i class="bi bi-key" aria-hidden="true"></i> Reset password</button>
+                        </form>
+                        <form action="<?php echo $ROOT_DIR; ?>/actions/kitchen_remove_staff_action.php" method="POST" data-confirm="Remove <?php echo htmlspecialchars($p['customer_name']); ?>'s access to the kitchen? They can still sign in to order food.">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="customer_id" value="<?php echo (int)$p['customer_id']; ?>">
+                            <button type="submit" class="cb-btn cb-btn-quiet ka-btn-sm" aria-label="Remove <?php echo htmlspecialchars($p['customer_name']); ?>">Remove</button>
+                        </form>
+                    </div>
                 </li>
             <?php endforeach; ?>
         </ul>
