@@ -24,7 +24,7 @@ $by = null;
 if ($order) {
     if (is_admin()) {
         $by = 'admin';
-    } elseif (is_kitchen() && get_kitchen_id() === (int)$order['brand_id']) {
+    } elseif (is_kitchen_staff() && get_kitchen_id() === (int)$order['brand_id']) {
         $by = 'kitchen';
     } elseif (can_order() && (int)$order['customer_id'] === (int)get_user_id()) {
         $by = 'customer';

@@ -27,7 +27,7 @@ $cancelAs = null;
 if (!$isCancelled) {
     if (is_admin()) {
         $cancelAs = 'admin';
-    } elseif ($isOrderKitchen) {
+    } elseif ($isOrderKitchen && is_kitchen_staff()) {
         $cancelAs = 'kitchen';
     } elseif (can_order() && (int)$order['customer_id'] === (int)get_user_id()) {
         $cancelAs = 'customer';
@@ -101,7 +101,7 @@ foreach ($items as $it) {
         <?php $i++; endforeach; ?>
     </ol>
 
-    <?php if ($isOrderKitchen): ?>
+    <?php if ($isOrderKitchen && is_kitchen_staff()): ?>
         <div class="cb-track-staff">
             <?php if ($next): ?>
                 <form action="<?php echo $ROOT_DIR; ?>/actions/update_order_status_action.php" method="POST">

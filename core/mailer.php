@@ -214,7 +214,7 @@ function smtp_send($toEmail, $toName, $subject, $message) {
         if (defined('SMTP_USER') && SMTP_USER !== '') {
             $command('AUTH LOGIN', 334);
             $command(base64_encode(SMTP_USER), 334, 'the username');
-            $command(base64_encode(SMTP_PASS), 235, 'the password');
+            $command(base64_encode(str_replace(' ', '', SMTP_PASS)), 235, 'the password');
         }
         $command('MAIL FROM:<' . MAIL_FROM . '>', 250);
         $command('RCPT TO:<' . $toEmail . '>', [250, 251]);

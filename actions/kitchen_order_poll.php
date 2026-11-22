@@ -7,7 +7,7 @@ require_once __DIR__ . '/../controllers/OrderController.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
-if (!is_kitchen()) {
+if (!is_kitchen_staff()) {
     http_response_code(401);
     echo json_encode(['error' => 'Sign in with a kitchen account.']);
     exit;

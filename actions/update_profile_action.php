@@ -18,7 +18,10 @@ if ($result['error']) {
 } else {
     // The greeting and avatar read the name from the session
     $_SESSION['customer_name'] = $result['values']['customer_name'];
-    $_SESSION['success'] = "Your details were saved.";
+    $_SESSION['customer_email'] = $result['values']['customer_email'];
+    $_SESSION['success'] = $result['emailChanged']
+        ? "Saved. Sign in with {$result['values']['customer_email']} from now on."
+        : "Your details were saved.";
 }
 
 header("Location: ../views/settings.php");

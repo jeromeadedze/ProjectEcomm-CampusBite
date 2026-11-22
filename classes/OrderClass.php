@@ -458,18 +458,55 @@ class OrderClass extends Database
         return array_column($rows, 'total', 'order_status');
     }
 
-    public function getKitchenBestSellers($brandId, $limit = 5)
+    // $since limits it to orders from that date on (null = all time)
+    public function getKitchenBestSellers($brandId, $limit = 5, $since = null)
     {
-        $sql = "SELECT p.product_id, p.product_title, SUM(od.qty) AS meals,
+        $sql = "SELECT p.product_id, p.product_title, p.product_image, SUM(od.qty) AS meals,
                        SUM(od.qty * COALESCE(od.price, p.product_price)) AS sales
                 FROM orderdetails od
                 JOIN orders o ON od.order_id = o.order_id
                 JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
-                WHERE o.brand_id = ? AND o.order_status <> 'Cancelled'
-                GROUP BY p.product_id, p.product_title
+                WHERE o.brand_id = ? AND o.order_status <> 'Cancelled'" . ($since ? " AND o.order_date >= ?" : "") . "
+                GROUP BY p.product_id, p.product_title, p.product_image
                 ORDER BY meals DESC, sales DESC
                 LIMIT " . intval($limit);
-        return $this->fetchAll($sql, [$brandId]);
+        return $this->fetchAll($sql, $since ? [$brandId, $since] : [$brandId]);
+    }
+
+    /**
+     * Every order a kitchen received since a date: its time, status, delivery fee, commission rate and meal total.
+     * The dashboards build their day-by-day and hour-by-hour figures from these. Meals from other kitchens
+     * (older mixed orders) are left out of the meal total.
+     */
+    public function getKitchenOrderFacts($brandId, $since)
+    {
+        $sql = "SELECT o.order_id, o.order_date, o.order_status, o.delivery_fee, o.cancel_reason,
+                       COALESCE(o.commission_rate, b.commission_rate) AS rate,
+                       (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0)
+                        FROM orderdetails od JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                        WHERE od.order_id = o.order_id) AS items,
+                       (SELECT COALESCE(SUM(od.qty), 0)
+                        FROM orderdetails od JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                        WHERE od.order_id = o.order_id) AS meals
+                FROM orders o
+                JOIN brands b ON b.brand_id = o.brand_id
+                WHERE o.brand_id = ? AND o.order_date >= ?
+                ORDER BY o.order_date ASC";
+        return $this->fetchAll($sql, [$brandId, $since]);
+    }
+
+    // Meals sold per menu category since a date, most ordered first
+    public function getKitchenCategorySplit($brandId, $since)
+    {
+        $sql = "SELECT c.cat_name, SUM(od.qty) AS meals, SUM(od.qty * COALESCE(od.price, p.product_price)) AS sales
+                FROM orders o
+                JOIN orderdetails od ON od.order_id = o.order_id
+                JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                JOIN categories c ON c.cat_id = p.product_cat
+                WHERE o.brand_id = ? AND o.order_status <> 'Cancelled' AND o.order_date >= ?
+                GROUP BY c.cat_id, c.cat_name
+                ORDER BY meals DESC, sales DESC";
+        return $this->fetchAll($sql, [$brandId, $since]);
     }
 
     public function addTrackingUpdate($orderId, $status, $message)

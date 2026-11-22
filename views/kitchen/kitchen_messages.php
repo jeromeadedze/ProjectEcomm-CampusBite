@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
 require_once __DIR__ . '/../../controllers/SupportController.php';
 
-require_kitchen();
+require_kitchen_staff();
 
 $kitchenId = get_kitchen_id();
 $kitchen = (new ProductController())->getBrandById($kitchenId);

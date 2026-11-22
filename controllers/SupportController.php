@@ -96,7 +96,11 @@ class SupportController
         if (is_admin()) {
             return 'admin';
         }
-        $kitchenId = get_kitchen_id();
+        // Kitchen staff answer customer messages; the kitchen admin doesn't handle them
+        $kitchenId = is_kitchen_staff() ? get_kitchen_id() : null;
+        if (is_kitchen_admin()) {
+            return null;
+        }
         if ($kitchenId) {
             $handles = (int)$msg['brand_id'] === $kitchenId || (int)($msg['order_brand_id'] ?? 0) === $kitchenId;
             return $handles ? 'kitchen' : null;

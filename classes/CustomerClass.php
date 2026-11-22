@@ -37,15 +37,16 @@ class CustomerClass extends Database
         return $this->fetchAll($sql);
     }
 
-    public function updateProfile($id, $name, $contact, $hostel)
+    public function updateProfile($id, $name, $contact, $hostel, $email)
     {
-        $sql = "UPDATE customer SET customer_name = ?, customer_contact = ?, campus_hostel = ? WHERE customer_id = ?";
-        return $this->execute($sql, [$name, $contact, $hostel, $id]);
+        $sql = "UPDATE customer SET customer_name = ?, customer_contact = ?, campus_hostel = ?, customer_email = ? WHERE customer_id = ?";
+        return $this->execute($sql, [$name, $contact, $hostel, $email, $id]);
     }
 
+    // Setting your own password also clears the "must change it" flag from a starting password
     public function updatePassword($id, $newPass)
     {
-        $sql = "UPDATE customer SET customer_pass = ? WHERE customer_id = ?";
+        $sql = "UPDATE customer SET customer_pass = ?, must_change_password = 0 WHERE customer_id = ?";
         return $this->execute($sql, [password_hash($newPass, PASSWORD_DEFAULT), $id]);
     }
 
@@ -93,16 +94,37 @@ class CustomerClass extends Database
 
     // ---------- Kitchen accounts (role 4) ----------
 
-    public function createKitchenAccount($name, $email, $pass, $contact, $brandId)
+    // $kitchenRole: 'admin' (owner/manager) or 'staff' (works the shift)
+    // $mustChange: true when $pass is a starting password made for them, so they set their own at first sign-in
+    public function createKitchenAccount($name, $email, $pass, $contact, $brandId, $kitchenRole = 'admin', $mustChange = false)
     {
-        $sql = "INSERT INTO customer (customer_name, customer_email, customer_pass, customer_country, customer_city, customer_contact, user_role, brand_id)
-                VALUES (?, ?, ?, 'Ghana', 'Berekuso', ?, 4, ?)";
-        return $this->execute($sql, [$name, $email, password_hash($pass, PASSWORD_DEFAULT), $contact, $brandId]);
+        $sql = "INSERT INTO customer (customer_name, customer_email, customer_pass, customer_country, customer_city, customer_contact, user_role, brand_id, kitchen_role, must_change_password)
+                VALUES (?, ?, ?, 'Ghana', 'Berekuso', ?, 4, ?, ?, ?)";
+        return $this->execute($sql, [$name, $email, password_hash($pass, PASSWORD_DEFAULT), $contact, $brandId, $kitchenRole === 'staff' ? 'staff' : 'admin', $mustChange ? 1 : 0]);
+    }
+
+    // Everyone with a login for one kitchen: admins first, then staff
+    public function getKitchenTeam($brandId)
+    {
+        $sql = "SELECT customer_id, customer_name, customer_email, customer_contact, COALESCE(kitchen_role, 'admin') AS kitchen_role
+                FROM customer
+                WHERE user_role = 4 AND brand_id = ?
+                ORDER BY (COALESCE(kitchen_role, 'admin') = 'admin') DESC, customer_name ASC";
+        return $this->fetchAll($sql, [$brandId]);
+    }
+
+    // A kitchen admin removing one of their own staff: only staff, only from that kitchen
+    public function removeKitchenStaff($id, $brandId)
+    {
+        $sql = "UPDATE customer SET user_role = 2, brand_id = NULL, kitchen_role = NULL
+                WHERE customer_id = ? AND user_role = 4 AND brand_id = ? AND kitchen_role = 'staff'";
+        $this->execute($sql, [$id, $brandId]);
+        return $this->fetchOne("SELECT ROW_COUNT() AS n")['n'] ?? 0;
     }
 
     public function getKitchenAccounts()
     {
-        $sql = "SELECT c.customer_id, c.customer_name, c.customer_email, c.customer_contact, c.brand_id, b.brand_name
+        $sql = "SELECT c.customer_id, c.customer_name, c.customer_email, c.customer_contact, c.brand_id, b.brand_name, COALESCE(c.kitchen_role, 'admin') AS kitchen_role
                 FROM customer c
                 LEFT JOIN brands b ON c.brand_id = b.brand_id
                 WHERE c.user_role = 4
@@ -113,7 +135,7 @@ class CustomerClass extends Database
     // Turns a kitchen account back into a regular customer account
     public function removeKitchenAccess($id)
     {
-        return $this->execute("UPDATE customer SET user_role = 2, brand_id = NULL WHERE customer_id = ? AND user_role = 4", [$id]);
+        return $this->execute("UPDATE customer SET user_role = 2, brand_id = NULL, kitchen_role = NULL WHERE customer_id = ? AND user_role = 4", [$id]);
     }
 
     public function updatePassStatus($id, $hasPass, $expiryDate)

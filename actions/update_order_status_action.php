@@ -4,7 +4,7 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 
-require_kitchen();
+require_kitchen_staff();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();

@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
 
-require_kitchen();
+require_kitchen_admin();
 
 $kitchenId = get_kitchen_id();
 $kitchen = (new ProductController())->getBrandById($kitchenId);
@@ -126,12 +126,16 @@ $contactButtons = function ($c) use ($kitchen) {
         </section>
     </div>
 
-    <form class="cb-card cb-money-range cb-order-filters" method="GET" action="kitchen_customers.php" role="search">
-        <label class="cb-order-search">Search by name, email or phone
-            <input type="search" name="q" value="<?php echo htmlspecialchars($result['q']); ?>" maxlength="100" placeholder="e.g. Ama Mensah or 0241234567">
+    <form class="cb-find" method="GET" action="kitchen_customers.php" role="search">
+        <label class="cb-find-field">
+            <span class="cb-sr-only">Search customers by name, email or phone</span>
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="q" value="<?php echo htmlspecialchars($result['q']); ?>" maxlength="100" placeholder="Search by name, email or phone">
         </label>
         <button type="submit" class="cb-btn">Search</button>
-        <?php if ($result['q'] !== ''): ?><a class="cb-btn cb-btn-quiet" href="kitchen_customers.php">Clear</a><?php endif; ?>
+        <?php if ($result['q'] !== ''): ?>
+            <p class="cb-find-note"><?php echo (int)$result['total']; ?> <?php echo (int)$result['total'] === 1 ? 'customer matches' : 'customers match'; ?> "<?php echo htmlspecialchars($result['q']); ?>" · <a class="cb-link" href="kitchen_customers.php">Clear</a></p>
+        <?php endif; ?>
     </form>
 
     <section class="cb-card">

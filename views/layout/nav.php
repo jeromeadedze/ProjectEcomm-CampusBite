@@ -1,7 +1,8 @@
 <?php
 /**
  * Top bar: logo, pill navigation, search, cart and account.
- * Three sets of links: shoppers get the ordering pages, admins the admin console, kitchen accounts their kitchen portal.
+ * Four sets of links: shoppers get the ordering pages, admins the admin console, kitchen admins sales/menu/staff,
+ * and kitchen staff orders/menu/messages.
  * On phones the shopper links become a tab bar fixed to the bottom of the screen; staff links scroll sideways under the bar.
  * Needs $currentPage, $ROOT_DIR and $panelCount from header.php.
  */
@@ -24,15 +25,24 @@ $icon = function ($name) use ($icons) {
 };
 
 // Each link: [path, pages that light it up, label, icon, phone-only]
-if (is_kitchen()) {
+if (is_kitchen_admin()) {
+    // The kitchen's owner or manager: sales, the menu and prices, staff logins, payouts. Orders are left to staff.
+    $navLabel = 'Kitchen admin';
+    $navLinks = [
+        ['/views/kitchen/kitchen_sales.php', ['kitchen_sales', 'order_tracking'], 'Sales', 'money'],
+        ['/views/kitchen/kitchen_menu.php', ['kitchen_menu'], 'Menu', 'food'],
+        ['/views/kitchen/kitchen_staff.php', ['kitchen_staff'], 'Staff', 'people'],
+        ['/views/kitchen/kitchen_customers.php', ['kitchen_customers'], 'Customers', 'user'],
+        ['/views/kitchen/kitchen_info.php', ['kitchen_info'], 'Kitchen info', 'shop'],
+    ];
+} elseif (is_kitchen_staff()) {
+    // Kitchen staff work the shift: orders, sold-out meals and customer messages. No money anywhere.
     $navLabel = 'Kitchen';
     $navLinks = [
         ['/views/kitchen/kitchen_dashboard.php', ['kitchen_dashboard'], 'Dashboard', 'grid'],
         ['/views/kitchen/kitchen_orders.php', ['kitchen_orders', 'order_tracking'], 'Orders', 'orders'],
         ['/views/kitchen/kitchen_menu.php', ['kitchen_menu'], 'Menu', 'food'],
-        ['/views/kitchen/kitchen_customers.php', ['kitchen_customers'], 'Customers', 'people'],
         ['/views/kitchen/kitchen_messages.php', ['kitchen_messages'], 'Messages', 'help'],
-        ['/views/kitchen/kitchen_info.php', ['kitchen_info'], 'Kitchen info', 'shop'],
     ];
 } elseif (is_admin()) {
     $navLabel = 'Admin';
@@ -64,7 +74,7 @@ $isShopperNav = !is_admin() && !is_kitchen();
 
 // Kitchens: how many new orders are waiting, and the newest order, so main.js can tell when another comes in
 $kitchenOrders = null;
-if (is_kitchen()) {
+if (is_kitchen_staff()) {
     require_once __DIR__ . '/../../controllers/OrderController.php';
     $kitchenOrders = (new OrderController())->getKitchenNewOrderState(get_kitchen_id());
 }
