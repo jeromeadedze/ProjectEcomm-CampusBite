@@ -50,6 +50,13 @@ $pageHeadingText = $pageHeading ?? $pageTitle;
 $headerCart = new CartController();
 $panelItems = can_order() ? $headerCart->getCartItems(get_cart_token(), get_user_id()) : [];
 $panelCount = array_sum(array_map(function ($item) { return (int)$item['qty']; }, $panelItems));
+// How many of each meal are in the bill, so meal cards show their counter instead of +
+$billQty = [];
+foreach ($panelItems as $item) {
+    $billQty[(int)$item['p_id']] = (int)$item['qty'];
+}
+// The phone basket bar (views/layout/basket_bar.php) shows on shopping pages, not on the bill or checkout themselves
+$showBasket = can_order() && !in_array($currentPage, ['cart', 'checkout'], true);
 
 // The order panel only appears once something is in the cart, and never where it would repeat
 // the page itself (Bills, checkout) or for admins and kitchens, who don't order
@@ -70,6 +77,7 @@ $cssVersion = function ($file) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?php echo csrf_token(); ?>">
     <title><?php echo htmlspecialchars($pageTitle); ?> – CampusBite</title>
     <link rel="icon" href="data:,">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,7 +92,7 @@ $cssVersion = function ($file) {
     <link rel="stylesheet" href="<?php echo $ROOT_DIR; ?>/css/admin.css?v=<?php echo $cssVersion('admin.css'); ?>">
 </head>
 <body>
-    <div class="cb<?php echo $showPanel ? ' has-panel' : ''; ?>" id="cb-app" data-panel-signature="<?php echo $panelSignature; ?>">
+    <div class="cb<?php echo $showPanel ? ' has-panel' : ''; ?><?php echo $showBasket && $panelCount > 0 ? ' has-basket' : ''; ?>" id="cb-app" data-panel-signature="<?php echo $panelSignature; ?>" data-root="<?php echo htmlspecialchars($ROOT_DIR); ?>" data-shop-page="<?php echo $showBasket ? '1' : '0'; ?>">
         <?php if ($showPanel): ?>
         <script>
             // Keep the panel closed if the shopper closed it and the cart hasn't changed since

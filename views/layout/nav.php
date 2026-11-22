@@ -100,9 +100,9 @@ if (is_kitchen_staff()) {
                 <?php echo $icon('search'); ?>
                 <input type="search" name="q" placeholder="Search meals or kitchens" aria-label="Search meals or kitchens" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>">
             </form>
-            <a class="cb-cart-pill" href="<?php echo $ROOT_DIR; ?>/views/cart.php" aria-label="Cart, <?php echo $panelCount; ?> items">
+            <a class="cb-cart-pill" href="<?php echo $ROOT_DIR; ?>/views/cart.php" aria-label="Cart, <?php echo $panelCount; ?> items" data-cart-pill>
                 <?php echo $icon('bag'); ?><span class="cb-cart-label">Cart</span>
-                <?php if ($panelCount > 0): ?><span class="cb-cart-count"><?php echo $panelCount; ?></span><?php endif; ?>
+                <span class="cb-cart-count" data-cart-count <?php echo $panelCount > 0 ? '' : 'hidden'; ?>><?php echo $panelCount; ?></span>
             </a>
         <?php endif; ?>
         <?php if (is_logged_in()): ?>

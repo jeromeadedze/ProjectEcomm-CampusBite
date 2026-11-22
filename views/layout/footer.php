@@ -1,6 +1,7 @@
         </main>
         <?php require __DIR__ . '/panel.php'; ?>
         </div>
+        <?php require __DIR__ . '/basket_bar.php'; ?>
     </div>
 
     <!-- Bootstrap Bundle JS -->

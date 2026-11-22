@@ -41,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $cartCtrl->clearCart(get_cart_token(), get_user_id());
             }
             $cartCtrl->addToCart($p_id, get_cart_token(), get_user_id(), $qty, $notes);
-            $_SESSION['success'] = "{$product['product_title']} added to your order!";
         }
     }
 }

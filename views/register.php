@@ -11,6 +11,7 @@ if (is_logged_in()) {
 // Values from a rejected submission, so nobody has to retype them
 $form = $_SESSION['register_form'] ?? [];
 unset($_SESSION['register_form']);
+$registerMsg = take_form_message('register');
 
 $formValue = function ($field) use ($form) {
     return htmlspecialchars($form[$field] ?? '');
@@ -23,6 +24,7 @@ $formValue = function ($field) use ($form) {
 
     <form id="registerForm" action="<?php echo $ROOT_DIR; ?>/actions/register_action.php" method="POST" novalidate>
         <?php echo csrf_field(); ?>
+        <?php echo form_message_html($registerMsg); ?>
         <div class="cb-field">
             <label for="customer_name">Full name</label>
             <input type="text" id="customer_name" name="customer_name" value="<?php echo $formValue('customer_name'); ?>" autocomplete="name" aria-describedby="name_error" required>

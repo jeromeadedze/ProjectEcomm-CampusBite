@@ -13,10 +13,10 @@ require_csrf();
 $result = (new SupportController())->submitMessage(get_user_id(), $_POST);
 
 if ($result['error']) {
-    $_SESSION['error'] = $result['error'];
+    set_form_message('contact', $result['error']);
     $_SESSION['contact_form'] = $result['values'];
 } else {
-    $_SESSION['success'] = "Thanks, your message was sent. We'll get back to you soon.";
+    set_form_message('contact', "Thanks, your message was sent. We'll get back to you soon.", 'success');
 }
 
 header("Location: ../views/contact.php");

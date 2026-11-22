@@ -8,6 +8,7 @@ if (is_logged_in()) {
 }
 
 $toCheckout = ($_GET['redirect'] ?? '') === 'checkout';
+$loginMsg = take_form_message('login');
 ?>
 
 <section class="cb-auth">
@@ -19,13 +20,14 @@ $toCheckout = ($_GET['redirect'] ?? '') === 'checkout';
         <?php if ($toCheckout): ?>
             <input type="hidden" name="redirect" value="checkout">
         <?php endif; ?>
+        <?php echo form_message_html($loginMsg); ?>
         <div class="cb-field">
             <label for="customer_email">Email address</label>
-            <input type="email" id="customer_email" name="customer_email" placeholder="name@ashesi.edu.gh" autocomplete="email" required>
+            <input type="email" id="customer_email" name="customer_email" placeholder="name@ashesi.edu.gh" autocomplete="email" required value="<?php echo htmlspecialchars($loginMsg['values']['customer_email'] ?? ''); ?>"<?php echo $loginMsg ? ' aria-invalid="true"' : ''; ?>>
         </div>
         <div class="cb-field">
             <label for="customer_pass">Password</label>
-            <input type="password" id="customer_pass" name="customer_pass" autocomplete="current-password" required>
+            <input type="password" id="customer_pass" name="customer_pass" autocomplete="current-password" required<?php echo $loginMsg ? ' aria-invalid="true" autofocus' : ''; ?>>
             <a class="cb-auth-forgot" href="<?php echo $ROOT_DIR; ?>/views/forgot_password.php">Forgot password?</a>
         </div>
         <button type="submit" class="cb-checkout">Sign in</button>

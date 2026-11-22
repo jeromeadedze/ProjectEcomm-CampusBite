@@ -18,11 +18,11 @@ $error = (new CustomerController())->changePassword(
 );
 
 if ($error) {
-    $_SESSION['error'] = $error;
+    set_form_message('password', $error);
 } else {
     // A fresh session id, so anyone holding the old one is signed out
     session_regenerate_id(true);
-    $_SESSION['success'] = "Your password was changed.";
+    set_form_message('password', "Your password was changed.", 'success');
 }
 
 // On a mistake, reopen the password form so it can be tried again straight away

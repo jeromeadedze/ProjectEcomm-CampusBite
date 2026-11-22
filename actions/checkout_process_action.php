@@ -49,7 +49,7 @@ if (!DeliveryController::isDropPoint($dropPoint)) {
     $formError = "Keep delivery instructions to 255 characters or fewer.";
 }
 if ($formError) {
-    $_SESSION['error'] = $formError;
+    set_form_message('checkout', $formError);
     $_SESSION['checkout_form'] = ['drop_point' => $dropPoint, 'drop_detail' => $dropDetail, 'notes' => $notes];
     header("Location: ../views/checkout.php");
     exit;
@@ -83,7 +83,7 @@ if ($unavailable) {
 // Paystack pays the kitchen directly, so it needs a payout account (a Paystack subaccount) first
 $kitchen = (new ProductController())->getBrandById((int)$kitchenIds[0]);
 if (!$kitchen || empty($kitchen['paystack_subaccount'])) {
-    $_SESSION['error'] = ($kitchen['brand_name'] ?? 'This kitchen') . " can't take online payments yet. Please try again later or order from another kitchen.";
+    set_form_message('checkout', ($kitchen['brand_name'] ?? 'This kitchen') . " can't take online payments yet. Please try again later or order from another kitchen.");
     header("Location: ../views/checkout.php");
     exit;
 }
@@ -97,7 +97,7 @@ $split = paystack_split_for($subtotal, $deliveryFee, $kitchen['commission_rate']
 
 if (!paystack_configured()) {
     error_log('Checkout: core/paystack_config.php is missing or has no secret key');
-    $_SESSION['error'] = "Payments aren't set up on this site yet. Please try again later.";
+    set_form_message('checkout', "Payments aren't set up on this site yet. Please try again later.");
     header("Location: ../views/checkout.php");
     exit;
 }
@@ -144,7 +144,7 @@ $init = paystack_request('POST', '/transaction/initialize', [
 
 if (empty($init['status']) || empty($init['data']['authorization_url'])) {
     error_log('Paystack initialize failed: ' . json_encode($init['message'] ?? $init));
-    $_SESSION['error'] = "We couldn't open the payment page. Your bag is unchanged, so please try again.";
+    set_form_message('checkout', "We couldn't open the payment page. Your bag is unchanged, so please try again.");
     header("Location: ../views/checkout.php");
     exit;
 }

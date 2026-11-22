@@ -20,13 +20,203 @@ document.addEventListener('DOMContentLoaded', () => {
         if (toasts.length) toasts[toasts.length - 1].remove();
     });
 
-    // Close the order panel; it stays closed until the cart changes
-    const panelClose = document.getElementById('cb-panel-close');
-    if (panelClose) {
-        panelClose.addEventListener('click', () => {
-            const app = document.getElementById('cb-app');
-            app.classList.remove('has-panel');
-            try { localStorage.setItem('cbPanelClosed', app.dataset.panelSignature); } catch (e) {}
+    // Close the order panel; it stays closed until the cart changes (delegated: the panel is redrawn after each change)
+    document.addEventListener('click', (event) => {
+        if (!event.target.closest('#cb-panel-close')) return;
+        const app = document.getElementById('cb-app');
+        app.classList.remove('has-panel');
+        try { localStorage.setItem('cbPanelClosed', app.dataset.panelSignature); } catch (e) {}
+    });
+
+    // ── Basket without page reloads ──────────────────────────────────────────────────────────────────────
+    // Meal cards: + adds one and turns into the meal's count; tapping the count opens − n +, which folds back
+    // after a few seconds. The order panel's − / + buttons work the same way. Each change goes to
+    // actions/cart_api.php, which answers with the whole basket, so every counter, the order panel (wide screens)
+    // and the basket bar (phones) stay in step. If the request fails, the forms still work as plain POSTs.
+    const shopApp = document.getElementById('cb-app');
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (shopApp && csrfMeta) {
+        const apiUrl = (shopApp.dataset.root || '..') + '/actions/cart_api.php';
+        const shopPage = shopApp.dataset.shopPage === '1';
+        let queue = Promise.resolve();
+        const foldTimers = new WeakMap();
+
+        const toast = (message) => {
+            let box = document.querySelector('.cb-toasts');
+            if (!box) { box = document.createElement('div'); box.className = 'cb-toasts'; shopApp.prepend(box); }
+            const el = document.createElement('div');
+            el.className = 'cb-toast cb-toast-error';
+            el.setAttribute('role', 'alert');
+            el.innerHTML = '<i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><p></p>'
+                + '<button type="button" aria-label="Dismiss message"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
+            el.querySelector('p').textContent = message;
+            el.querySelector('button').addEventListener('click', () => el.remove());
+            box.appendChild(el);
+            setTimeout(() => el.remove(), 6000);
+        };
+
+        // Draws one meal card's control for a quantity; open = show − n +
+        const drawStep = (step, qty, open) => {
+            const max = parseInt(step.dataset.max, 10) || 20;
+            const title = step.dataset.title || 'this meal';
+            step.dataset.qty = qty;
+            const isOpen = qty > 0 && open;
+            step.querySelector('[data-step-add]').hidden = qty > 0;
+            const count = step.querySelector('[data-step-count]');
+            count.hidden = qty === 0 || isOpen;
+            count.textContent = qty;
+            count.setAttribute('aria-label', qty + ' ' + title + ' in your basket. Change how many');
+            step.querySelector('[data-step-open]').hidden = !isOpen;
+            step.querySelector('[data-step-num]').textContent = qty;
+            step.querySelector('[data-step-plus]').disabled = qty >= max;
+            step.querySelector('[data-step-minus]').setAttribute('aria-label', (qty <= 1 ? 'Remove ' : 'One less ') + title);
+        };
+
+        // Fold an open counter back to its number a few seconds after the last tap
+        const foldLater = (step) => {
+            clearTimeout(foldTimers.get(step));
+            foldTimers.set(step, setTimeout(() => {
+                const hadFocus = step.contains(document.activeElement);
+                drawStep(step, parseInt(step.dataset.qty, 10) || 0, false);
+                if (hadFocus) (step.querySelector('[data-step-count]:not([hidden])') || step.querySelector('[data-step-add]')).focus();
+            }, 3500));
+        };
+
+        // Applies the basket the server sent back
+        const applyBasket = (state) => {
+            document.querySelectorAll('[data-step]').forEach(step => {
+                const qty = state.items[step.dataset.product] || 0;
+                const open = !step.querySelector('[data-step-open]').hidden;
+                drawStep(step, qty, open);
+            });
+            const bar = document.querySelector('[data-basket]');
+            if (bar) {
+                const countEl = bar.querySelector('[data-basket-count]');
+                const changed = countEl.textContent !== String(state.count);
+                bar.hidden = state.count === 0;
+                countEl.textContent = state.count;
+                bar.querySelector('[data-basket-total]').textContent = state.subtotal_text;
+                bar.setAttribute('aria-label', 'View basket, ' + state.count + (state.count === 1 ? ' meal, ' : ' meals, ') + state.subtotal_text);
+                if (changed) { countEl.classList.remove('is-bump'); void countEl.offsetWidth; countEl.classList.add('is-bump'); }
+            }
+            shopApp.classList.toggle('has-basket', !!bar && state.count > 0);
+            const oldPanel = document.getElementById('cb-panel');
+            if (state.panel) {
+                const holder = document.createElement('div');
+                holder.innerHTML = state.panel.trim();
+                const fresh = holder.firstElementChild;
+                if (oldPanel) oldPanel.replaceWith(fresh);
+                else { const body = document.querySelector('.cb-body'); if (body) body.appendChild(fresh); }
+            } else if (oldPanel) {
+                oldPanel.remove();
+            }
+            // A change to the basket brings a closed panel back, as a page reload would
+            shopApp.classList.toggle('has-panel', shopPage && state.count > 0);
+            const cartBadge = document.querySelector('[data-cart-count]');
+            if (cartBadge) { cartBadge.textContent = state.count; cartBadge.hidden = state.count === 0; }
+            const cartPill = document.querySelector('[data-cart-pill]');
+            if (cartPill) cartPill.setAttribute('aria-label', 'Cart, ' + state.count + ' items');
+        };
+
+        // Sets one meal's quantity in the basket. Requests run one at a time, in the order they were made.
+        const setQty = (productId, qty, replace) => {
+            queue = queue.then(() => {
+                const body = new FormData();
+                body.append('csrf_token', csrfMeta.content);
+                body.append('product_id', productId);
+                body.append('qty', qty);
+                body.append('root', shopApp.dataset.root || '..');
+                if (replace) body.append('replace', '1');
+                return fetch(apiUrl, { method: 'POST', body, credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                    .then(r => r.json())
+                    .then(data => {
+                        // Every answer carries the basket as it really is, so a refused change is undone on screen
+                        if (data.items) applyBasket(data);
+                        if (data.conflict) askNewBasket(data.conflict, productId, qty);
+                        else if (!data.ok) toast(data.error || "That didn't work. Try again.");
+                    })
+                    .catch(() => { toast("Couldn't reach CampusBite. Check your connection and try again."); });
+            });
+            return queue;
+        };
+        // "Start a new basket?" when a meal from another kitchen is added (same sheet as views/layout/flash.php)
+        const askNewBasket = (conflict, productId, qty) => {
+            document.querySelectorAll('[data-sheet]').forEach(s => s.remove());
+            const sheet = document.createElement('div');
+            sheet.className = 'cb-sheet';
+            sheet.setAttribute('data-sheet', '');
+            sheet.innerHTML = '<div class="cb-sheet-backdrop" data-sheet-close></div>'
+                + '<div class="cb-sheet-card" role="dialog" aria-modal="true" aria-labelledby="cb-sheet-title">'
+                + '<span class="cb-sheet-icon" aria-hidden="true"><i class="bi bi-shop"></i></span>'
+                + '<h2 id="cb-sheet-title">Start a new basket?</h2><p></p>'
+                + '<button type="button" class="cb-checkout" data-sheet-replace>Start new basket</button>'
+                + '<button type="button" class="cb-sheet-keep" data-sheet-close></button></div>';
+            const p = sheet.querySelector('p');
+            p.append('Your basket has meals from ');
+            const strong = document.createElement('strong'); strong.textContent = conflict.bill_kitchen; p.append(strong);
+            p.append('. Each order comes from one kitchen, so adding ' + conflict.meal + ' from ' + conflict.new_kitchen + ' empties it first.');
+            sheet.querySelector('.cb-sheet-keep').textContent = 'Keep my ' + conflict.bill_kitchen + ' basket';
+            sheet.querySelector('[data-sheet-replace]').addEventListener('click', () => {
+                sheet.remove();
+                setQty(productId, qty, true);
+            });
+            shopApp.appendChild(sheet); // inside #cb-app, where the colour tokens are defined
+            sheet.querySelector('[data-sheet-replace]').focus();
+        };
+
+        // Clicking the backdrop or "Keep" closes the sheet (server-drawn or ours); so does Escape
+        document.addEventListener('click', (event) => {
+            const closer = event.target.closest('[data-sheet-close]');
+            if (closer) closer.closest('[data-sheet]').remove();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const sheet = document.querySelector('[data-sheet]');
+            if (sheet) sheet.remove();
+        });
+        const serverSheet = document.querySelector('[data-sheet] .cb-checkout');
+        if (serverSheet) serverSheet.focus();
+
+        // Meal cards
+        document.querySelectorAll('[data-step]').forEach(step => {
+            const current = () => parseInt(step.dataset.qty, 10) || 0;
+            const max = parseInt(step.dataset.max, 10) || 20;
+            step.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const submitter = event.submitter;
+                if (submitter && submitter.hasAttribute('data-step-count')) {
+                    // The count opens − n +
+                    drawStep(step, current(), true);
+                    step.querySelector('[data-step-plus]').focus();
+                    foldLater(step);
+                    return;
+                }
+                // + : add the first one, shown straight away
+                drawStep(step, 1, false);
+                setQty(step.dataset.product, 1);
+            });
+            step.querySelector('[data-step-plus]').addEventListener('click', () => {
+                const next = Math.min(max, current() + 1);
+                drawStep(step, next, true);
+                foldLater(step);
+                setQty(step.dataset.product, next);
+            });
+            step.querySelector('[data-step-minus]').addEventListener('click', () => {
+                const next = Math.max(0, current() - 1);
+                drawStep(step, next, next > 0);
+                if (next > 0) foldLater(step);
+                else step.querySelector('[data-step-add]').focus();
+                setQty(step.dataset.product, next);
+            });
+        });
+
+        // The order panel's − / + buttons (the panel is redrawn after each change, so listen on the page)
+        document.addEventListener('submit', (event) => {
+            const form = event.target.closest('#cb-panel form.cb-qty');
+            if (!form || !event.submitter) return;
+            event.preventDefault();
+            const pid = form.querySelector('input[name="p_id"]').value;
+            setQty(pid, parseInt(event.submitter.value, 10) || 0);
         });
     }
 
