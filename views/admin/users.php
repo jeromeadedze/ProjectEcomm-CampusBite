@@ -40,6 +40,12 @@ $staffRow = function ($account, $kitchenCell) use ($ROOT_DIR) { ?>
         <td><?php echo htmlspecialchars($account['customer_email']); ?></td>
         <td>
             <div class="cb-table-actions">
+                <?php // Kitchen logins can't reset by email (made-up sign-in emails): the admin gives them a new starting password ?>
+                <form action="<?php echo $ROOT_DIR; ?>/actions/reset_kitchen_password_action.php" method="POST" data-confirm="Reset <?php echo htmlspecialchars($account['customer_name']); ?>'s password? Their current password stops working, and you'll get a new one to give them.">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="customer_id" value="<?php echo (int)$account['customer_id']; ?>">
+                    <button type="submit" class="is-plain" aria-label="Reset <?php echo htmlspecialchars($account['customer_name']); ?>'s password">Reset password</button>
+                </form>
                 <form action="<?php echo $ROOT_DIR; ?>/actions/remove_kitchen_access_action.php" method="POST" data-confirm="Remove kitchen access for <?php echo htmlspecialchars($account['customer_name']); ?>? They can still sign in to order food, but can no longer open the kitchen portal.">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="customer_id" value="<?php echo (int)$account['customer_id']; ?>">

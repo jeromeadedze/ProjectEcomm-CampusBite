@@ -19,6 +19,9 @@ if (mb_strlen($name) < 2) {
     $error = 'Enter your full name.';
 } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $error = 'Enter a valid email address.';
+} elseif (CustomerController::isMadeUpEmail($email)) {
+    // Kept for kitchen logins; customers need a real inbox so "Forgot password?" can reach them
+    $error = 'Use your own email address, so we can send you a reset link if you forget your password.';
 } elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/', $pass)) {
     $error = 'Use at least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.';
 } elseif (!preg_match('/^[0-9+\-\s]{7,15}$/', $contact)) {
