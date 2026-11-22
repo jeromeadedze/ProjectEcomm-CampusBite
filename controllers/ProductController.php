@@ -32,6 +32,15 @@ class ProductController
     // Every filter chip on the menu: the stored labels plus Quick
     const LABEL_FILTERS = self::LABELS + ['quick' => 'Quick'];
 
+    // Menu sort orders shoppers can pick (menu.php?sort=); '' is the default, newest first. SQL in ProductClass::SORT_ORDERS.
+    const SORTS = [
+        '' => 'Newest',
+        'popular' => 'Most ordered',
+        'price_low' => 'Cheapest',
+        'price_high' => 'Priciest',
+        'quickest' => 'Quickest',
+    ];
+
     const CATEGORY_ICONS = [
         'bi-egg-fried' => 'Fried egg',
         'bi-fire' => 'Flame',
@@ -497,10 +506,17 @@ class ProductController
         return $this->productModel->countAvailableProducts($brandId, $catId, $this->cleanLabelFilter($label));
     }
 
-    public function getAvailableProductsPage($brandId, $catId, $page, $label = '')
+    public function getAvailableProductsPage($brandId, $catId, $page, $label = '', $sort = '')
     {
         $offset = (max(1, (int)$page) - 1) * self::DISHES_PER_PAGE;
-        return $this->productModel->getAvailableProductsPage($brandId, $catId, self::DISHES_PER_PAGE, $offset, $this->cleanLabelFilter($label));
+        return $this->productModel->getAvailableProductsPage($brandId, $catId, self::DISHES_PER_PAGE, $offset,
+            $this->cleanLabelFilter($label), $this->cleanSort($sort));
+    }
+
+    // A sort from the address bar, or '' (newest first) when it isn't one of SORTS
+    public function cleanSort($sort)
+    {
+        return is_string($sort) && isset(self::SORTS[$sort]) ? $sort : '';
     }
 
     // A label from the address bar, or '' when it isn't one of the menu's filter chips

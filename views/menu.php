@@ -11,6 +11,8 @@ $brandId = (int)($_GET['brand'] ?? 0);
 $catId = (int)($_GET['cat'] ?? 0);
 // Label chip (spicy, vegan, quick...). Anything not on the list is ignored, so the menu shows everything.
 $label = $controller->cleanLabelFilter($_GET['label'] ?? '');
+// Sort order (cheapest, quickest...). Anything else means the default, newest first.
+$sort = $controller->cleanSort($_GET['sort'] ?? '');
 
 $kitchen = null;
 if ($brandId > 0) {
@@ -37,7 +39,7 @@ $total = $controller->countAvailableProducts($brandId, $catId, $label);
 $perPage = ProductController::DISHES_PER_PAGE;
 $pages = max(1, (int)ceil($total / $perPage));
 $page = min(max(1, (int)($_GET['page'] ?? 1)), $pages);
-$dishes = $controller->getAvailableProductsPage($brandId, $catId, $page, $label);
+$dishes = $controller->getAvailableProductsPage($brandId, $catId, $page, $label, $sort);
 $chipCategories = $controller->getCategoriesWithDishes($brandId);
 
 // Links keep the kitchen and category the shopper picked
@@ -47,9 +49,11 @@ $listingUrl = function ($params) {
     });
     return 'menu.php' . ($params ? '?' . http_build_query($params) : '');
 };
-// Chip and page links open the new page at the filters (#dishes), not back at the top
-$filterUrl = function ($params) use ($listingUrl) {
-    return $listingUrl($params) . '#dishes';
+// Chip, sort and page links keep everything the shopper picked and change only what's passed in; picking a new
+// filter goes back to page 1. They open the new page at the filters (#dishes), not back at the top.
+$picked = ['brand' => $brandId, 'cat' => $catId, 'label' => $label, 'sort' => $sort];
+$filterUrl = function ($changes) use ($listingUrl, $picked) {
+    return $listingUrl(array_merge($picked, ['page' => 0], $changes)) . '#dishes';
 };
 
 $pageHeading = $category && !$kitchen ? $category['cat_name'] : null;
@@ -103,10 +107,10 @@ if ($kitchen) {
 
 <?php if (count($chipCategories) > 1 || $category): ?>
     <div class="cb-chips" role="group" aria-label="Filter by category">
-        <a class="cb-chip <?php echo !$category ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['brand' => $brandId, 'label' => $label]); ?>" data-menu-filter="cat:0" <?php echo !$category ? 'aria-current="true"' : ''; ?>>All</a>
+        <a class="cb-chip <?php echo !$category ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['cat' => 0]); ?>" data-menu-filter="cat:0" <?php echo !$category ? 'aria-current="true"' : ''; ?>>All</a>
         <?php foreach ($chipCategories as $chip): ?>
             <?php $chipOn = $catId === (int)$chip['cat_id']; ?>
-            <a class="cb-chip <?php echo $chipOn ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['brand' => $brandId, 'cat' => $chip['cat_id'], 'label' => $label]); ?>" data-menu-filter="cat:<?php echo (int)$chip['cat_id']; ?>" <?php echo $chipOn ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($chip['cat_name']); ?></a>
+            <a class="cb-chip <?php echo $chipOn ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['cat' => (int)$chip['cat_id']]); ?>" data-menu-filter="cat:<?php echo (int)$chip['cat_id']; ?>" <?php echo $chipOn ? 'aria-current="true"' : ''; ?>><?php echo htmlspecialchars($chip['cat_name']); ?></a>
         <?php endforeach; ?>
     </div>
 <?php else: ?>
@@ -118,7 +122,7 @@ if ($kitchen) {
     <?php foreach (ProductController::LABEL_FILTERS as $labelKey => $labelName): ?>
         <?php $labelOn = $label === $labelKey; ?>
         <a class="cb-chip <?php echo $labelOn ? 'is-on' : ''; ?>"
-           href="<?php echo $filterUrl(['brand' => $brandId, 'cat' => $catId, 'label' => $labelOn ? '' : $labelKey]); ?>"
+           href="<?php echo $filterUrl(['label' => $labelOn ? '' : $labelKey]); ?>"
            data-menu-filter="label:<?php echo $labelKey; ?>"
            <?php echo $labelOn ? 'aria-current="true"' : ''; ?>
            title="<?php echo $labelKey === 'quick' ? 'Ready in ' . ProductController::QUICK_MINUTES . ' minutes or less' : ''; ?>">
@@ -128,10 +132,21 @@ if ($kitchen) {
     <?php endforeach; ?>
 </div>
 
+<?php // Sort: one is always on (Newest by default). Changing it keeps every filter. ?>
+<div class="cb-menu-tools">
+    <div class="cb-sortbar" role="group" aria-label="Sort dishes">
+        <span class="cb-tools-label">Sort</span>
+        <?php foreach (ProductController::SORTS as $sortKey => $sortName): ?>
+            <a class="cb-sort <?php echo $sort === $sortKey ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['sort' => $sortKey]); ?>"
+               data-menu-filter="sort:<?php echo $sortKey; ?>" <?php echo $sort === $sortKey ? 'aria-current="true"' : ''; ?>><?php echo $sortName; ?></a>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 <?php if (empty($dishes) && $label !== ''): ?>
     <p class="cb-empty">
         No <?php echo strtolower(ProductController::LABEL_FILTERS[$label]); ?> dishes here yet.
-        <a class="cb-link" href="<?php echo $filterUrl(['brand' => $brandId, 'cat' => $catId]); ?>" data-menu-filter="label:">Show all dishes</a>
+        <a class="cb-link" href="<?php echo $filterUrl(['label' => '']); ?>" data-menu-filter="label:">Show all dishes</a>
     </p>
 <?php elseif (empty($dishes)): ?>
     <p class="cb-empty">No dishes here yet.</p>
@@ -146,11 +161,11 @@ if ($kitchen) {
     <?php if ($pages > 1): ?>
         <nav class="cb-pager" aria-label="Pages">
             <?php if ($page > 1): ?>
-                <a href="<?php echo $filterUrl(['brand' => $brandId, 'cat' => $catId, 'label' => $label, 'page' => $page - 1]); ?>" data-menu-filter="page:prev" data-menu-page>‹ Previous</a>
+                <a href="<?php echo $filterUrl(['page' => $page - 1]); ?>" data-menu-filter="page:prev" data-menu-page>‹ Previous</a>
             <?php endif; ?>
             <span>Page <?php echo $page; ?> of <?php echo $pages; ?></span>
             <?php if ($page < $pages): ?>
-                <a href="<?php echo $filterUrl(['brand' => $brandId, 'cat' => $catId, 'label' => $label, 'page' => $page + 1]); ?>" data-menu-filter="page:next" data-menu-page>Next ›</a>
+                <a href="<?php echo $filterUrl(['page' => $page + 1]); ?>" data-menu-filter="page:next" data-menu-page>Next ›</a>
             <?php endif; ?>
         </nav>
     <?php endif; ?>

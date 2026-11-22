@@ -293,15 +293,28 @@ class ProductClass extends Database
         return (int)$row['total'];
     }
 
-    public function getAvailableProductsPage($brandId, $catId, $limit, $offset, $label = '')
+    // Menu sort orders. Only these fixed SQL pieces are ever used; $sort is a key checked by the controller.
+    // Each ends with the newest meal first, so meals with the same price or prep time keep a steady order across pages.
+    const SORT_ORDERS = [
+        '' => 'p.product_id DESC',
+        'price_low' => 'p.product_price ASC, p.product_id DESC',
+        'price_high' => 'p.product_price DESC, p.product_id DESC',
+        'quickest' => 'p.prep_time_minutes ASC, p.product_id DESC',
+        // Meals sold in orders that weren't cancelled
+        'popular' => "(SELECT COALESCE(SUM(od.qty), 0) FROM cb_orderdetails od JOIN cb_orders o ON o.order_id = od.order_id
+                       WHERE od.product_id = p.product_id AND o.order_status <> 'Cancelled') DESC, p.product_id DESC",
+    ];
+
+    public function getAvailableProductsPage($brandId, $catId, $limit, $offset, $label = '', $sort = '')
     {
         [$where, $params] = $this->availableFilter($brandId, $catId, $label);
+        $orderBy = self::SORT_ORDERS[$sort] ?? self::SORT_ORDERS[''];
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone
                 FROM cb_products p
                 JOIN cb_categories c ON p.product_cat = c.cat_id
                 JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE $where
-                ORDER BY p.product_id DESC
+                ORDER BY $orderBy
                 LIMIT " . intval($limit) . " OFFSET " . intval($offset);
         return $this->fetchAll($sql, $params);
     }
