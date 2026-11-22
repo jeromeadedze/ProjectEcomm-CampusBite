@@ -13,6 +13,8 @@ $catId = (int)($_GET['cat'] ?? 0);
 $label = $controller->cleanLabelFilter($_GET['label'] ?? '');
 // Sort order (cheapest, quickest...). Anything else means the default, newest first.
 $sort = $controller->cleanSort($_GET['sort'] ?? '');
+// Price limit ("Up to GH₵ 20"): one of ProductController::PRICE_LIMITS, or 0 for any price
+$maxPrice = $controller->cleanMaxPrice($_GET['max'] ?? '');
 
 $kitchen = null;
 if ($brandId > 0) {
@@ -35,11 +37,11 @@ if ($catId > 0) {
     }
 }
 
-$total = $controller->countAvailableProducts($brandId, $catId, $label);
+$total = $controller->countAvailableProducts($brandId, $catId, $label, $maxPrice);
 $perPage = ProductController::DISHES_PER_PAGE;
 $pages = max(1, (int)ceil($total / $perPage));
 $page = min(max(1, (int)($_GET['page'] ?? 1)), $pages);
-$dishes = $controller->getAvailableProductsPage($brandId, $catId, $page, $label, $sort);
+$dishes = $controller->getAvailableProductsPage($brandId, $catId, $page, $label, $sort, $maxPrice);
 $chipCategories = $controller->getCategoriesWithDishes($brandId);
 
 // Links keep the kitchen and category the shopper picked
@@ -51,7 +53,7 @@ $listingUrl = function ($params) {
 };
 // Chip, sort and page links keep everything the shopper picked and change only what's passed in; picking a new
 // filter goes back to page 1. They open the new page at the filters (#dishes), not back at the top.
-$picked = ['brand' => $brandId, 'cat' => $catId, 'label' => $label, 'sort' => $sort];
+$picked = ['brand' => $brandId, 'cat' => $catId, 'label' => $label, 'max' => $maxPrice, 'sort' => $sort];
 $filterUrl = function ($changes) use ($listingUrl, $picked) {
     return $listingUrl(array_merge($picked, ['page' => 0], $changes)) . '#dishes';
 };
@@ -132,8 +134,17 @@ if ($kitchen) {
     <?php endforeach; ?>
 </div>
 
-<?php // Sort: one is always on (Newest by default). Changing it keeps every filter. ?>
+<?php // Price limit and sort: one of each is always on (Any price, Newest). Changing one keeps every other filter. ?>
 <div class="cb-menu-tools">
+    <div class="cb-sortbar" role="group" aria-label="Filter by price">
+        <span class="cb-tools-label">Price</span>
+        <a class="cb-sort <?php echo $maxPrice === 0 ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['max' => 0]); ?>"
+           data-menu-filter="max:0" <?php echo $maxPrice === 0 ? 'aria-current="true"' : ''; ?>>Any</a>
+        <?php foreach (ProductController::PRICE_LIMITS as $limit): ?>
+            <a class="cb-sort <?php echo $maxPrice === $limit ? 'is-on' : ''; ?>" href="<?php echo $filterUrl(['max' => $limit]); ?>"
+               data-menu-filter="max:<?php echo $limit; ?>" <?php echo $maxPrice === $limit ? 'aria-current="true"' : ''; ?>>Up to GH₵ <?php echo $limit; ?></a>
+        <?php endforeach; ?>
+    </div>
     <div class="cb-sortbar" role="group" aria-label="Sort dishes">
         <span class="cb-tools-label">Sort</span>
         <?php foreach (ProductController::SORTS as $sortKey => $sortName): ?>
@@ -143,10 +154,16 @@ if ($kitchen) {
     </div>
 </div>
 
-<?php if (empty($dishes) && $label !== ''): ?>
+<?php if (empty($dishes) && ($label !== '' || $maxPrice > 0)): ?>
     <p class="cb-empty">
-        No <?php echo strtolower(ProductController::LABEL_FILTERS[$label]); ?> dishes here yet.
-        <a class="cb-link" href="<?php echo $filterUrl(['label' => '']); ?>" data-menu-filter="label:">Show all dishes</a>
+        <?php if ($maxPrice > 0 && $label !== ''): ?>
+            No <?php echo strtolower(ProductController::LABEL_FILTERS[$label]); ?> dishes up to GH₵ <?php echo $maxPrice; ?> here yet.
+        <?php elseif ($maxPrice > 0): ?>
+            No dishes up to GH₵ <?php echo $maxPrice; ?> here yet.
+        <?php else: ?>
+            No <?php echo strtolower(ProductController::LABEL_FILTERS[$label]); ?> dishes here yet.
+        <?php endif; ?>
+        <a class="cb-link" href="<?php echo $filterUrl(['label' => '', 'max' => 0]); ?>" data-menu-filter="clear">Show all dishes</a>
     </p>
 <?php elseif (empty($dishes)): ?>
     <p class="cb-empty">No dishes here yet.</p>

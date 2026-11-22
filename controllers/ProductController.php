@@ -32,6 +32,9 @@ class ProductController
     // Every filter chip on the menu: the stored labels plus Quick
     const LABEL_FILTERS = self::LABELS + ['quick' => 'Quick'];
 
+    // Menu price chips: "Up to GH₵ 15" and so on (menu.php?max=). Picked so each one leaves out a real part of the menu.
+    const PRICE_LIMITS = [15, 20, 30];
+
     // Menu sort orders shoppers can pick (menu.php?sort=); '' is the default, newest first. SQL in ProductClass::SORT_ORDERS.
     const SORTS = [
         '' => 'Newest',
@@ -501,16 +504,25 @@ class ProductController
         return $this->productModel->getCategoriesWithDishes($brandId);
     }
 
-    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '')
+    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '', $maxPrice = 0)
     {
-        return $this->productModel->countAvailableProducts($brandId, $catId, $this->cleanLabelFilter($label));
+        return $this->productModel->countAvailableProducts($brandId, $catId, $this->cleanLabelFilter($label), $this->cleanMaxPrice($maxPrice));
     }
 
-    public function getAvailableProductsPage($brandId, $catId, $page, $label = '', $sort = '')
+    public function getAvailableProductsPage($brandId, $catId, $page, $label = '', $sort = '', $maxPrice = 0)
     {
         $offset = (max(1, (int)$page) - 1) * self::DISHES_PER_PAGE;
         return $this->productModel->getAvailableProductsPage($brandId, $catId, self::DISHES_PER_PAGE, $offset,
-            $this->cleanLabelFilter($label), $this->cleanSort($sort));
+            $this->cleanLabelFilter($label), $this->cleanSort($sort), $this->cleanMaxPrice($maxPrice));
+    }
+
+    // A price limit from the address bar (menu.php?max=), or 0 (any price) when it isn't one of PRICE_LIMITS
+    public function cleanMaxPrice($max)
+    {
+        if (!is_string($max) && !is_int($max)) {
+            return 0; // e.g. ?max[]=x
+        }
+        return ctype_digit((string)$max) && in_array((int)$max, self::PRICE_LIMITS, true) ? (int)$max : 0;
     }
 
     // A sort from the address bar, or '' (newest first) when it isn't one of SORTS

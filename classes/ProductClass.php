@@ -282,9 +282,9 @@ class ProductClass extends Database
         return $this->fetchAll($sql, $params);
     }
 
-    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '')
+    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '', $maxPrice = 0)
     {
-        [$where, $params] = $this->availableFilter($brandId, $catId, $label);
+        [$where, $params] = $this->availableFilter($brandId, $catId, $label, $maxPrice);
         $sql = "SELECT COUNT(*) AS total
                 FROM cb_products p
                 JOIN cb_brands b ON p.product_brand = b.brand_id
@@ -305,9 +305,9 @@ class ProductClass extends Database
                        WHERE od.product_id = p.product_id AND o.order_status <> 'Cancelled') DESC, p.product_id DESC",
     ];
 
-    public function getAvailableProductsPage($brandId, $catId, $limit, $offset, $label = '', $sort = '')
+    public function getAvailableProductsPage($brandId, $catId, $limit, $offset, $label = '', $sort = '', $maxPrice = 0)
     {
-        [$where, $params] = $this->availableFilter($brandId, $catId, $label);
+        [$where, $params] = $this->availableFilter($brandId, $catId, $label, $maxPrice);
         $orderBy = self::SORT_ORDERS[$sort] ?? self::SORT_ORDERS[''];
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone
                 FROM cb_products p
@@ -319,8 +319,9 @@ class ProductClass extends Database
         return $this->fetchAll($sql, $params);
     }
 
-    // $label is one key of ProductController::LABEL_FILTERS, already checked by the controller
-    private function availableFilter($brandId, $catId, $label = '')
+    // $label is one key of ProductController::LABEL_FILTERS and $maxPrice one of PRICE_LIMITS (or 0 for any price),
+    // both already checked by the controller
+    private function availableFilter($brandId, $catId, $label = '', $maxPrice = 0)
     {
         $where = "p.is_available = 1 AND b.is_active = 1";
         $params = [];
@@ -342,6 +343,10 @@ class ProductClass extends Database
         } elseif ($label !== '') {
             $where .= " AND FIND_IN_SET(?, p.labels)";
             $params[] = $label;
+        }
+        if ($maxPrice > 0) {
+            $where .= " AND p.product_price <= ?";
+            $params[] = $maxPrice;
         }
         return [$where, $params];
     }
