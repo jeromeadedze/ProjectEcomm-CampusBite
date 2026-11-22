@@ -1041,3 +1041,10 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 .cb-sort.is-on{background:var(--ink);color:#fff}
 @media (hover:hover){.cb-sort:not(.is-on):hover{background:var(--paper)}}
 .cb-sort:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+
+/* ---------- Order again (Sprint 32): a button under each past order ---------- */
+.cb-order-item{display:flex;flex-direction:column;gap:8px}
+.cb-order-item .cb-order-card{flex:1}
+.cb-order-again{margin:0}
+.cb-order-again .cb-btn{width:100%;padding:9px 18px}
+.cb-bill-summary .cb-order-again{margin-top:14px}

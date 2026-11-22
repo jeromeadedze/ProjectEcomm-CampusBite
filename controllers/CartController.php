@@ -53,6 +53,16 @@ class CartController
     }
 
     /**
+     * The kitchen the shopper's basket is from: ['id' => brand_id, 'name' => brand_name], or null when it's empty.
+     * "Order again" uses it to ask before emptying another kitchen's basket.
+     */
+    public function basketKitchen($token, $c_id = null)
+    {
+        $items = $this->getCartItems($token, $c_id);
+        return $items ? ['id' => (int)$items[0]['product_brand'], 'name' => $items[0]['brand_name']] : null;
+    }
+
+    /**
      * Zone B if any item comes from a Berekuso kitchen, otherwise Zone A
      */
     public function deliveryZoneFor($items)
