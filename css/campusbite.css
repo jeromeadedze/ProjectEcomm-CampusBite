@@ -937,20 +937,27 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 }
 .cb-step-count,.cb-step-open button{-webkit-tap-highlight-color:transparent}
 
-/* Phone basket bar: replaces the floating tab menu (and the order panel) while the basket has meals */
+/* Phone basket bar: a slim bar just above the floating tab menu while the basket has meals (the order panel and the
+   top bar's Cart button are hidden on phones). Scrolling down shrinks it to a round bag on the right (.is-mini, js/main.js). */
 .cb-basket{display:none}
 @media (max-width:860px){
-  .cb.has-basket .cb-basket:not([hidden]){display:flex;align-items:center;gap:12px;position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:31;
-    height:56px;padding:0 18px 0 8px;border-radius:999px;background:var(--ember);color:#fff;text-decoration:none;font-weight:600;box-shadow:0 10px 30px rgba(227,0,27,.32)}
-  .cb.has-basket .cb-nav-tabs{display:none}
+  .cb-cart-pill{display:none}
   .cb-panel{display:none}
-  .cb-basket-count{min-width:40px;height:40px;padding:0 8px;border-radius:999px;background:#fff;color:var(--ember);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
-  .cb-basket-label{flex:1;font-size:15px}
-  .cb-basket-total{font-size:15px;font-variant-numeric:tabular-nums}
+  .cb.has-basket .cb-basket:not([hidden]){--bw:min(300px,calc(100vw - 48px));display:flex;align-items:center;justify-content:center;gap:12px;position:fixed;z-index:31;
+    right:calc((100vw - var(--bw)) / 2);width:var(--bw);bottom:calc(max(12px,env(safe-area-inset-bottom)) + 68px);
+    height:46px;padding:0 18px;border-radius:999px;background:var(--ember);color:#fff;text-decoration:none;font-weight:600;
+    box-shadow:0 8px 22px rgba(227,0,27,.3);overflow:hidden;white-space:nowrap}
+  .cb.has-basket .cb-basket.is-mini:not([hidden]){width:52px;height:52px;right:16px;padding:0;gap:0}
+  .cb.has-basket .cb-basket.is-mini .cb-basket-total{display:none}
+  .cb.has-basket .cb-main{padding-bottom:170px}
+  .cb-basket-bag{position:relative;display:flex;flex:none}
+  .cb-basket-bag svg{width:22px;height:22px}
+  .cb-basket-count{position:absolute;top:-7px;right:-10px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#fff;color:var(--ember);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px var(--ember)}
+  .cb-basket-total{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
 }
 @media (max-width:860px) and (prefers-reduced-motion:no-preference){
-  .cb.has-basket .cb-basket:not([hidden]){animation:cb-basket-in .22s ease-out}
-  @keyframes cb-basket-in{from{transform:translateY(120%)}to{transform:none}}
+  .cb.has-basket .cb-basket:not([hidden]){animation:cb-basket-in .22s ease-out;transition:width .25s ease,height .25s ease,right .25s ease,padding .25s ease}
+  @keyframes cb-basket-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
   .cb-basket-count.is-bump{animation:cb-bump .3s ease-out}
   @keyframes cb-bump{40%{transform:scale(1.18)}}
 }

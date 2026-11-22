@@ -177,6 +177,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const serverSheet = document.querySelector('[data-sheet] .cb-checkout');
         if (serverSheet) serverSheet.focus();
 
+        // Phones: scrolling down shrinks the basket bar to a round bag on the right; scrolling up (or reaching the top) brings it back
+        const basketBar = document.querySelector('[data-basket]');
+        if (basketBar) {
+            let lastY = window.scrollY;
+            window.addEventListener('scroll', () => {
+                const y = window.scrollY;
+                if (Math.abs(y - lastY) < 8) return; // ignore tiny wobbles
+                basketBar.classList.toggle('is-mini', y > 80 && y > lastY);
+                lastY = y;
+            }, { passive: true });
+        }
+
         // Meal cards
         document.querySelectorAll('[data-step]').forEach(step => {
             const current = () => parseInt(step.dataset.qty, 10) || 0;
