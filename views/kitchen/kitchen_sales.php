@@ -13,7 +13,6 @@ $productCtrl = new ProductController();
 $orderCtrl = new OrderController();
 $kitchenId = get_kitchen_id();
 $kitchen = $productCtrl->getBrandById($kitchenId);
-$commissionPercent = round($kitchen['commission_rate'] * 100);
 $payoutLabel = ProductController::payoutLabel($kitchen);
 $refunds = $orderCtrl->getKitchenRefundBalance($kitchenId);
 $since = date('Y-m-d 00:00:00', strtotime('-' . ($range - 1) . ' days'));
@@ -61,11 +60,10 @@ $change = function ($now, $before, $lowerIsBetter = false) {
 };
 
 $kpis = [
-    ['You earned', $money($now['earnings']), $change($now['earnings'], $before['earnings']), 'Paid to your account after ' . $commissionPercent . '% commission, delivery fees included', true],
+    ['You earned', $money($now['earnings']), $change($now['earnings'], $before['earnings']), 'Paid to your account, delivery fees included', true],
     ['Meal sales', $money($now['sales']), $change($now['sales'], $before['sales']), $plural($now['meals'], 'meal') . ' sold', false],
     ['Orders', number_format($now['orders']), $change($now['orders'], $before['orders']), number_format($now['orders'] / $range, 1) . ' a day on average', false],
     ['Average order', $money($now['avg']), $change($now['avg'], $before['avg']), 'Meal value per order', false],
-    ['CampusBite commission', $money($now['commission']), $change($now['commission'], $before['commission'], null), $commissionPercent . '% of meal sales', false],
     ['Cancelled', number_format($now['cancelled']), $change($now['cancelRate'], $before['cancelRate'], true), number_format($now['cancelRate'], 1) . '% of orders, refunded in full', false],
 ];
 
@@ -218,7 +216,6 @@ $catMax = $categories ? max(array_map('floatval', array_column($categories, 'sal
         <?php endif; ?>
         <dl class="ka-facts">
             <div><dt>All-time earnings</dt><dd><?php echo $money($salesSummary['all']['payout']); ?></dd></div>
-            <div><dt>Each order you get</dt><dd>Meals − <?php echo $commissionPercent; ?>% + delivery</dd></div>
             <div><dt>Refunds still to take back</dt><dd class="<?php echo $refunds['owed'] > 0 ? 'ka-bad' : ''; ?>"><?php echo $money(max(0, $refunds['owed'])); ?></dd></div>
         </dl>
         <p class="ka-fine">Paystack pays your share of each order straight to your account, usually the next working day.</p>
