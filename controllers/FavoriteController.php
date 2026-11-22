@@ -23,6 +23,17 @@ class FavoriteController
         return true;
     }
 
+    public function setFavorite($customerId, $productId, $saved)
+{
+    if ($saved) {
+        $this->favoriteModel->addFavorite($customerId, $productId);
+    } else {
+        $this->favoriteModel->removeFavorite($customerId, $productId);
+    }
+
+    return $saved;
+}
+
     public function getFavoriteIds($customerId)
     {
         return $this->favoriteModel->getFavoriteIds($customerId);
