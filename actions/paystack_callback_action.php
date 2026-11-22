@@ -99,7 +99,7 @@ $cartCtrl = new CartController();
 try {
     $orderCtrl->beginTransaction();
 
-    $orderId = $orderCtrl->createOrder($userId, (int)$meta['brand_id'], mt_rand(100000, 999999), $meta['delivery_zone'],
+    $orderId = $orderCtrl->createOrder($userId, (int)$meta['brand_id'], null, $meta['delivery_zone'],
         (float)$meta['delivery_fee'], $meta['drop_location'], $meta['notes'] ?? '', $commissionRate);
     if (!$orderId) {
         throw new RuntimeException('Order row was not created');

@@ -130,6 +130,7 @@ CREATE TABLE `cb_orders` (
   `cancelled_by` varchar(20) DEFAULT NULL, -- customer, kitchen or admin
   `cancel_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
+  UNIQUE KEY `invoice_no` (`invoice_no`), -- every order gets its own invoice number (OrderClass::newInvoiceNo)
   KEY `customer_id` (`customer_id`),
   KEY `brand_id` (`brand_id`),
   CONSTRAINT `cb_orders_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `cb_brands` (`brand_id`),

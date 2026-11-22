@@ -9,8 +9,30 @@ class OrderClass extends Database
      */
     const LINE_RATE = "CASE WHEN p.product_brand = o.brand_id AND o.commission_rate IS NOT NULL THEN o.commission_rate ELSE b.commission_rate END";
 
+    /**
+     * A 6-digit invoice number no other order has. Random, so it doesn't show how many orders there are;
+     * checked against existing orders first (a database error stops the page, so we can't insert and retry).
+     * cb_orders.invoice_no is UNIQUE as a backstop. Falls back to 1000000 + a counter in the unlikely case
+     * that many random picks in a row are taken.
+     */
+    public function newInvoiceNo()
+    {
+        for ($try = 0; $try < 20; $try++) {
+            $candidate = random_int(100000, 999999);
+            if (!$this->fetchOne("SELECT 1 FROM cb_orders WHERE invoice_no = ?", [$candidate])) {
+                return $candidate;
+            }
+        }
+        $row = $this->fetchOne("SELECT GREATEST(1000000, COALESCE(MAX(invoice_no), 0)) + 1 AS next FROM cb_orders");
+        return (int)$row['next'];
+    }
+
+    // $invoiceNo null = pick a new unused one
     public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null)
     {
+        if ($invoiceNo === null) {
+            $invoiceNo = $this->newInvoiceNo();
+        }
         // The commission rate is copied onto the order, so changing a rate later doesn't change past orders.
         // $commissionRate is the rate the Paystack split was made with; without it, the kitchen's current rate.
         $sql = "INSERT INTO cb_orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions, commission_rate)
