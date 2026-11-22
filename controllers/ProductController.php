@@ -11,6 +11,27 @@ class ProductController
 
     const DISHES_PER_PAGE = 24;
 
+    // Labels a kitchen can tick on a meal, stored in cb_products.labels
+    const LABELS = [
+        'spicy' => 'Spicy',
+        'mild' => 'Mild',
+        'vegetarian' => 'Vegetarian',
+        'vegan' => 'Vegan',
+        'healthy' => 'Healthy',
+    ];
+    const LABEL_ICONS = [
+        'spicy' => 'bi-fire',
+        'mild' => 'bi-emoji-smile',
+        'vegetarian' => 'bi-flower1',
+        'vegan' => 'bi-tree',
+        'healthy' => 'bi-heart-pulse',
+        'quick' => 'bi-lightning-charge',
+    ];
+    // Meals ready in this many minutes or fewer count as Quick (worked out from prep time, never ticked)
+    const QUICK_MINUTES = ProductClass::QUICK_MINUTES;
+    // Every filter chip on the menu: the stored labels plus Quick
+    const LABEL_FILTERS = self::LABELS + ['quick' => 'Quick'];
+
     const CATEGORY_ICONS = [
         'bi-egg-fried' => 'Fried egg',
         'bi-fire' => 'Flame',
@@ -315,6 +336,7 @@ class ProductController
             'product_keywords' => trim($input['product_keywords'] ?? ''),
             'prep_time' => trim($input['prep_time'] ?? ''),
             'is_available' => ($input['is_available'] ?? '1') === '0' ? 0 : 1,
+            'labels' => self::labelsFromInput($input['labels'] ?? []),
         ];
 
         $error = null;
@@ -336,6 +358,8 @@ class ProductController
             $error = "Keep the description to 2000 characters or fewer.";
         } elseif (mb_strlen($values['product_keywords']) > 200) {
             $error = "Keep the keywords to 200 characters or fewer.";
+        } elseif (in_array('spicy', $values['labels'], true) && in_array('mild', $values['labels'], true)) {
+            $error = "A meal can be Spicy or Mild, not both.";
         } elseif ($this->productModel->productTitleExists($values['product_title'], (int)$values['product_brand'], $excludeId)) {
             $error = "That kitchen already has a meal called \"{$values['product_title']}\".";
         } else {
@@ -419,6 +443,44 @@ class ProductController
         return $this->productModel->deleteProduct($id);
     }
 
+    /**
+     * The ticked labels from a form, keeping only known ones, in LABELS order.
+     * Anything else sent (a made-up label, a string instead of a list) is dropped.
+     */
+    public static function labelsFromInput($raw)
+    {
+        $raw = is_array($raw) ? $raw : [];
+        return array_values(array_filter(array_keys(self::LABELS), function ($key) use ($raw) {
+            return in_array($key, $raw, true);
+        }));
+    }
+
+    // A meal row's labels as a list of keys, e.g. ['spicy', 'healthy']
+    public static function labelsOf($product)
+    {
+        return self::labelsFromInput(explode(',', (string)($product['labels'] ?? '')));
+    }
+
+    // Labels to show on a meal: its stored labels, plus Quick when it's ready fast enough
+    public static function displayLabels($product)
+    {
+        $keys = self::labelsOf($product);
+        if ((int)($product['prep_time_minutes'] ?? 99) <= self::QUICK_MINUTES) {
+            $keys[] = 'quick';
+        }
+        return $keys;
+    }
+
+    public function setProductLabels($productId, $labels)
+    {
+        return $this->productModel->setLabels($productId, self::labelsFromInput($labels));
+    }
+
+    public function lastProductId()
+    {
+        return $this->productModel->lastProductId();
+    }
+
     // Shopper listings
     public function getBrandsWithCounts()
     {
@@ -430,15 +492,21 @@ class ProductController
         return $this->productModel->getCategoriesWithDishes($brandId);
     }
 
-    public function countAvailableProducts($brandId = 0, $catId = 0)
+    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '')
     {
-        return $this->productModel->countAvailableProducts($brandId, $catId);
+        return $this->productModel->countAvailableProducts($brandId, $catId, $this->cleanLabelFilter($label));
     }
 
-    public function getAvailableProductsPage($brandId, $catId, $page)
+    public function getAvailableProductsPage($brandId, $catId, $page, $label = '')
     {
         $offset = (max(1, (int)$page) - 1) * self::DISHES_PER_PAGE;
-        return $this->productModel->getAvailableProductsPage($brandId, $catId, self::DISHES_PER_PAGE, $offset);
+        return $this->productModel->getAvailableProductsPage($brandId, $catId, self::DISHES_PER_PAGE, $offset, $this->cleanLabelFilter($label));
+    }
+
+    // A label from the address bar, or '' when it isn't one of the menu's filter chips
+    public function cleanLabelFilter($label)
+    {
+        return is_string($label) && isset(self::LABEL_FILTERS[$label]) ? $label : '';
     }
 
 }

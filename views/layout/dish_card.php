@@ -35,6 +35,14 @@ $heartIcon = '<i class="bi ' . ($dishSaved ? 'bi-heart-fill' : 'bi-heart') . '" 
         </a>
     <?php endif; ?>
     <p class="cb-dish-name"><?php echo htmlspecialchars($dish['product_title']); ?></p>
+    <?php $dishLabels = class_exists('ProductController') ? ProductController::displayLabels($dish) : []; ?>
+    <?php if ($dishLabels): ?>
+        <p class="cb-dish-labels">
+            <?php foreach ($dishLabels as $dishLabel): ?>
+                <span><i class="bi <?php echo ProductController::LABEL_ICONS[$dishLabel]; ?>" aria-hidden="true"></i> <?php echo ProductController::LABEL_FILTERS[$dishLabel]; ?></span>
+            <?php endforeach; ?>
+        </p>
+    <?php endif; ?>
     <div class="cb-dish-foot">
         <span class="cb-price">GH₵ <?php echo number_format($dish['product_price'], 2); ?></span>
         <?php if (can_order()): ?>

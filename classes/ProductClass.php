@@ -3,6 +3,9 @@ require_once __DIR__ . "/../core/db_class.php";
 
 class ProductClass extends Database
 {
+    // Meals ready in this many minutes or fewer count as Quick on the menu
+    const QUICK_MINUTES = 15;
+
     // ==========================================
     // BRANDS / VENDORS
     // ==========================================
@@ -279,9 +282,9 @@ class ProductClass extends Database
         return $this->fetchAll($sql, $params);
     }
 
-    public function countAvailableProducts($brandId = 0, $catId = 0)
+    public function countAvailableProducts($brandId = 0, $catId = 0, $label = '')
     {
-        [$where, $params] = $this->availableFilter($brandId, $catId);
+        [$where, $params] = $this->availableFilter($brandId, $catId, $label);
         $sql = "SELECT COUNT(*) AS total
                 FROM cb_products p
                 JOIN cb_brands b ON p.product_brand = b.brand_id
@@ -290,9 +293,9 @@ class ProductClass extends Database
         return (int)$row['total'];
     }
 
-    public function getAvailableProductsPage($brandId, $catId, $limit, $offset)
+    public function getAvailableProductsPage($brandId, $catId, $limit, $offset, $label = '')
     {
-        [$where, $params] = $this->availableFilter($brandId, $catId);
+        [$where, $params] = $this->availableFilter($brandId, $catId, $label);
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone
                 FROM cb_products p
                 JOIN cb_categories c ON p.product_cat = c.cat_id
@@ -303,7 +306,8 @@ class ProductClass extends Database
         return $this->fetchAll($sql, $params);
     }
 
-    private function availableFilter($brandId, $catId)
+    // $label is one key of ProductController::LABEL_FILTERS, already checked by the controller
+    private function availableFilter($brandId, $catId, $label = '')
     {
         $where = "p.is_available = 1 AND b.is_active = 1";
         $params = [];
@@ -315,7 +319,30 @@ class ProductClass extends Database
             $where .= " AND p.product_cat = ?";
             $params[] = $catId;
         }
+        if ($label === 'quick') {
+            // Not a stored label: worked out from the prep time
+            $where .= " AND p.prep_time_minutes <= ?";
+            $params[] = self::QUICK_MINUTES;
+        } elseif ($label === 'vegetarian') {
+            // Vegan meals are vegetarian too
+            $where .= " AND (FIND_IN_SET('vegetarian', p.labels) OR FIND_IN_SET('vegan', p.labels))";
+        } elseif ($label !== '') {
+            $where .= " AND FIND_IN_SET(?, p.labels)";
+            $params[] = $label;
+        }
         return [$where, $params];
+    }
+
+    // Saves a meal's labels as a comma list, e.g. "spicy,healthy" (the column is a MySQL SET)
+    public function setLabels($productId, $labels)
+    {
+        return $this->execute("UPDATE cb_products SET labels = ? WHERE product_id = ?", [implode(',', $labels), $productId]);
+    }
+
+    // The product_id of the meal just added
+    public function lastProductId()
+    {
+        return (int)$this->getLastInsertId();
     }
 }
 ?>
