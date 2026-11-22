@@ -22,6 +22,7 @@ $needReply = count(array_filter($messages, function ($msg) {
 }));
 
 $pageHeading = $kitchen['brand_name'] . ' messages';
+$liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/../layout/header.php';
 ?>
 

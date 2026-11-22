@@ -2,6 +2,42 @@
  * CampusBite Client-Side JavaScript
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // ── Signed out elsewhere (password changed or reset) ──────────────────────────────────────────────────────
+    // A link or form that loads a page is caught by the server. This catches everything else: any request this page
+    // makes in the background that comes back 401 { signed_out } goes to the sign-in page (which says why), and a
+    // signed-in page asks actions/session_check.php on clicks and key presses (at most every 3 s), when the tab comes
+    // back, and every 10 s, so a reset password signs the person out without them having to reload.
+    const sessionApp = document.getElementById('cb-app');
+    const siteRoot = sessionApp ? (sessionApp.dataset.root || '..') : '..';
+    let goingToSignIn = false;
+    const goToSignIn = () => {
+        if (goingToSignIn) return;
+        goingToSignIn = true;
+        window.location.href = siteRoot + '/views/login.php';
+    };
+    const realFetch = window.fetch.bind(window);
+    window.fetch = (...args) => realFetch(...args).then(response => {
+        if (response.status === 401) {
+            response.clone().json().then(data => { if (data && data.signed_out) goToSignIn(); }).catch(() => {});
+        }
+        return response;
+    });
+    if (sessionApp && sessionApp.dataset.signedIn === '1') {
+        let lastCheck = 0;
+        const checkSession = (force) => {
+            const now = Date.now();
+            if (goingToSignIn || (!force && now - lastCheck < 3000)) return;
+            lastCheck = now;
+            fetch(siteRoot + '/actions/session_check.php', { credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } })
+                .catch(() => {}); // a 401 is handled by the fetch wrapper above
+        };
+        document.addEventListener('pointerdown', () => checkSession(false), { capture: true, passive: true });
+        document.addEventListener('keydown', () => checkSession(false), { capture: true });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) checkSession(true); });
+        window.addEventListener('pageshow', (e) => { if (e.persisted) checkSession(true); }); // back/forward cache
+        setInterval(() => { if (!document.hidden) checkSession(true); }, 10000);
+    }
+
     // On phones the nav row scrolls sideways; bring the current page's link into view
     const activeNav = document.querySelector('.cb-nav a.is-active');
     if (activeNav && activeNav.parentElement.scrollWidth > activeNav.parentElement.clientWidth) {
@@ -363,9 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
         update();
     });
 
-    // Kitchens: check for new orders every 20 seconds while a kitchen page is open. A new order updates the Orders
-    // badge and the tab title, plays a short chime and shows a message; the Orders page reloads itself unless
-    // someone is filling in a form there.
+    // Kitchens: check for new orders every 5 seconds while a kitchen page is open. A new order updates the Orders
+    // badge and the tab title, plays a short chime and shows a message. (Pages with live updates, like Orders and
+    // the dashboard, also refresh themselves: see "Live updates" below.) The newest order seen is remembered across
+    // reloads, so an order that arrived while the page was refreshing is still announced.
     const orderWatch = document.querySelector('[data-order-watch]');
     if (orderWatch) {
         const badge = orderWatch.querySelector('[data-new-count]');
@@ -410,18 +447,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const onOrdersPage = /kitchen_orders\.php$/.test(location.pathname) && !/[?&]view=(all|done)/.test(location.search);
-        const busy = () => {
-            const field = document.activeElement;
-            return (field && field.matches('input, select, textarea')) || document.querySelector('details[open]');
-        };
 
         const announce = (placed, fresh) => {
             const text = fresh === 1 ? 'New order just came in.' : fresh + ' new orders just came in.';
             if (live) live.textContent = text + ' ' + placed + ' waiting to start.';
-            if (onOrdersPage && !busy()) {
-                location.reload();
-                return;
-            }
             let toast = document.getElementById('cb-new-order-toast');
             if (!toast) {
                 const toasts = document.querySelector('.cb-toasts');
@@ -453,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (state.latest > latest) {
                         const fresh = Math.max(1, state.placed - placedBefore);
                         latest = state.latest;
+                        remember(latest);
                         chime();
                         announce(state.placed, fresh);
                     }
@@ -461,8 +491,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 .catch(() => {});
         };
 
+        // The newest order this tab has seen, kept across reloads (live updates reload the page)
+        const seenKey = 'cbLatestOrderSeen';
+        const remember = (n) => { try { sessionStorage.setItem(seenKey, String(n)); } catch (e) {} };
+        let seenBefore = 0;
+        try { seenBefore = Number(sessionStorage.getItem(seenKey)) || 0; } catch (e) {}
         showCount(placedBefore);
-        setInterval(check, 20000);
+        if (seenBefore && latest > seenBefore) {
+            // A new order came in while this page was reloading: still chime and say so
+            chime();
+            announce(placedBefore, 1);
+        }
+        remember(latest);
+        setInterval(check, 5000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
         document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
     }
 
@@ -488,6 +530,79 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', update);
         update();
     });
+
+    // ── Live updates ─────────────────────────────────────────────────────────────────────────────────────────
+    // Pages that show things which change on their own (orders, messages, dashboards) set $liveRefresh in PHP, which
+    // puts data-live="5" on #cb-app. Every 5 seconds this fetches the page again and, if what's in the main panel
+    // changed, reloads it, keeping the scroll position. It waits while someone is typing, has edited a field, has a
+    // fold open or a sheet showing, has text selected, or the tab is hidden, and reloads once they're done.
+    // If the fetch is redirected (signed out, e.g. the password was reset elsewhere), it goes there.
+    const liveApp = document.getElementById('cb-app');
+    const liveSecs = liveApp ? parseInt(liveApp.dataset.live || '0', 10) : 0;
+    if (liveSecs > 0) {
+        let baseline = null, pending = false, leaving = false;
+        window.addEventListener('beforeunload', () => { leaving = true; });
+        document.addEventListener('submit', (e) => { if (!e.defaultPrevented) leaving = true; });
+
+        // What we compare: the main panel as the server drew it, without one-time messages and the CSRF token
+        const snapshot = (html) => {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const main = doc.getElementById('MainContent');
+            if (!main) return null;
+            main.querySelectorAll('[data-page-msg], #new-login-done, .cb-form-msg, input[name="csrf_token"]').forEach(el => el.remove());
+            return main.innerHTML.replace(/\s+/g, ' ').trim();
+        };
+        const userIsBusy = () => {
+            if (document.hidden || leaving) return true;
+            const field = document.activeElement;
+            if (field && field.matches('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select, [contenteditable]')) return true;
+            if (document.querySelector('details[open], [data-sheet], .cb-step-open:not([hidden])')) return true;
+            const sel = window.getSelection && window.getSelection();
+            if (sel && String(sel).trim() !== '') return true;
+            // Something typed or changed in a form that hasn't been sent yet
+            return Array.from(document.querySelectorAll('#MainContent input, #MainContent textarea, #MainContent select')).some(el => {
+                if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button') return false;
+                if (el.type === 'checkbox' || el.type === 'radio') return el.checked !== el.defaultChecked;
+                if (el.tagName === 'SELECT') return Array.from(el.options).some(o => o.selected !== o.defaultSelected);
+                return el.value !== el.defaultValue;
+            });
+        };
+        const reloadWhenFree = () => {
+            if (userIsBusy()) { pending = true; return; }
+            try { sessionStorage.setItem('cbLiveScroll:' + location.href, String(window.scrollY)); } catch (e) {}
+            location.reload();
+        };
+        // Put the scroll back where it was before a live reload
+        try {
+            const y = sessionStorage.getItem('cbLiveScroll:' + location.href);
+            if (y !== null) { sessionStorage.removeItem('cbLiveScroll:' + location.href); window.scrollTo(0, Number(y) || 0); }
+        } catch (e) {}
+
+        const tick = () => {
+            if (pending) { reloadWhenFree(); return; }
+            if (document.hidden || leaving) return;
+            fetch(location.href, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-CB-Live': '1' } })
+                .then(response => {
+                    // Sent somewhere else, e.g. to sign in again after a password reset
+                    if (response.redirected && new URL(response.url).pathname !== location.pathname) {
+                        location.href = response.url;
+                        return null;
+                    }
+                    return response.ok ? response.text() : null;
+                })
+                .then(html => {
+                    if (!html) return;
+                    const now = snapshot(html);
+                    if (now === null) return;
+                    if (baseline === null) { baseline = now; return; }
+                    if (now !== baseline) reloadWhenFree();
+                })
+                .catch(() => {});
+        };
+        tick(); // the page as it is now is the baseline
+        setInterval(tick, liveSecs * 1000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+    }
 
     // Ask before a destructive form submits
     document.querySelectorAll('form[data-confirm]').forEach(form => {

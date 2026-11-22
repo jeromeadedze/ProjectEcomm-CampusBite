@@ -106,7 +106,7 @@ $initials = function ($name) {
                             <input type="hidden" name="customer_id" value="<?php echo (int)$p['customer_id']; ?>">
                             <button type="submit" class="cb-btn cb-btn-quiet ka-btn-sm" aria-label="Reset <?php echo htmlspecialchars($p['customer_name']); ?>'s password"><i class="bi bi-key" aria-hidden="true"></i> Reset password</button>
                         </form>
-                        <form action="<?php echo $ROOT_DIR; ?>/actions/kitchen_remove_staff_action.php" method="POST" data-confirm="Remove <?php echo htmlspecialchars($p['customer_name']); ?>'s access to the kitchen? They can still sign in to order food.">
+                        <form action="<?php echo $ROOT_DIR; ?>/actions/kitchen_remove_staff_action.php" method="POST" data-confirm="Remove <?php echo htmlspecialchars($p['customer_name']); ?>? Their login is deleted and they can't sign in any more. Replies they sent customers stay.">
                             <?php echo csrf_field(); ?>
                             <input type="hidden" name="customer_id" value="<?php echo (int)$p['customer_id']; ?>">
                             <button type="submit" class="cb-btn cb-btn-quiet ka-btn-sm" aria-label="Remove <?php echo htmlspecialchars($p['customer_name']); ?>">Remove</button>

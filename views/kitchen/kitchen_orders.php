@@ -41,6 +41,7 @@ foreach (array_reverse($orders) as $o) {
 }
 
 $pageHeading = $kitchen['brand_name'] . ' orders';
+$liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/../layout/header.php';
 
 $renderOrder = function ($o) use ($orderCtrl, $ROOT_DIR) {

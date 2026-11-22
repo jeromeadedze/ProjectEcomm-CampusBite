@@ -119,12 +119,40 @@ class CustomerClass extends Database
     }
 
     // A kitchen admin removing one of their own staff: only staff, only from that kitchen
+    /**
+     * Deletes a kitchen login (removed staff, or a kitchen login the CampusBite admin removes). Kitchen logins are
+     * made for the kitchen, so they're deleted, not turned into customer accounts. Their replies to customers stay
+     * (author set to NULL; they show the kitchen's name). Never deletes an account that has orders or payments
+     * (those keep it, by foreign key): hasOrders() is checked first. $brandId / $staffOnly limit it to one kitchen's
+     * staff (a kitchen admin removing their own staff). Returns how many logins were deleted.
+     */
+    public function deleteKitchenLogin($id, $brandId = null, $staffOnly = false)
+    {
+        $sql = "DELETE FROM cb_customer WHERE customer_id = ? AND user_role = 4
+                AND NOT EXISTS (SELECT 1 FROM cb_orders o WHERE o.customer_id = ?)
+                AND NOT EXISTS (SELECT 1 FROM cb_payment p WHERE p.customer_id = ?)";
+        $params = [$id, $id, $id];
+        if ($brandId !== null) {
+            $sql .= " AND brand_id = ?";
+            $params[] = $brandId;
+        }
+        if ($staffOnly) {
+            $sql .= " AND kitchen_role = 'staff'";
+        }
+        return $this->executeCount($sql, $params);
+    }
+
+    // True if the account has ever ordered (it then can't be deleted)
+    public function hasOrders($id)
+    {
+        return (bool)$this->fetchOne("SELECT 1 AS x FROM cb_orders WHERE customer_id = ? UNION SELECT 1 FROM cb_payment WHERE customer_id = ? LIMIT 1", [$id, $id]);
+    }
+
+    // Old behaviour, kept for a kitchen login that has orders: it loses kitchen access and stays a customer
     public function removeKitchenStaff($id, $brandId)
     {
-        $sql = "UPDATE cb_customer SET user_role = 2, brand_id = NULL, kitchen_role = NULL
-                WHERE customer_id = ? AND user_role = 4 AND brand_id = ? AND kitchen_role = 'staff'";
-        $this->execute($sql, [$id, $brandId]);
-        return $this->fetchOne("SELECT ROW_COUNT() AS n")['n'] ?? 0;
+        return $this->executeCount("UPDATE cb_customer SET user_role = 2, brand_id = NULL, kitchen_role = NULL
+                WHERE customer_id = ? AND user_role = 4 AND brand_id = ? AND kitchen_role = 'staff'", [$id, $brandId]);
     }
 
     /**
