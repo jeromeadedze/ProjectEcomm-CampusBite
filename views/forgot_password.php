@@ -37,6 +37,7 @@ require_once __DIR__ . '/layout/header.php';
 
         <form action="<?php echo $ROOT_DIR; ?>/actions/forgot_password_action.php" method="POST">
             <?php echo csrf_field(); ?>
+            <?php echo form_message_html(take_form_message('forgot')); ?>
             <div class="cb-field">
                 <label for="customer_email">Email address</label>
                 <input type="email" id="customer_email" name="customer_email" placeholder="name@ashesi.edu.gh" autocomplete="email" maxlength="100" required>

@@ -337,10 +337,38 @@ class OrderController
         require_once __DIR__ . '/../core/paystack.php';
         $latest = paystack_configured() ? paystack_refund_status($order['paystack_refund_id']) : null;
         if ($latest !== null && $latest !== '') {
-            $this->orderModel->updateRefundStatus((int)$order['refund_id'], mb_substr($latest, 0, 20));
+            $latest = mb_substr($latest, 0, 20);
+            $this->setRefundStatus((int)$order['refund_id'], (int)$order['order_id'], $latest);
             return $latest;
         }
         return $status;
+    }
+
+    /**
+     * Saves a refund's new status. When the refund has just been sent (processed) or has failed, the customer
+     * is emailed, once: only the request that actually changed the status sends it.
+     */
+    public function setRefundStatus($refundId, $orderId, $status)
+    {
+        if (!$this->orderModel->setRefundStatusIfChanged($refundId, $status)) {
+            $this->orderModel->updateRefundStatus($refundId, $status); // same status: just note when we last checked
+            return false;
+        }
+        if (in_array($status, ['processed', 'failed'], true)) {
+            require_once __DIR__ . '/OrderEmails.php';
+            (new OrderEmails())->refundFinished($orderId);
+        }
+        return true;
+    }
+
+    // Paystack's webhook says a refund changed: update each matching refund (normally one). Returns how many matched.
+    public function refundUpdatedByPaystack($paystackRefundId, $transactionReference, $status)
+    {
+        $refunds = $this->orderModel->findRefundsForPaystack($paystackRefundId, $transactionReference);
+        foreach ($refunds as $refund) {
+            $this->setRefundStatus((int)$refund['refund_id'], (int)$refund['order_id'], $status);
+        }
+        return count($refunds);
     }
 
     const ORDERS_PER_PAGE = 25;

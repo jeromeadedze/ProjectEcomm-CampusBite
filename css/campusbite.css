@@ -918,3 +918,95 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 .cb-find .cb-btn{height:48px;padding:0 24px}
 .cb-find-note{flex-basis:100%;margin:0;font-size:13px;color:var(--muted)}
 @media (max-width:860px){.cb-find-field input{font-size:16px}}
+
+/* ── Basket (Sprint 29): meal-card counters, phone basket bar, kitchen-switch sheet, messages inside forms ── */
+/* Meal card: + until the meal is in the basket, then its count; tapping the count opens − n + */
+.cb-step{display:flex;align-items:center;margin:0}
+.cb-step [hidden]{display:none!important}
+.cb-step-count{min-width:34px;height:34px;padding:0 10px;border-radius:999px;border:0;background:var(--ink);color:#fff;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer}
+@media (hover:hover){.cb-step-count:hover{background:var(--ember)}}
+.cb-step-open{display:inline-flex;align-items:center;gap:2px;height:34px;padding:0 3px;border-radius:999px;background:var(--ink);color:#fff}
+.cb-step-open button{width:28px;height:28px;border-radius:50%;border:0;background:transparent;color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+@media (hover:hover){.cb-step-open button:hover{background:rgba(255,255,255,.16)}}
+.cb-step-open button:disabled{opacity:.4;cursor:default}
+.cb-step-open output{min-width:20px;text-align:center;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.cb-step.is-busy{opacity:.85}
+@media (prefers-reduced-motion:no-preference){
+  .cb-step-open{animation:cb-step-in .16s ease-out}
+  @keyframes cb-step-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+}
+.cb-step-count,.cb-step-open button{-webkit-tap-highlight-color:transparent}
+
+/* Phone basket bar: a slim bar just above the floating tab menu while the basket has meals (the order panel and the
+   top bar's Cart button are hidden on phones). Scrolling down shrinks it to a round bag on the right (.is-mini, js/main.js). */
+.cb-basket{display:none}
+@media (max-width:860px){
+  .cb-cart-pill{display:none}
+  .cb-panel{display:none}
+  .cb.has-basket .cb-basket:not([hidden]){--bw:min(300px,calc(100vw - 48px));display:flex;align-items:center;justify-content:center;gap:12px;position:fixed;z-index:31;
+    right:calc((100vw - var(--bw)) / 2);width:var(--bw);bottom:calc(max(12px,env(safe-area-inset-bottom)) + 68px);
+    height:46px;padding:0 18px;border-radius:999px;background:var(--ember);color:#fff;text-decoration:none;font-weight:600;
+    box-shadow:0 8px 22px rgba(227,0,27,.3);overflow:hidden;white-space:nowrap}
+  .cb.has-basket .cb-basket.is-mini:not([hidden]){width:52px;height:52px;right:16px;padding:0;gap:0}
+  .cb.has-basket .cb-basket.is-mini .cb-basket-total{display:none}
+  .cb.has-basket .cb-main{padding-bottom:170px}
+  .cb-basket-bag{position:relative;display:flex;flex:none}
+  .cb-basket-bag svg{width:22px;height:22px}
+  .cb-basket-count{position:absolute;top:-7px;right:-10px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#fff;color:var(--ember);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;box-shadow:0 0 0 2px var(--ember)}
+  .cb-basket-total{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+}
+@media (max-width:860px) and (prefers-reduced-motion:no-preference){
+  .cb.has-basket .cb-basket:not([hidden]){animation:cb-basket-in .22s ease-out;transition:width .25s ease,height .25s ease,right .25s ease,padding .25s ease}
+  @keyframes cb-basket-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .cb-basket-count.is-bump{animation:cb-bump .3s ease-out}
+  @keyframes cb-bump{40%{transform:scale(1.18)}}
+}
+
+/* "Start a new basket?" sheet: slides up on phones, centred card on wide screens */
+.cb-sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.cb-sheet-backdrop{position:absolute;inset:0;background:rgba(15,15,15,.45)}
+.cb-sheet-card{position:relative;width:100%;max-width:440px;background:var(--card);border-radius:24px 24px 0 0;padding:26px 22px max(22px,env(safe-area-inset-bottom));text-align:center}
+.cb-sheet-icon{width:52px;height:52px;border-radius:50%;background:var(--ember-soft);color:var(--ember);display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px}
+.cb-sheet-card h2{font-size:19px;margin:0 0 8px}
+.cb-sheet-card p{font-size:14px;color:var(--muted);line-height:1.55;margin:0 0 18px}
+.cb-sheet-card p strong{color:var(--ink)}
+.cb-sheet-card form{margin:0}
+.cb-sheet-card .cb-checkout{width:100%}
+.cb-sheet-keep{display:block;width:100%;margin-top:8px;padding:12px;border:0;background:none;font-weight:600;font-size:14px;color:var(--ink);cursor:pointer;border-radius:999px}
+@media (hover:hover){.cb-sheet-keep:hover{background:var(--paper)}}
+@media (min-width:861px){.cb-sheet{align-items:center}.cb-sheet-card{border-radius:24px;padding-bottom:22px}}
+@media (max-width:860px){.cb-sheet-card{max-width:none}}
+@media (prefers-reduced-motion:no-preference){
+  .cb-sheet-card{animation:cb-sheet-in .22s ease-out}
+  @keyframes cb-sheet-in{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+}
+
+/* A form's own message (wrong password, details saved), in place of a pop-up card */
+.cb-form-msg{display:flex;align-items:flex-start;gap:9px;margin:0 0 16px;padding:11px 14px;border-radius:14px;font-size:13.5px;line-height:1.45}
+.cb-form-msg i{margin-top:1px}
+.cb-form-msg.is-error{background:var(--ember-soft);color:var(--ember-d)}
+.cb-form-msg.is-ok{background:#E6F6EE;color:#16774A}
+.cb-field input[aria-invalid="true"]{border-color:var(--ember)}
+
+/* Carousel (home page kitchens): one row that scrolls sideways, snapping to each card */
+.cb-row-end{display:flex;align-items:center;gap:8px}
+.cb-carousel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;padding:4px 2px 6px;margin:-4px -2px 0}
+.cb-carousel::-webkit-scrollbar{display:none}
+.cb-carousel>*{flex:0 0 190px;scroll-snap-align:start}
+.cb-carousel:focus-visible{outline:2px solid var(--ember);outline-offset:4px;border-radius:20px}
+.cb-car-btn{width:32px;height:32px;border-radius:50%;border:0;background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 0 var(--line);transition:background .15s,color .15s,opacity .15s}
+.cb-car-btn[hidden]{display:none}
+.cb-car-btn:disabled{opacity:.35;cursor:default}
+@media (hover:hover){.cb-car-btn:not(:disabled):hover{background:var(--ember);color:#fff}}
+@media (max-width:860px){
+  /* Phones swipe: cards run to the screen edge so the next one peeks in */
+  .cb-car-btn{display:none!important}
+  .cb-carousel{margin:-4px -16px 0;padding:4px 16px 6px;scroll-padding-left:16px}
+  .cb-carousel>*{flex-basis:150px}
+}
+@media (prefers-reduced-motion:no-preference){.cb-carousel{scroll-behavior:smooth}}
+/* A one-time message from an action, at the top of the page (views/layout/page_message.php) */
+.cb-page-msg{align-items:center}
+.cb-page-msg span{flex:1}
+.cb-page-msg-x{border:0;background:none;color:inherit;opacity:.7;cursor:pointer;padding:2px 4px;border-radius:8px;font-size:12px}
+@media (hover:hover){.cb-page-msg-x:hover{opacity:1}}

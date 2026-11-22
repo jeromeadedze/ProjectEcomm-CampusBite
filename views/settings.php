@@ -23,6 +23,9 @@ $form = $_SESSION['settings_form'] ?? [
 ];
 $form['customer_email'] = $form['customer_email'] ?? $user['customer_email'];
 unset($_SESSION['settings_form']);
+// "Saved" or what went wrong, shown inside the card it belongs to
+$profileMsg = take_form_message('profile');
+$passwordMsg = take_form_message('password');
 
 // Who this account is, for the badge under the name
 $kitchenName = is_kitchen() ? ((new ProductController())->getBrandById(get_kitchen_id())['brand_name'] ?? '') : '';
@@ -66,6 +69,7 @@ $hostelLabel = DeliveryController::isDropPoint($user['campus_hostel'] ?? null)
             <button type="button" class="cb-btn cb-btn-quiet ka-btn-sm" data-edit-open <?php echo $detailsOpen ? 'hidden' : ''; ?>><i class="bi bi-pencil" aria-hidden="true"></i> Edit</button>
         </div>
 
+        <?php echo form_message_html($profileMsg); ?>
         <dl class="ka-facts" data-edit-view <?php echo $detailsOpen ? 'hidden' : ''; ?>>
             <div><dt>Full name</dt><dd><?php echo htmlspecialchars($user['customer_name']); ?></dd></div>
             <div><dt>Phone</dt><dd><?php echo htmlspecialchars($user['customer_contact']); ?></dd></div>
@@ -134,6 +138,7 @@ $hostelLabel = DeliveryController::isDropPoint($user['campus_hostel'] ?? null)
             <button type="button" class="cb-btn cb-btn-quiet ka-btn-sm" data-edit-open <?php echo $passwordOpen ? 'hidden' : ''; ?>><i class="bi bi-key" aria-hidden="true"></i> Change password</button>
         </div>
 
+        <?php echo form_message_html($passwordMsg); ?>
         <div data-edit-view <?php echo $passwordOpen ? 'hidden' : ''; ?>>
             <div class="ki-account">
                 <span class="ki-account-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>

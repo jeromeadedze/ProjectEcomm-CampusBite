@@ -35,7 +35,7 @@ if ($error === null) {
 }
 
 if ($error !== null) {
-    $_SESSION['error'] = $error;
+    set_form_message('register', $error);
     // Refill the form after the redirect, leaving the password out
     $_SESSION['register_form'] = [
         'customer_name' => $name,
@@ -47,7 +47,6 @@ if ($error !== null) {
 }
 
 log_in_customer($result['user']);
-$_SESSION['success'] = "Welcome, " . $result['user']['customer_name'] . "! Your account is ready.";
 header("Location: ../index.php");
 exit;
 ?>

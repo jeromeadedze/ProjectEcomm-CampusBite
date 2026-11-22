@@ -30,6 +30,7 @@ $hasPass = has_active_pass($user);
 // then the customer's saved drop point from Settings.
 $checkoutForm = $_SESSION['checkout_form'] ?? [];
 unset($_SESSION['checkout_form']);
+$checkoutMsg = take_form_message('checkout');
 $savedPoint = DeliveryController::isDropPoint($user['campus_hostel'] ?? null) ? $user['campus_hostel'] : '';
 $pickedPoint = $checkoutForm['drop_point'] ?? $savedPoint;
 $pickedPoint = DeliveryController::isDropPoint($pickedPoint) ? $pickedPoint : '';
@@ -121,6 +122,7 @@ require_once __DIR__ . '/layout/header.php';
             <div><span data-delivery-label>Delivery<?php echo $pickedPoint !== '' ? ' to ' . htmlspecialchars($pickedPoint) : ''; ?></span><span data-delivery-fee><?php echo $deliveryFee !== null ? 'GH₵ ' . number_format($deliveryFee, 2) : 'Pick a drop point'; ?></span></div>
             <div class="total"><span>Total</span><span data-delivery-total data-subtotal="<?php echo number_format($subtotal, 2, '.', ''); ?>"><?php echo $deliveryFee !== null ? 'GH₵ ' . number_format($grandTotal, 2) : 'GH₵ ' . number_format($subtotal, 2) . ' + delivery'; ?></span></div>
         </div>
+        <?php echo form_message_html($checkoutMsg); ?>
         <?php if ($canPay): ?>
             <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> <span data-delivery-pay><?php echo $deliveryFee !== null ? 'Pay GH₵ ' . number_format($grandTotal, 2) . ' with Paystack' : 'Pay with Paystack'; ?></span></button>
         <?php else: ?>

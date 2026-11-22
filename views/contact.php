@@ -40,6 +40,7 @@ require_once __DIR__ . '/layout/header.php';
         <h2>Send a message</h2>
         <form class="cb-admin-form" action="<?php echo $ROOT_DIR; ?>/actions/send_message_action.php" method="POST">
             <?php echo csrf_field(); ?>
+            <?php echo form_message_html(take_form_message('contact')); ?>
             <div class="cb-field">
                 <label for="topic">What is it about?</label>
                 <select id="topic" name="topic" required>

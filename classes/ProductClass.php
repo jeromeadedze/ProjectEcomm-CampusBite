@@ -251,11 +251,12 @@ class ProductClass extends Database
     // ==========================================
     // SHOPPER LISTINGS (available meals in active kitchens only)
     // ==========================================
+    // Kitchens shoppers can order from: open, with at least one available meal (a new or sold-out kitchen is left out)
     public function getBrandsWithCounts()
     {
         $sql = "SELECT b.*, COUNT(p.product_id) AS dish_count
                 FROM cb_brands b
-                LEFT JOIN cb_products p ON p.product_brand = b.brand_id AND p.is_available = 1
+                JOIN cb_products p ON p.product_brand = b.brand_id AND p.is_available = 1
                 WHERE b.is_active = 1
                 GROUP BY b.brand_id
                 ORDER BY b.brand_name ASC";

@@ -13,8 +13,9 @@ $token = (string)($_POST['token'] ?? '');
 $error = (new CustomerController())->resetPassword($token, (string)($_POST['new_pass'] ?? ''), (string)($_POST['confirm_pass'] ?? ''));
 
 if ($error) {
-    $_SESSION['error'] = $error;
-    $back = preg_match('/^[a-f0-9]{64}$/', $token) ? 'reset_password.php?token=' . $token : 'forgot_password.php';
+    $validToken = preg_match('/^[a-f0-9]{64}$/', $token);
+    set_form_message($validToken ? 'reset' : 'forgot', $error);
+    $back = $validToken ? 'reset_password.php?token=' . $token : 'forgot_password.php';
     header("Location: ../views/" . $back);
     exit;
 }
@@ -22,6 +23,6 @@ if ($error) {
 // Whoever was signed in on this browser is signed out, so the new password is needed next time
 $_SESSION = [];
 session_regenerate_id(true);
-$_SESSION['success'] = 'Your password was changed. Sign in with your new password.';
+set_form_message('login', 'Your password was changed. Sign in with your new password.', 'success');
 header("Location: ../views/login.php");
 exit;

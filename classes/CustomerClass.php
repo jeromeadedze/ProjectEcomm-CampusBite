@@ -127,6 +127,23 @@ class CustomerClass extends Database
         return $this->fetchOne("SELECT ROW_COUNT() AS n")['n'] ?? 0;
     }
 
+    /**
+     * Who to alert about a kitchen's orders and customer messages: its staff logins, who handle them.
+     * A kitchen with no staff yet falls back to its admin, so the alert still reaches someone.
+     */
+    public function getKitchenAlertLogins($brandId)
+    {
+        $team = $this->getKitchenTeam($brandId);
+        $staff = array_values(array_filter($team, function ($m) { return $m['kitchen_role'] === 'staff'; }));
+        return $staff ?: $team;
+    }
+
+    // CampusBite admins, for customer replies to messages sent to CampusBite rather than a kitchen
+    public function getAdminLogins()
+    {
+        return $this->fetchAll("SELECT customer_id, customer_name, customer_email FROM cb_customer WHERE user_role = 1");
+    }
+
     public function getKitchenAccounts()
     {
         $sql = "SELECT c.customer_id, c.customer_name, c.customer_email, c.customer_contact, c.brand_id, b.brand_name, COALESCE(c.kitchen_role, 'admin') AS kitchen_role

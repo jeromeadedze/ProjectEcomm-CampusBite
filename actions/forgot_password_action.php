@@ -11,7 +11,7 @@ require_csrf();
 
 $email = trim((string)($_POST['customer_email'] ?? ''));
 if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100) {
-    $_SESSION['error'] = 'Enter the email address you signed up with.';
+    set_form_message('forgot', 'Enter the email address you signed up with.');
     header("Location: ../views/forgot_password.php");
     exit;
 }

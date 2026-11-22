@@ -26,6 +26,7 @@ require_once __DIR__ . '/layout/header.php';
         <form action="<?php echo $ROOT_DIR; ?>/actions/reset_password_action.php" method="POST">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
+            <?php echo form_message_html(take_form_message('reset')); ?>
             <div class="cb-field">
                 <label for="new_pass">New password</label>
                 <input type="password" id="new_pass" name="new_pass" autocomplete="new-password" minlength="8" aria-describedby="new_pass_hint" required>

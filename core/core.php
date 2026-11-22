@@ -216,6 +216,35 @@ function redirect_back($fallback) {
 }
 
 /**
+ * A message that belongs to one form (wrong password, details saved), shown inside that form
+ * instead of as a pop-up card. $form names the form ('login', 'profile', ...), $type is 'error' or 'success',
+ * and $values refills what was typed. The page reads it once with take_form_message().
+ */
+function set_form_message($form, $message, $type = 'error', $values = []) {
+    $_SESSION['form_message'] = ['form' => $form, 'type' => $type, 'message' => $message, 'values' => $values];
+}
+
+function take_form_message($form) {
+    $msg = $_SESSION['form_message'] ?? null;
+    if (!$msg || $msg['form'] !== $form) {
+        return null;
+    }
+    unset($_SESSION['form_message']);
+    return $msg;
+}
+
+// The message as a line at the top of its form (role="alert" so screen readers announce errors)
+function form_message_html($msg) {
+    if (!$msg) {
+        return '';
+    }
+    $isError = $msg['type'] === 'error';
+    return '<p class="cb-form-msg ' . ($isError ? 'is-error' : 'is-ok') . '" role="' . ($isError ? 'alert' : 'status') . '">'
+         . '<i class="bi ' . ($isError ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill') . '" aria-hidden="true"></i>'
+         . '<span>' . htmlspecialchars($msg['message']) . '</span></p>';
+}
+
+/**
  * Random key that ties a guest's cart to their browser session.
  * Replaces the old IP-based key: on campus Wi-Fi many students share one IP,
  * and the X-Forwarded-For header could be faked to read someone else's cart.

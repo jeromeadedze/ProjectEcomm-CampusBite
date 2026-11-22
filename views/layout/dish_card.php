@@ -38,11 +38,24 @@ $heartIcon = '<i class="bi ' . ($dishSaved ? 'bi-heart-fill' : 'bi-heart') . '" 
     <div class="cb-dish-foot">
         <span class="cb-price">GH₵ <?php echo number_format($dish['product_price'], 2); ?></span>
         <?php if (can_order()): ?>
-        <form action="<?php echo $ROOT_DIR; ?>/actions/add_to_cart_action.php" method="POST">
+        <?php
+        // + when the meal isn't in the bill; its count when it is. Tapping the count opens − n + (js/main.js).
+        // Without JavaScript both buttons simply add one more.
+        $dishQty = $billQty[(int)$dish['product_id']] ?? 0;
+        $dishTitle = htmlspecialchars($dish['product_title']);
+        ?>
+        <form class="cb-step" action="<?php echo $ROOT_DIR; ?>/actions/add_to_cart_action.php" method="POST"
+              data-step data-product="<?php echo (int)$dish['product_id']; ?>" data-qty="<?php echo $dishQty; ?>" data-max="<?php echo CartClass::MAX_QTY; ?>" data-title="<?php echo $dishTitle; ?>">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="product_id" value="<?php echo (int)$dish['product_id']; ?>">
             <input type="hidden" name="qty" value="1">
-            <button class="cb-add" type="submit" aria-label="Add <?php echo htmlspecialchars($dish['product_title']); ?> to your order">+</button>
+            <button class="cb-add" type="submit" data-step-add aria-label="Add <?php echo $dishTitle; ?> to your order" <?php echo $dishQty ? 'hidden' : ''; ?>>+</button>
+            <button class="cb-step-count" type="submit" data-step-count aria-label="<?php echo $dishQty . ' ' . $dishTitle; ?> in your basket. Change how many" <?php echo $dishQty ? '' : 'hidden'; ?>><?php echo $dishQty; ?></button>
+            <span class="cb-step-open" data-step-open hidden>
+                <button type="button" data-step-minus aria-label="One less <?php echo $dishTitle; ?>">−</button>
+                <output data-step-num aria-live="polite"><?php echo $dishQty; ?></output>
+                <button type="button" data-step-plus aria-label="One more <?php echo $dishTitle; ?>">+</button>
+            </span>
         </form>
         <?php endif; ?>
     </div>

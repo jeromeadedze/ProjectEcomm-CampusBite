@@ -17,7 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($user) {
             log_in_customer($user);
-            $_SESSION['success'] = "Welcome back, " . $user['customer_name'] . "!";
             // Came back from Paystack after the session ran out: finish checking that payment first
             $pendingRef = $_SESSION['pending_payment_ref'] ?? '';
             unset($_SESSION['pending_payment_ref']);
@@ -30,10 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             exit;
         } else {
-            $_SESSION['error'] = "That email and password don't match. Check them and try again.";
+            set_form_message('login', "That email and password don't match. Check them and try again.", 'error', ['customer_email' => $email]);
         }
     } else {
-        $_SESSION['error'] = "Enter your email and password to sign in.";
+        set_form_message('login', "Enter your email and password to sign in.", 'error', ['customer_email' => $email]);
     }
 }
 
