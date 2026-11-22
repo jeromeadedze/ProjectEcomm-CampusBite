@@ -8,7 +8,7 @@ class ProductClass extends Database
     // ==========================================
     public function getAllBrands()
     {
-        $sql = "SELECT * FROM brands WHERE is_active = 1 ORDER BY brand_name ASC";
+        $sql = "SELECT * FROM cb_brands WHERE is_active = 1 ORDER BY brand_name ASC";
         return $this->fetchAll($sql);
     }
 
@@ -16,8 +16,8 @@ class ProductClass extends Database
     public function getBrandsForAdmin()
     {
         $sql = "SELECT b.*, COUNT(p.product_id) AS product_count
-                FROM brands b
-                LEFT JOIN products p ON p.product_brand = b.brand_id
+                FROM cb_brands b
+                LEFT JOIN cb_products p ON p.product_brand = b.brand_id
                 GROUP BY b.brand_id
                 ORDER BY b.brand_name ASC";
         return $this->fetchAll($sql);
@@ -25,25 +25,25 @@ class ProductClass extends Database
 
     public function brandNameExists($name, $excludeId = 0)
     {
-        $sql = "SELECT brand_id FROM brands WHERE LOWER(brand_name) = LOWER(?) AND brand_id != ?";
+        $sql = "SELECT brand_id FROM cb_brands WHERE LOWER(brand_name) = LOWER(?) AND brand_id != ?";
         return (bool)$this->fetchOne($sql, [$name, $excludeId]);
     }
 
     public function countProductsByBrand($id)
     {
-        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM products WHERE product_brand = ?", [$id]);
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM cb_products WHERE product_brand = ?", [$id]);
         return (int)$row['total'];
     }
 
     public function getBrandById($id)
     {
-        $sql = "SELECT * FROM brands WHERE brand_id = ?";
+        $sql = "SELECT * FROM cb_brands WHERE brand_id = ?";
         return $this->fetchOne($sql, [$id]);
     }
 
     public function addBrand($name, $zone = 'Zone A', $location = '', $commission = 0.10, $isActive = 1, $phone = null)
     {
-        $sql = "INSERT INTO brands (brand_name, zone, location_desc, brand_phone, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO cb_brands (brand_name, zone, location_desc, brand_phone, commission_rate, is_active) VALUES (?, ?, ?, ?, ?, ?)";
         return $this->execute($sql, [$name, $zone, $location, $phone, $commission, $isActive]);
     }
 
@@ -51,19 +51,19 @@ class ProductClass extends Database
     public function updateBrandTerms($id, $commission, $isActive)
     {
         // An admin pause is remembered so the kitchen can't undo it; setting Active clears it
-        return $this->execute("UPDATE brands SET commission_rate = ?, is_active = ?, admin_paused = ? WHERE brand_id = ?", [$commission, $isActive, $isActive ? 0 : 1, $id]);
+        return $this->execute("UPDATE cb_brands SET commission_rate = ?, is_active = ?, admin_paused = ? WHERE brand_id = ?", [$commission, $isActive, $isActive ? 0 : 1, $id]);
     }
 
     // What a kitchen can change about itself from its portal. A kitchen the admin paused stays paused.
     public function updateBrandInfo($id, $location, $isActive, $phone = null)
     {
-        return $this->execute("UPDATE brands SET location_desc = ?, is_active = IF(admin_paused = 1, 0, ?), brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
+        return $this->execute("UPDATE cb_brands SET location_desc = ?, is_active = IF(admin_paused = 1, 0, ?), brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
     }
 
     // Where Paystack pays the kitchen (split payments), saved once Paystack has accepted the account
     public function setPayoutAccount($id, $type, $bankCode, $bankName, $number, $name, $subaccount)
     {
-        return $this->execute("UPDATE brands SET payout_type = ?, payout_bank_code = ?, payout_bank_name = ?, payout_account_number = ?,
+        return $this->execute("UPDATE cb_brands SET payout_type = ?, payout_bank_code = ?, payout_bank_name = ?, payout_account_number = ?,
                                                  payout_account_name = ?, paystack_subaccount = ? WHERE brand_id = ?",
             [$type, $bankCode, $bankName, $number, $name, $subaccount, $id]);
     }
@@ -72,10 +72,10 @@ class ProductClass extends Database
     public function getProductsForKitchen($brandId)
     {
         $sql = "SELECT p.*, c.cat_name, c.cat_icon,
-                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od JOIN orders o ON o.order_id = od.order_id
+                       (SELECT COALESCE(SUM(od.qty), 0) FROM cb_orderdetails od JOIN cb_orders o ON o.order_id = od.order_id
                         WHERE od.product_id = p.product_id AND o.order_status <> 'Cancelled') AS meals_sold
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
                 WHERE p.product_brand = ?
                 ORDER BY p.is_available DESC, p.product_title ASC";
         return $this->fetchAll($sql, [$brandId]);
@@ -83,7 +83,7 @@ class ProductClass extends Database
 
     public function deleteBrand($id)
     {
-        $sql = "DELETE FROM brands WHERE brand_id = ?";
+        $sql = "DELETE FROM cb_brands WHERE brand_id = ?";
         return $this->execute($sql, [$id]);
     }
 
@@ -92,15 +92,15 @@ class ProductClass extends Database
     // ==========================================
     public function getAllCategories()
     {
-        $sql = "SELECT * FROM categories ORDER BY cat_name ASC";
+        $sql = "SELECT * FROM cb_categories ORDER BY cat_name ASC";
         return $this->fetchAll($sql);
     }
 
     public function getCategoriesForAdmin()
     {
         $sql = "SELECT c.*, COUNT(p.product_id) AS product_count
-                FROM categories c
-                LEFT JOIN products p ON p.product_cat = c.cat_id
+                FROM cb_categories c
+                LEFT JOIN cb_products p ON p.product_cat = c.cat_id
                 GROUP BY c.cat_id
                 ORDER BY c.cat_name ASC";
         return $this->fetchAll($sql);
@@ -108,37 +108,37 @@ class ProductClass extends Database
 
     public function categoryNameExists($name, $excludeId = 0)
     {
-        $sql = "SELECT cat_id FROM categories WHERE LOWER(cat_name) = LOWER(?) AND cat_id != ?";
+        $sql = "SELECT cat_id FROM cb_categories WHERE LOWER(cat_name) = LOWER(?) AND cat_id != ?";
         return (bool)$this->fetchOne($sql, [$name, $excludeId]);
     }
 
     public function countProductsByCategory($id)
     {
-        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM products WHERE product_cat = ?", [$id]);
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM cb_products WHERE product_cat = ?", [$id]);
         return (int)$row['total'];
     }
 
     public function getCategoryById($id)
     {
-        $sql = "SELECT * FROM categories WHERE cat_id = ?";
+        $sql = "SELECT * FROM cb_categories WHERE cat_id = ?";
         return $this->fetchOne($sql, [$id]);
     }
 
     public function addCategory($name, $icon = 'bi-egg-fried')
     {
-        $sql = "INSERT INTO categories (cat_name, cat_icon) VALUES (?, ?)";
+        $sql = "INSERT INTO cb_categories (cat_name, cat_icon) VALUES (?, ?)";
         return $this->execute($sql, [$name, $icon]);
     }
 
     public function updateCategory($id, $name, $icon = 'bi-egg-fried')
     {
-        $sql = "UPDATE categories SET cat_name = ?, cat_icon = ? WHERE cat_id = ?";
+        $sql = "UPDATE cb_categories SET cat_name = ?, cat_icon = ? WHERE cat_id = ?";
         return $this->execute($sql, [$name, $icon, $id]);
     }
 
     public function deleteCategory($id)
     {
-        $sql = "DELETE FROM categories WHERE cat_id = ?";
+        $sql = "DELETE FROM cb_categories WHERE cat_id = ?";
         return $this->execute($sql, [$id]);
     }
 
@@ -148,9 +148,9 @@ class ProductClass extends Database
     public function getAllProducts()
     {
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 ORDER BY p.product_id DESC";
         return $this->fetchAll($sql);
     }
@@ -158,9 +158,9 @@ class ProductClass extends Database
     public function getFeaturedProducts($limit = 12)
     {
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC
                 LIMIT " . intval($limit);
@@ -170,9 +170,9 @@ class ProductClass extends Database
     public function getProductById($id)
     {
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.location_desc, b.is_active AS brand_active
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE p.product_id = ?";
         return $this->fetchOne($sql, [$id]);
     }
@@ -180,9 +180,9 @@ class ProductClass extends Database
     public function getProductsByCategory($cat_id)
     {
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE p.product_cat = ? AND p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC";
         return $this->fetchAll($sql, [$cat_id]);
@@ -191,9 +191,9 @@ class ProductClass extends Database
     public function getProductsByBrand($brand_id)
     {
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE p.product_brand = ? AND p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC";
         return $this->fetchAll($sql, [$brand_id]);
@@ -204,9 +204,9 @@ class ProductClass extends Database
         // Escape LIKE wildcards so "%" or "_" in a search are matched literally
         $term = "%" . addcslashes($query, '%_\\') . "%";
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone 
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE (p.product_title LIKE ? OR p.product_desc LIKE ? OR p.product_keywords LIKE ? OR b.brand_name LIKE ?)
                 AND p.is_available = 1 AND b.is_active = 1
                 ORDER BY p.product_id DESC";
@@ -215,19 +215,19 @@ class ProductClass extends Database
 
     public function productTitleExists($title, $brand, $excludeId = 0)
     {
-        $sql = "SELECT product_id FROM products WHERE LOWER(product_title) = LOWER(?) AND product_brand = ? AND product_id != ?";
+        $sql = "SELECT product_id FROM cb_products WHERE LOWER(product_title) = LOWER(?) AND product_brand = ? AND product_id != ?";
         return (bool)$this->fetchOne($sql, [$title, $brand, $excludeId]);
     }
 
     public function countOrdersForProduct($id)
     {
-        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM orderdetails WHERE product_id = ?", [$id]);
+        $row = $this->fetchOne("SELECT COUNT(*) AS total FROM cb_orderdetails WHERE product_id = ?", [$id]);
         return (int)$row['total'];
     }
 
     public function addProduct($cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime = 15, $isAvailable = 1)
     {
-        $sql = "INSERT INTO products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords, prep_time_minutes, is_available)
+        $sql = "INSERT INTO cb_products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords, prep_time_minutes, is_available)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime, $isAvailable]);
     }
@@ -235,16 +235,16 @@ class ProductClass extends Database
     public function updateProduct($id, $cat, $brand, $title, $price, $desc, $image = null, $keywords = '', $prepTime = 15, $isAvailable = 1)
     {
         if ($image) {
-            $sql = "UPDATE products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_image = ?, product_keywords = ?, prep_time_minutes = ?, is_available = ? WHERE product_id = ?";
+            $sql = "UPDATE cb_products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_image = ?, product_keywords = ?, prep_time_minutes = ?, is_available = ? WHERE product_id = ?";
             return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $image, $keywords, $prepTime, $isAvailable, $id]);
         }
-        $sql = "UPDATE products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_keywords = ?, prep_time_minutes = ?, is_available = ? WHERE product_id = ?";
+        $sql = "UPDATE cb_products SET product_cat = ?, product_brand = ?, product_title = ?, product_price = ?, product_desc = ?, product_keywords = ?, prep_time_minutes = ?, is_available = ? WHERE product_id = ?";
         return $this->execute($sql, [$cat, $brand, $title, $price, $desc, $keywords, $prepTime, $isAvailable, $id]);
     }
 
     public function deleteProduct($id)
     {
-        $sql = "DELETE FROM products WHERE product_id = ?";
+        $sql = "DELETE FROM cb_products WHERE product_id = ?";
         return $this->execute($sql, [$id]);
     }
 
@@ -254,8 +254,8 @@ class ProductClass extends Database
     public function getBrandsWithCounts()
     {
         $sql = "SELECT b.*, COUNT(p.product_id) AS dish_count
-                FROM brands b
-                LEFT JOIN products p ON p.product_brand = b.brand_id AND p.is_available = 1
+                FROM cb_brands b
+                LEFT JOIN cb_products p ON p.product_brand = b.brand_id AND p.is_available = 1
                 WHERE b.is_active = 1
                 GROUP BY b.brand_id
                 ORDER BY b.brand_name ASC";
@@ -266,9 +266,9 @@ class ProductClass extends Database
     public function getCategoriesWithDishes($brandId = 0)
     {
         $sql = "SELECT c.*, COUNT(p.product_id) AS dish_count
-                FROM categories c
-                JOIN products p ON p.product_cat = c.cat_id AND p.is_available = 1
-                JOIN brands b ON p.product_brand = b.brand_id AND b.is_active = 1";
+                FROM cb_categories c
+                JOIN cb_products p ON p.product_cat = c.cat_id AND p.is_available = 1
+                JOIN cb_brands b ON p.product_brand = b.brand_id AND b.is_active = 1";
         $params = [];
         if ($brandId > 0) {
             $sql .= " WHERE b.brand_id = ?";
@@ -282,8 +282,8 @@ class ProductClass extends Database
     {
         [$where, $params] = $this->availableFilter($brandId, $catId);
         $sql = "SELECT COUNT(*) AS total
-                FROM products p
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE $where";
         $row = $this->fetchOne($sql, $params);
         return (int)$row['total'];
@@ -293,9 +293,9 @@ class ProductClass extends Database
     {
         [$where, $params] = $this->availableFilter($brandId, $catId);
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone
-                FROM products p
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_products p
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE $where
                 ORDER BY p.product_id DESC
                 LIMIT " . intval($limit) . " OFFSET " . intval($offset);

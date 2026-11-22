@@ -83,7 +83,7 @@ A fresh import has six kitchens and 39 meals across nine categories: Rice & Joll
 `database/campusbite.sql` creates both staff accounts, so they work straight after a fresh import. They are for local testing only: **change their passwords or delete them on any real server.** An existing database won't get them from a migration. To add them there, sign up on the site and then:
 
 ```sql
-UPDATE customer SET user_role = 1 WHERE customer_email = 'admin@campusbite.com';
+UPDATE cb_customer SET user_role = 1 WHERE customer_email = 'admin@campusbite.com';
 ```
 
 For a kitchen login, use the admin's **Users** page instead.

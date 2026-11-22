@@ -5,22 +5,22 @@ class FavoriteClass extends Database
 {
     public function isFavorite($customerId, $productId)
     {
-        return (bool)$this->fetchOne("SELECT 1 FROM favorites WHERE customer_id = ? AND product_id = ?", [$customerId, $productId]);
+        return (bool)$this->fetchOne("SELECT 1 FROM cb_favorites WHERE customer_id = ? AND product_id = ?", [$customerId, $productId]);
     }
 
     public function addFavorite($customerId, $productId)
     {
-        return $this->execute("INSERT IGNORE INTO favorites (customer_id, product_id) VALUES (?, ?)", [$customerId, $productId]);
+        return $this->execute("INSERT IGNORE INTO cb_favorites (customer_id, product_id) VALUES (?, ?)", [$customerId, $productId]);
     }
 
     public function removeFavorite($customerId, $productId)
     {
-        return $this->execute("DELETE FROM favorites WHERE customer_id = ? AND product_id = ?", [$customerId, $productId]);
+        return $this->execute("DELETE FROM cb_favorites WHERE customer_id = ? AND product_id = ?", [$customerId, $productId]);
     }
 
     public function getFavoriteIds($customerId)
     {
-        $rows = $this->fetchAll("SELECT product_id FROM favorites WHERE customer_id = ?", [$customerId]);
+        $rows = $this->fetchAll("SELECT product_id FROM cb_favorites WHERE customer_id = ?", [$customerId]);
         return array_map('intval', array_column($rows, 'product_id'));
     }
 
@@ -28,10 +28,10 @@ class FavoriteClass extends Database
     public function getFavoriteProducts($customerId)
     {
         $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.is_active AS brand_active
-                FROM favorites f
-                JOIN products p ON f.product_id = p.product_id
-                JOIN categories c ON p.product_cat = c.cat_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_favorites f
+                JOIN cb_products p ON f.product_id = p.product_id
+                JOIN cb_categories c ON p.product_cat = c.cat_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE f.customer_id = ?
                 ORDER BY f.created_at DESC";
         return $this->fetchAll($sql, [$customerId]);
