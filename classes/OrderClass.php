@@ -28,16 +28,17 @@ class OrderClass extends Database
     }
 
     // $invoiceNo null = pick a new unused one
-    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null)
+    // $dropPoint: the listed drop point the fee was worked out for (DeliveryController); $dropLocation adds the room
+    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null, $dropPoint = null)
     {
         if ($invoiceNo === null) {
             $invoiceNo = $this->newInvoiceNo();
         }
         // The commission rate is copied onto the order, so changing a rate later doesn't change past orders.
         // $commissionRate is the rate the Paystack split was made with; without it, the kitchen's current rate.
-        $sql = "INSERT INTO cb_orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions, commission_rate)
-                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?, COALESCE(?, (SELECT commission_rate FROM cb_brands WHERE brand_id = ?)))";
-        $success = $this->execute($sql, [$customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $commissionRate, $brandId]);
+        $sql = "INSERT INTO cb_orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_point, drop_location, special_instructions, commission_rate)
+                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?, ?, COALESCE(?, (SELECT commission_rate FROM cb_brands WHERE brand_id = ?)))";
+        $success = $this->execute($sql, [$customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropPoint, $dropLocation, $notes, $commissionRate, $brandId]);
         if ($success) {
             $orderId = $this->getLastInsertId();
             // Create initial tracking entry
@@ -203,8 +204,8 @@ class OrderClass extends Database
                        MIN(o.order_date) AS first_order, MAX(o.order_date) AS last_order,
                        (SELECT COALESCE(SUM(p.amt), 0) FROM cb_payment p JOIN cb_orders o2 ON o2.order_id = p.order_id
                         WHERE o2.customer_id = c.customer_id AND o2.brand_id = ? AND o2.order_status <> 'Cancelled') AS spent,
-                       (SELECT o3.drop_location FROM cb_orders o3 WHERE o3.customer_id = c.customer_id AND o3.brand_id = ?
-                        GROUP BY o3.drop_location ORDER BY COUNT(*) DESC, MAX(o3.order_date) DESC LIMIT 1) AS usual_drop
+                       (SELECT COALESCE(o3.drop_point, o3.drop_location) FROM cb_orders o3 WHERE o3.customer_id = c.customer_id AND o3.brand_id = ?
+                        GROUP BY COALESCE(o3.drop_point, o3.drop_location) ORDER BY COUNT(*) DESC, MAX(o3.order_date) DESC LIMIT 1) AS usual_drop
                 FROM cb_orders o
                 JOIN cb_customer c ON c.customer_id = o.customer_id
                 WHERE $where

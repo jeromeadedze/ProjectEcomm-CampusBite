@@ -25,19 +25,27 @@ if (empty($cartItems)) {
 
 $user = (new CustomerController())->getCustomerById($userId);
 $subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
-$deliveryFee = $cartCtrl->calculateDeliveryFee($cartItems, has_active_pass($user));
-$grandTotal = $subtotal + $deliveryFee;
-$zone = $cartCtrl->deliveryZoneFor($cartItems);
+$hasPass = has_active_pass($user);
+// The drop point decides the fee. Start from what was picked last time (an error sends the form back),
+// then the customer's saved drop point from Settings.
+$checkoutForm = $_SESSION['checkout_form'] ?? [];
+unset($_SESSION['checkout_form']);
+$savedPoint = DeliveryController::isDropPoint($user['campus_hostel'] ?? null) ? $user['campus_hostel'] : '';
+$pickedPoint = $checkoutForm['drop_point'] ?? $savedPoint;
+$pickedPoint = DeliveryController::isDropPoint($pickedPoint) ? $pickedPoint : '';
+// This bill's fee to every drop point, for the picker and the live total
+$feeByPoint = [];
+foreach (array_keys(DeliveryController::DROP_POINTS) as $point) {
+    $feeByPoint[$point] = (float)$cartCtrl->calculateDeliveryFee($cartItems, $hasPass, $point);
+}
+$deliveryFee = $pickedPoint !== '' ? $feeByPoint[$pickedPoint] : null;
+$grandTotal = $subtotal + (float)$deliveryFee;
 $kitchenName = $cartItems[0]['brand_name'] ?? '';
 // Paystack pays the kitchen directly, so a kitchen without a payout account can't be paid yet
 $kitchenIds = $cartCtrl->kitchenIds($cartItems);
 $billKitchen = count($kitchenIds) === 1 ? (new ProductController())->getBrandById((int)$kitchenIds[0]) : null;
 $canPay = $billKitchen && !empty($billKitchen['paystack_subaccount']);
 
-$dropPoints = [
-    'Walter Sisulu Hall (Hostel 1)', 'Wangari Maathai Hall (Hostel 2)', 'Charlotte Court (Off-Campus)', 'Masere Hostel (Berekuso)',
-    'FabLab / Engineering Building Courtyard', 'Library Courtyard / Upper Quad', 'Faculty Office Lounge', 'Student Center Hive',
-];
 
 require_once __DIR__ . '/layout/header.php';
 ?>
@@ -48,21 +56,37 @@ require_once __DIR__ . '/layout/header.php';
         <section class="cb-card">
             <h2><span class="cb-step-num">1</span> Where should <?php echo htmlspecialchars($kitchenName ?: 'the kitchen'); ?> deliver?</h2>
             <div class="cb-field">
-                <label for="drop-preset">Popular drop points</label>
-                <select id="drop-preset" data-fill="drop-location">
-                    <option value="">Choose a drop point, or type your own below</option>
-                    <?php foreach ($dropPoints as $point): ?>
-                        <option value="<?php echo htmlspecialchars($point); ?>"><?php echo htmlspecialchars($point); ?></option>
+                <label for="drop-point">Drop point</label>
+                <select id="drop-point" name="drop_point" required data-delivery-picker>
+                    <option value="">Choose your hall or hostel</option>
+                    <?php foreach (DeliveryController::grouped() as $area => $points): ?>
+                        <optgroup label="<?php echo htmlspecialchars(DeliveryController::AREAS[$area]); ?>">
+                            <?php foreach ($points as $point): ?>
+                                <option value="<?php echo htmlspecialchars($point); ?>" data-fee="<?php echo number_format($feeByPoint[$point], 2, '.', ''); ?>" <?php echo $point === $pickedPoint ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($point); ?> · GH₵ <?php echo number_format($feeByPoint[$point], 0); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
                     <?php endforeach; ?>
                 </select>
+                <p class="cb-field-hint">
+                    <?php echo htmlspecialchars($kitchenName ?: 'This kitchen'); ?> delivers to <?php echo htmlspecialchars(DeliveryController::nearLabel($billKitchen ?: 'Zone A')); ?>
+                    for GH₵ <?php echo DeliveryController::FEE_NEAR; ?>; everywhere else is GH₵ <?php echo DeliveryController::FEE_FAR; ?>.
+                </p>
             </div>
             <div class="cb-field">
-                <label for="drop-location">Drop point, room or building</label>
-                <input type="text" id="drop-location" name="drop_location" maxlength="150" required placeholder="e.g. Sisulu Room 208, or Lab 2" value="<?php echo htmlspecialchars($user['campus_hostel'] ?? ''); ?>">
+                <label for="drop-detail">Room, block or landmark <span class="cb-muted">(optional)</span></label>
+                <input type="text" id="drop-detail" name="drop_detail" maxlength="80" placeholder="e.g. Room 208, or the main gate" value="<?php echo htmlspecialchars($checkoutForm['drop_detail'] ?? ''); ?>">
             </div>
+            <?php if ($pickedPoint !== $savedPoint || $savedPoint === ''): ?>
+                <label class="cb-check">
+                    <input type="checkbox" name="save_drop_point" value="1" <?php echo $savedPoint === '' ? 'checked' : ''; ?>>
+                    <span>Make this my usual drop point</span>
+                </label>
+            <?php endif; ?>
             <div class="cb-field">
                 <label for="drop-notes">Instructions for the kitchen <span class="cb-muted">(optional)</span></label>
-                <input type="text" id="drop-notes" name="notes" maxlength="255" placeholder="e.g. Call when you're outside the courtyard">
+                <input type="text" id="drop-notes" name="notes" maxlength="255" placeholder="e.g. Call when you're outside the courtyard" value="<?php echo htmlspecialchars($checkoutForm['notes'] ?? ''); ?>">
             </div>
             <p class="cb-checkout-contact">
                 <i class="bi bi-telephone" aria-hidden="true"></i>
@@ -94,11 +118,11 @@ require_once __DIR__ . '/layout/header.php';
         </ul>
         <div class="cb-totals">
             <div><span>Meals</span><span>GH₵ <?php echo number_format($subtotal, 2); ?></span></div>
-            <div><span>Delivery (<?php echo htmlspecialchars($zone); ?>)</span><span>GH₵ <?php echo number_format($deliveryFee, 2); ?></span></div>
-            <div class="total"><span>Total</span><span>GH₵ <?php echo number_format($grandTotal, 2); ?></span></div>
+            <div><span data-delivery-label>Delivery<?php echo $pickedPoint !== '' ? ' to ' . htmlspecialchars($pickedPoint) : ''; ?></span><span data-delivery-fee><?php echo $deliveryFee !== null ? 'GH₵ ' . number_format($deliveryFee, 2) : 'Pick a drop point'; ?></span></div>
+            <div class="total"><span>Total</span><span data-delivery-total data-subtotal="<?php echo number_format($subtotal, 2, '.', ''); ?>"><?php echo $deliveryFee !== null ? 'GH₵ ' . number_format($grandTotal, 2) : 'GH₵ ' . number_format($subtotal, 2) . ' + delivery'; ?></span></div>
         </div>
         <?php if ($canPay): ?>
-            <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> Pay GH₵ <?php echo number_format($grandTotal, 2); ?> with Paystack</button>
+            <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> <span data-delivery-pay><?php echo $deliveryFee !== null ? 'Pay GH₵ ' . number_format($grandTotal, 2) . ' with Paystack' : 'Pay with Paystack'; ?></span></button>
         <?php else: ?>
             <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> <?php echo htmlspecialchars($kitchenName ?: 'This kitchen'); ?> can't take online payments yet. Try again later or order from another kitchen.</p>
             <button type="button" class="cb-checkout" disabled>Payment unavailable</button>
@@ -106,5 +130,31 @@ require_once __DIR__ . '/layout/header.php';
         <a class="cb-panel-bills" href="<?php echo $ROOT_DIR; ?>/views/cart.php">‹ Back to bill</a>
     </aside>
 </form>
+
+<script>
+// Shows the delivery fee and total for the drop point picked (the server works the fee out again when paying)
+(function () {
+    var picker = document.querySelector('[data-delivery-picker]');
+    if (!picker) return;
+    var label = document.querySelector('[data-delivery-label]'), fee = document.querySelector('[data-delivery-fee]'),
+        total = document.querySelector('[data-delivery-total]'), pay = document.querySelector('[data-delivery-pay]');
+    var subtotal = parseFloat(total.getAttribute('data-subtotal'));
+    var money = function (n) { return 'GH\u20B5 ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+    picker.addEventListener('change', function () {
+        var opt = picker.options[picker.selectedIndex];
+        if (!picker.value) {
+            label.textContent = 'Delivery'; fee.textContent = 'Pick a drop point';
+            total.textContent = money(subtotal) + ' + delivery';
+            if (pay) pay.textContent = 'Pay with Paystack';
+            return;
+        }
+        var f = parseFloat(opt.getAttribute('data-fee'));
+        label.textContent = 'Delivery to ' + picker.value;
+        fee.textContent = money(f);
+        total.textContent = money(subtotal + f);
+        if (pay) pay.textContent = 'Pay ' + money(subtotal + f) + ' with Paystack';
+    });
+})();
+</script>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

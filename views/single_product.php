@@ -52,7 +52,7 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
 
         <div class="cb-meal-tags">
             <span><i class="bi bi-clock" aria-hidden="true"></i> About <?php echo (int)($product['prep_time_minutes'] ?? 15); ?> min to prepare</span>
-            <span><i class="bi bi-bicycle" aria-hidden="true"></i> GH₵ <?php echo number_format($prodCtrl->deliveryFeeForZone($product['zone']), 2); ?> delivery</span>
+            <span><i class="bi bi-bicycle" aria-hidden="true"></i> <?php require_once __DIR__ . '/../controllers/DeliveryController.php'; echo htmlspecialchars(DeliveryController::feeTag($product)['text']); ?></span>
             <span><i class="bi bi-tag" aria-hidden="true"></i> <?php echo htmlspecialchars($product['cat_name']); ?></span>
             <?php if (!empty($product['location_desc'])): ?>
                 <span><i class="bi bi-geo-alt" aria-hidden="true"></i> <?php echo htmlspecialchars($product['location_desc']); ?></span>

@@ -53,9 +53,9 @@ class OrderController
         $this->orderModel = new OrderClass();
     }
 
-    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null)
+    public function createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes = '', $commissionRate = null, $dropPoint = null)
     {
-        return $this->orderModel->createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $commissionRate);
+        return $this->orderModel->createOrder($customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $commissionRate, $dropPoint);
     }
 
     public function addOrderDetail($orderId, $productId, $qty, $price, $notes = null)

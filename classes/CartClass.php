@@ -24,7 +24,7 @@ class CartClass extends Database
         [$where, $params] = $this->owner($token, $c_id);
         $sql = "SELECT c.*, p.product_title, p.product_price, p.product_image, p.is_available, p.product_brand,
                        (SELECT cat_icon FROM cb_categories WHERE cat_id = p.product_cat) AS cat_icon,
-                       b.brand_name, b.zone, b.is_active AS brand_active
+                       b.brand_name, b.zone, b.near_drop_points, b.is_active AS brand_active
                 FROM cb_cart c
                 JOIN cb_products p ON c.p_id = p.product_id
                 JOIN cb_brands b ON p.product_brand = b.brand_id

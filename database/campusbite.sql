@@ -36,7 +36,7 @@ CREATE TABLE `cb_customer` (
   `customer_country` varchar(50) NOT NULL DEFAULT 'Ghana',
   `customer_city` varchar(50) NOT NULL DEFAULT 'Berekuso',
   `customer_contact` varchar(20) NOT NULL,
-  `campus_hostel` varchar(100) DEFAULT NULL, -- e.g. 'Walter Sisulu Hall', 'Wangari Maathai', 'Charlotte Court', etc.
+  `campus_hostel` varchar(100) DEFAULT NULL, -- the customer's usual drop point, one of DeliveryController::DROP_POINTS (e.g. 'Sisulu Hall')
   `customer_image` varchar(150) DEFAULT NULL,
   `user_role` int(11) NOT NULL DEFAULT 2, -- 1: Admin, 2: Customer (Student/Faculty), 4: Kitchen (role 3, courier, was retired: kitchens deliver their own orders)
   `brand_id` int(11) DEFAULT NULL, -- for kitchen accounts (role 4): the kitchen they run
@@ -54,6 +54,7 @@ CREATE TABLE `cb_brands` (
   `brand_id` int(11) NOT NULL AUTO_INCREMENT,
   `brand_name` varchar(100) NOT NULL,
   `zone` enum('Zone A', 'Zone B') NOT NULL DEFAULT 'Zone A', -- Zone A: On-campus, Zone B: Berekuso corridor
+  `near_drop_points` varchar(255) DEFAULT NULL, -- extra drop points this kitchen delivers to for GH₵ 5, comma-separated (e.g. 'Queenstar')
   `location_desc` varchar(255) DEFAULT NULL,
   `brand_phone` varchar(20) DEFAULT NULL,
   `commission_rate` decimal(4,2) NOT NULL DEFAULT 0.10,
@@ -122,8 +123,9 @@ CREATE TABLE `cb_orders` (
   `order_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `order_status` varchar(50) NOT NULL DEFAULT 'Placed', -- Placed, Preparing, Ready, In Transit, Delivered, Cancelled
   `delivery_zone` varchar(20) NOT NULL DEFAULT 'Zone A', -- Zone A or Zone B
-  `delivery_fee` double NOT NULL DEFAULT 5.00,
-  `drop_location` varchar(150) NOT NULL, -- e.g. 'Walter Sisulu Hall - Room 204', 'FabLab Courtyard'
+  `delivery_fee` double NOT NULL DEFAULT 5.00, -- GH₵ 5 when the drop point is in the kitchen's area, otherwise GH₵ 10 (DeliveryController)
+  `drop_point` varchar(60) DEFAULT NULL, -- the listed drop point the fee was worked out for, e.g. 'Sisulu Hall'
+  `drop_location` varchar(150) NOT NULL, -- what the kitchen sees, e.g. 'Sisulu Hall · Room 204'
   `special_instructions` varchar(255) DEFAULT NULL,
   `commission_rate` decimal(4,2) DEFAULT NULL, -- the kitchen's commission when the order was placed, so later rate changes don't alter past payouts
   `cancelled_at` datetime DEFAULT NULL,

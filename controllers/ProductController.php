@@ -3,15 +3,10 @@ require_once __DIR__ . "/../classes/ProductClass.php";
 
 class ProductController
 {
+    // Where a kitchen is. It delivers for the near fee to its own area (DeliveryController has the fees).
     const ZONES = [
-        'Zone A' => 'Zone A: on campus (GH₵ 5.00 delivery)',
-        'Zone B' => 'Zone B: Berekuso corridor (GH₵ 10.00 delivery)',
-    ];
-
-    // Delivery fee in GH₵ for each zone. The single source for every fee shown or charged.
-    const DELIVERY_FEES = [
-        'Zone A' => 5,
-        'Zone B' => 10,
+        'Zone A' => 'Zone A: on campus (GH₵ 5 to the campus halls)',
+        'Zone B' => 'Zone B: Berekuso town (GH₵ 5 to the town hostels)',
     ];
 
     const DISHES_PER_PAGE = 24;
@@ -446,9 +441,5 @@ class ProductController
         return $this->productModel->getAvailableProductsPage($brandId, $catId, self::DISHES_PER_PAGE, $offset);
     }
 
-    public function deliveryFeeForZone($zone)
-    {
-        return self::DELIVERY_FEES[$zone] ?? self::DELIVERY_FEES['Zone A'];
-    }
 }
 ?>

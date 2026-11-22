@@ -45,7 +45,7 @@ class OrderEmails
             $meals += $lineTotal;
             $rows[] = [(int)$line['qty'] . '× ' . $line['product_title'], $this->money($lineTotal)];
         }
-        $rows[] = ['Delivery (' . $order['delivery_zone'] . ')', $this->money($order['delivery_fee'])];
+        $rows[] = ['Delivery' . (!empty($order['drop_point']) ? ' to ' . $order['drop_point'] : ''), $this->money($order['delivery_fee'])];
         $rows[] = ['Total paid', $this->money($order['amt'] ?? ($meals + (float)$order['delivery_fee'])), true];
         return $rows;
     }

@@ -37,6 +37,11 @@ class CustomerClass extends Database
         return $this->fetchAll($sql);
     }
 
+    public function updateDropPoint($id, $dropPoint)
+    {
+        return $this->execute("UPDATE cb_customer SET campus_hostel = ? WHERE customer_id = ?", [$dropPoint, $id]);
+    }
+
     public function updateProfile($id, $name, $contact, $hostel, $email)
     {
         $sql = "UPDATE cb_customer SET customer_name = ?, customer_contact = ?, campus_hostel = ?, customer_email = ? WHERE customer_id = ?";
