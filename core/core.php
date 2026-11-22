@@ -3,6 +3,10 @@
 // core.php - Global Session & Security Controller
 // ============================================================
 
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
 ob_start();
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -18,7 +22,7 @@ function sync_account_session() {
         return;
     }
     require_once __DIR__ . '/db_class.php';
-    $row = (new Database())->fetchOne("SELECT user_role, brand_id, kitchen_role, must_change_password FROM customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
+    $row = (new Database())->fetchOne("SELECT user_role, brand_id, kitchen_role, must_change_password FROM cb_customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
     if (!$row) {
         // The account was deleted while signed in
         $_SESSION = [];

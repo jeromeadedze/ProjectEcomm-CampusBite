@@ -13,8 +13,8 @@ class OrderClass extends Database
     {
         // The commission rate is copied onto the order, so changing a rate later doesn't change past orders.
         // $commissionRate is the rate the Paystack split was made with; without it, the kitchen's current rate.
-        $sql = "INSERT INTO orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions, commission_rate)
-                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?, COALESCE(?, (SELECT commission_rate FROM brands WHERE brand_id = ?)))";
+        $sql = "INSERT INTO cb_orders (customer_id, brand_id, invoice_no, order_status, delivery_zone, delivery_fee, drop_location, special_instructions, commission_rate)
+                VALUES (?, ?, ?, 'Placed', ?, ?, ?, ?, COALESCE(?, (SELECT commission_rate FROM cb_brands WHERE brand_id = ?)))";
         $success = $this->execute($sql, [$customerId, $brandId, $invoiceNo, $deliveryZone, $deliveryFee, $dropLocation, $notes, $commissionRate, $brandId]);
         if ($success) {
             $orderId = $this->getLastInsertId();
@@ -28,14 +28,14 @@ class OrderClass extends Database
     // $price is the meal's price at checkout, kept so the order's value never changes afterwards
     public function addOrderDetail($orderId, $productId, $qty, $price, $notes = null)
     {
-        $sql = "INSERT INTO orderdetails (order_id, product_id, qty, price, notes) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO cb_orderdetails (order_id, product_id, qty, price, notes) VALUES (?, ?, ?, ?, ?)";
         return $this->execute($sql, [$orderId, $productId, $qty, $price, $notes]);
     }
 
     // $split: ['subaccount' => code, 'kitchen_share' => GH₵, 'campusbite_share' => GH₵, 'refund_recovery' => GH₵] for a split payment
     public function recordPayment($amt, $customerId, $orderId, $paymentMode, $ref, $verified = false, $split = null)
     {
-        $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, verified_at,
+        $sql = "INSERT INTO cb_payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, verified_at,
                                      subaccount_code, kitchen_share, campusbite_share, refund_recovery)
                 VALUES (?, ?, ?, 'GHS', ?, ?, " . ($verified ? "NOW()" : "NULL") . ", ?, ?, ?, ?)";
         return $this->execute($sql, [$amt, $customerId, $orderId, $paymentMode, $ref,
@@ -47,7 +47,7 @@ class OrderClass extends Database
      */
     public function getOrderIdByReference($ref)
     {
-        $row = $this->fetchOne("SELECT order_id FROM payment WHERE transaction_reference = ?", [$ref]);
+        $row = $this->fetchOne("SELECT order_id FROM cb_payment WHERE transaction_reference = ?", [$ref]);
         return $row ? (int)$row['order_id'] : null;
     }
 
@@ -55,15 +55,15 @@ class OrderClass extends Database
     {
         $sql = "SELECT o.*, c.customer_name, c.customer_email, c.customer_contact,
                        b.brand_name, b.brand_phone, COALESCE(o.commission_rate, b.commission_rate) AS commission_rate,
-                       COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM customer ks
+                       COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM cb_customer ks
                         WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1)) AS kitchen_contact,
                        pay.pay_id, pay.amt, pay.payment_mode, pay.transaction_reference, pay.verified_at, pay.subaccount_code, pay.kitchen_share,
                        r.refund_id, r.amount AS refund_amount, r.status AS refund_status, r.paystack_refund_id, r.updated_at AS refund_updated_at
-                FROM orders o
-                JOIN customer c ON o.customer_id = c.customer_id
-                LEFT JOIN brands b ON o.brand_id = b.brand_id
-                LEFT JOIN payment pay ON pay.pay_id = (SELECT MIN(p2.pay_id) FROM payment p2 WHERE p2.order_id = o.order_id)
-                LEFT JOIN refunds r ON r.order_id = o.order_id
+                FROM cb_orders o
+                JOIN cb_customer c ON o.customer_id = c.customer_id
+                LEFT JOIN cb_brands b ON o.brand_id = b.brand_id
+                LEFT JOIN cb_payment pay ON pay.pay_id = (SELECT MIN(p2.pay_id) FROM cb_payment p2 WHERE p2.order_id = o.order_id)
+                LEFT JOIN cb_refunds r ON r.order_id = o.order_id
                 WHERE o.order_id = ?";
         return $this->fetchOne($sql, [$orderId]);
     }
@@ -71,10 +71,10 @@ class OrderClass extends Database
     public function getOrderDetails($orderId)
     {
         $sql = "SELECT od.*, COALESCE(od.price, p.product_price) AS unit_price, p.product_title, p.product_price, p.product_image, p.product_brand, b.brand_name,
-                       (SELECT cat_icon FROM categories WHERE cat_id = p.product_cat) AS cat_icon
-                FROM orderdetails od
-                JOIN products p ON od.product_id = p.product_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                       (SELECT cat_icon FROM cb_categories WHERE cat_id = p.product_cat) AS cat_icon
+                FROM cb_orderdetails od
+                JOIN cb_products p ON od.product_id = p.product_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE od.order_id = ?";
         return $this->fetchAll($sql, [$orderId]);
     }
@@ -83,16 +83,16 @@ class OrderClass extends Database
     public function getOrdersByCustomer($customerId)
     {
         $sql = "SELECT o.*,
-                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od WHERE od.order_id = o.order_id) AS item_count,
-                       COALESCE((SELECT SUM(p.amt) FROM payment p WHERE p.order_id = o.order_id),
+                       (SELECT COALESCE(SUM(od.qty), 0) FROM cb_orderdetails od WHERE od.order_id = o.order_id) AS item_count,
+                       COALESCE((SELECT SUM(p.amt) FROM cb_payment p WHERE p.order_id = o.order_id),
                                 (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
-                                 FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                                 FROM cb_orderdetails od JOIN cb_products pr ON od.product_id = pr.product_id
                                  WHERE od.order_id = o.order_id) + o.delivery_fee) AS order_total,
                        b.brand_name, b.brand_phone,
-                       COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM customer ks
+                       COALESCE(b.brand_phone, (SELECT ks.customer_contact FROM cb_customer ks
                         WHERE ks.user_role = 4 AND ks.brand_id = o.brand_id ORDER BY ks.customer_id LIMIT 1)) AS kitchen_contact
-                FROM orders o
-                LEFT JOIN brands b ON o.brand_id = b.brand_id
+                FROM cb_orders o
+                LEFT JOIN cb_brands b ON o.brand_id = b.brand_id
                 WHERE o.customer_id = ?
                 ORDER BY o.order_id DESC";
         return $this->fetchAll($sql, [$customerId]);
@@ -102,12 +102,12 @@ class OrderClass extends Database
     {
         $sql = "SELECT o.*, c.customer_name, c.customer_contact, p.payment_mode, p.amt, b.brand_name,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
-                        FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                        FROM cb_orderdetails od JOIN cb_products pr ON od.product_id = pr.product_id
                         WHERE od.order_id = o.order_id) AS items_total
-                FROM orders o
-                JOIN customer c ON o.customer_id = c.customer_id
-                LEFT JOIN brands b ON o.brand_id = b.brand_id
-                LEFT JOIN payment p ON o.order_id = p.order_id
+                FROM cb_orders o
+                JOIN cb_customer c ON o.customer_id = c.customer_id
+                LEFT JOIN cb_brands b ON o.brand_id = b.brand_id
+                LEFT JOIN cb_payment p ON o.order_id = p.order_id
                 ORDER BY o.order_id DESC";
         return $this->fetchAll($sql);
     }
@@ -179,12 +179,12 @@ class OrderClass extends Database
                        COALESCE(SUM(o.order_status <> 'Cancelled'), 0) AS orders,
                        COALESCE(SUM(o.order_status = 'Cancelled'), 0) AS cancelled,
                        MIN(o.order_date) AS first_order, MAX(o.order_date) AS last_order,
-                       (SELECT COALESCE(SUM(p.amt), 0) FROM payment p JOIN orders o2 ON o2.order_id = p.order_id
+                       (SELECT COALESCE(SUM(p.amt), 0) FROM cb_payment p JOIN cb_orders o2 ON o2.order_id = p.order_id
                         WHERE o2.customer_id = c.customer_id AND o2.brand_id = ? AND o2.order_status <> 'Cancelled') AS spent,
-                       (SELECT o3.drop_location FROM orders o3 WHERE o3.customer_id = c.customer_id AND o3.brand_id = ?
+                       (SELECT o3.drop_location FROM cb_orders o3 WHERE o3.customer_id = c.customer_id AND o3.brand_id = ?
                         GROUP BY o3.drop_location ORDER BY COUNT(*) DESC, MAX(o3.order_date) DESC LIMIT 1) AS usual_drop
-                FROM orders o
-                JOIN customer c ON c.customer_id = o.customer_id
+                FROM cb_orders o
+                JOIN cb_customer c ON c.customer_id = o.customer_id
                 WHERE $where
                 GROUP BY c.customer_id, c.customer_name, c.customer_email, c.customer_contact
                 ORDER BY last_order DESC
@@ -195,8 +195,8 @@ class OrderClass extends Database
     public function countKitchenCustomers($brandId, $q)
     {
         [$where, $params] = $this->kitchenCustomerWhere($brandId, $q);
-        return (int)$this->fetchOne("SELECT COUNT(DISTINCT o.customer_id) AS n FROM orders o
-                                     JOIN customer c ON c.customer_id = o.customer_id WHERE $where", $params)['n'];
+        return (int)$this->fetchOne("SELECT COUNT(DISTINCT o.customer_id) AS n FROM cb_orders o
+                                     JOIN cb_customer c ON c.customer_id = o.customer_id WHERE $where", $params)['n'];
     }
 
     // Headline numbers: customers, how many came back for a second order, and how many first ordered since $since
@@ -204,7 +204,7 @@ class OrderClass extends Database
     {
         $row = $this->fetchOne("SELECT COUNT(*) AS customers, COALESCE(SUM(n >= 2), 0) AS returners, COALESCE(SUM(first_order >= ?), 0) AS new_recently
                                 FROM (SELECT customer_id, SUM(order_status <> 'Cancelled') AS n, MIN(order_date) AS first_order
-                                      FROM orders WHERE brand_id = ? GROUP BY customer_id) t", [$since, (int)$brandId]);
+                                      FROM cb_orders WHERE brand_id = ? GROUP BY customer_id) t", [$since, (int)$brandId]);
         return array_map('intval', $row);
     }
 
@@ -214,12 +214,12 @@ class OrderClass extends Database
         [$where, $params] = $this->orderSearchWhere($f);
         $sql = "SELECT o.*, c.customer_name, c.customer_contact, b.brand_name, pay.payment_mode, pay.amt,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
-                        FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                        FROM cb_orderdetails od JOIN cb_products pr ON od.product_id = pr.product_id
                         WHERE od.order_id = o.order_id) AS items_total
-                FROM orders o
-                JOIN customer c ON o.customer_id = c.customer_id
-                LEFT JOIN brands b ON o.brand_id = b.brand_id
-                LEFT JOIN payment pay ON pay.pay_id = (SELECT MIN(p2.pay_id) FROM payment p2 WHERE p2.order_id = o.order_id)
+                FROM cb_orders o
+                JOIN cb_customer c ON o.customer_id = c.customer_id
+                LEFT JOIN cb_brands b ON o.brand_id = b.brand_id
+                LEFT JOIN cb_payment pay ON pay.pay_id = (SELECT MIN(p2.pay_id) FROM cb_payment p2 WHERE p2.order_id = o.order_id)
                 WHERE $where
                 ORDER BY o.order_id DESC
                 LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
@@ -231,7 +231,7 @@ class OrderClass extends Database
     {
         [$where, $params] = $this->orderSearchWhere($f, false);
         $sql = "SELECT o.order_status, COUNT(*) AS total
-                FROM orders o JOIN customer c ON o.customer_id = c.customer_id
+                FROM cb_orders o JOIN cb_customer c ON o.customer_id = c.customer_id
                 WHERE $where
                 GROUP BY o.order_status";
         return array_column($this->fetchAll($sql, $params), 'total', 'order_status');
@@ -240,7 +240,7 @@ class OrderClass extends Database
     public function updateOrderStatus($orderId, $status)
     {
         // A cancelled order stays cancelled
-        $sql = "UPDATE orders SET order_status = ? WHERE order_id = ? AND order_status <> 'Cancelled'";
+        $sql = "UPDATE cb_orders SET order_status = ? WHERE order_id = ? AND order_status <> 'Cancelled'";
         $res = $this->executeCount($sql, [$status, $orderId]) > 0;
         if ($res) {
             $msg = "Order status updated to: " . $status;
@@ -258,7 +258,7 @@ class OrderClass extends Database
     public function claimCancellation($orderId, $fromStatuses, $by, $reason)
     {
         $marks = implode(', ', array_fill(0, count($fromStatuses), '?'));
-        $sql = "UPDATE orders SET order_status = 'Cancelled', cancelled_at = NOW(), cancelled_by = ?, cancel_reason = ?
+        $sql = "UPDATE cb_orders SET order_status = 'Cancelled', cancelled_at = NOW(), cancelled_by = ?, cancel_reason = ?
                 WHERE order_id = ? AND order_status IN ($marks)";
         return $this->executeCount($sql, array_merge([$by, $reason, $orderId], $fromStatuses)) === 1;
     }
@@ -266,20 +266,20 @@ class OrderClass extends Database
     // Puts a cancelled order back when its refund couldn't be started
     public function undoCancellation($orderId, $previousStatus)
     {
-        $sql = "UPDATE orders SET order_status = ?, cancelled_at = NULL, cancelled_by = NULL, cancel_reason = NULL
+        $sql = "UPDATE cb_orders SET order_status = ?, cancelled_at = NULL, cancelled_by = NULL, cancel_reason = NULL
                 WHERE order_id = ? AND order_status = 'Cancelled'";
         return $this->execute($sql, [$previousStatus, $orderId]);
     }
 
     public function recordRefund($orderId, $payId, $amount, $status, $paystackId = null)
     {
-        $sql = "INSERT INTO refunds (order_id, pay_id, amount, status, paystack_refund_id) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO cb_refunds (order_id, pay_id, amount, status, paystack_refund_id) VALUES (?, ?, ?, ?, ?)";
         return $this->execute($sql, [$orderId, $payId, $amount, $status, $paystackId]);
     }
 
     public function updateRefundStatus($refundId, $status)
     {
-        return $this->execute("UPDATE refunds SET status = ?, updated_at = NOW() WHERE refund_id = ?", [$status, $refundId]);
+        return $this->execute("UPDATE cb_refunds SET status = ?, updated_at = NOW() WHERE refund_id = ?", [$status, $refundId]);
     }
 
     // ---------- Admin dashboard (whole platform) ----------
@@ -293,23 +293,23 @@ class OrderClass extends Database
         $sql = "SELECT COUNT(DISTINCT o.order_id) AS orders,
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0) AS sales,
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0) AS commission
-                FROM orders o
-                JOIN orderdetails od ON od.order_id = o.order_id
-                JOIN products p ON od.product_id = p.product_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_orders o
+                JOIN cb_orderdetails od ON od.order_id = o.order_id
+                JOIN cb_products p ON od.product_id = p.product_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE o.order_status <> 'Cancelled'" . ($since ? " AND o.order_date >= ?" : "");
         return $this->fetchOne($sql, $since ? [$since] : []);
     }
 
     public function getDeliveryFees($since = null)
     {
-        $row = $this->fetchOne("SELECT COALESCE(SUM(delivery_fee), 0) AS fees FROM orders WHERE order_status <> 'Cancelled'" . ($since ? " AND order_date >= ?" : ""), $since ? [$since] : []);
+        $row = $this->fetchOne("SELECT COALESCE(SUM(delivery_fee), 0) AS fees FROM cb_orders WHERE order_status <> 'Cancelled'" . ($since ? " AND order_date >= ?" : ""), $since ? [$since] : []);
         return (float)$row['fees'];
     }
 
     public function countOrdersByStatus()
     {
-        return array_column($this->fetchAll("SELECT order_status, COUNT(*) AS total FROM orders GROUP BY order_status"), 'total', 'order_status');
+        return array_column($this->fetchAll("SELECT order_status, COUNT(*) AS total FROM cb_orders GROUP BY order_status"), 'total', 'order_status');
     }
 
     /**
@@ -318,18 +318,18 @@ class OrderClass extends Database
     public function getKitchenOverview($since)
     {
         $sql = "SELECT b.brand_id, b.brand_name, b.zone, b.is_active, b.commission_rate, b.paystack_subaccount,
-                       (SELECT COUNT(*) FROM customer c WHERE c.user_role = 4 AND c.brand_id = b.brand_id) AS logins,
-                       (SELECT COUNT(*) FROM products p WHERE p.product_brand = b.brand_id) AS meals,
-                       (SELECT COUNT(*) FROM products p WHERE p.product_brand = b.brand_id AND p.is_available = 0) AS sold_out,
-                       (SELECT COUNT(*) FROM orders o WHERE o.brand_id = b.brand_id AND o.order_date >= ? AND o.order_status <> 'Cancelled') AS orders,
-                       (SELECT COUNT(*) FROM orders o WHERE o.brand_id = b.brand_id AND o.order_status NOT IN ('Delivered', 'Cancelled')) AS active,
+                       (SELECT COUNT(*) FROM cb_customer c WHERE c.user_role = 4 AND c.brand_id = b.brand_id) AS logins,
+                       (SELECT COUNT(*) FROM cb_products p WHERE p.product_brand = b.brand_id) AS meals,
+                       (SELECT COUNT(*) FROM cb_products p WHERE p.product_brand = b.brand_id AND p.is_available = 0) AS sold_out,
+                       (SELECT COUNT(*) FROM cb_orders o WHERE o.brand_id = b.brand_id AND o.order_date >= ? AND o.order_status <> 'Cancelled') AS orders,
+                       (SELECT COUNT(*) FROM cb_orders o WHERE o.brand_id = b.brand_id AND o.order_status NOT IN ('Delivered', 'Cancelled')) AS active,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0)
-                        FROM orderdetails od JOIN orders o ON od.order_id = o.order_id JOIN products p ON od.product_id = p.product_id
+                        FROM cb_orderdetails od JOIN cb_orders o ON od.order_id = o.order_id JOIN cb_products p ON od.product_id = p.product_id
                         WHERE p.product_brand = b.brand_id AND o.order_date >= ? AND o.order_status <> 'Cancelled') AS sales,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0)
-                        FROM orderdetails od JOIN orders o ON od.order_id = o.order_id JOIN products p ON od.product_id = p.product_id
+                        FROM cb_orderdetails od JOIN cb_orders o ON od.order_id = o.order_id JOIN cb_products p ON od.product_id = p.product_id
                         WHERE p.product_brand = b.brand_id AND o.order_date >= ? AND o.order_status <> 'Cancelled') AS commission
-                FROM brands b
+                FROM cb_brands b
                 ORDER BY sales DESC, b.brand_name ASC";
         return $this->fetchAll($sql, [$since, $since, $since]);
     }
@@ -338,7 +338,7 @@ class OrderClass extends Database
     public function getWaitingOrders($minutes)
     {
         $sql = "SELECT o.order_id, o.invoice_no, o.order_date, b.brand_name
-                FROM orders o LEFT JOIN brands b ON o.brand_id = b.brand_id
+                FROM cb_orders o LEFT JOIN cb_brands b ON o.brand_id = b.brand_id
                 WHERE o.order_status = 'Placed' AND o.order_date < (NOW() - INTERVAL " . intval($minutes) . " MINUTE)
                 ORDER BY o.order_date ASC";
         return $this->fetchAll($sql);
@@ -357,10 +357,10 @@ class OrderClass extends Database
                        o.order_status = 'Delivered' AS delivered,
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0) AS sales,
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0) AS commission
-                FROM orders o
-                JOIN orderdetails od ON od.order_id = o.order_id
-                JOIN products p ON od.product_id = p.product_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_orders o
+                JOIN cb_orderdetails od ON od.order_id = o.order_id
+                JOIN cb_products p ON od.product_id = p.product_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE o.order_date >= ? AND o.order_date < ? AND o.order_status <> 'Cancelled'
                 GROUP BY p.product_brand, delivered";
         return $this->fetchAll($sql, [$from, $to]);
@@ -374,7 +374,7 @@ class OrderClass extends Database
     {
         $sql = "SELECT o.brand_id, o.order_status = 'Delivered' AS delivered,
                        COUNT(*) AS orders, COALESCE(SUM(o.delivery_fee), 0) AS delivery
-                FROM orders o
+                FROM cb_orders o
                 WHERE o.order_date >= ? AND o.order_date < ? AND o.order_status <> 'Cancelled'
                 GROUP BY o.brand_id, delivered";
         return $this->fetchAll($sql, [$from, $to]);
@@ -388,17 +388,17 @@ class OrderClass extends Database
     {
         $sql = "SELECT o.order_id, o.invoice_no, o.order_date, o.order_status, b.brand_name, c.customer_name,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
-                        FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                        FROM cb_orderdetails od JOIN cb_products pr ON od.product_id = pr.product_id
                         WHERE od.order_id = o.order_id) + o.delivery_fee AS expected,
-                       (SELECT SUM(pay.amt) FROM payment pay WHERE pay.order_id = o.order_id) AS paid,
-                       (SELECT COUNT(*) FROM payment pay WHERE pay.order_id = o.order_id) AS payments,
-                       (SELECT GROUP_CONCAT(pay.transaction_reference SEPARATOR ', ') FROM payment pay WHERE pay.order_id = o.order_id) AS refs,
-                       (SELECT COUNT(*) FROM payment pay WHERE pay.order_id = o.order_id AND pay.verified_at IS NOT NULL) AS verified,
+                       (SELECT SUM(pay.amt) FROM cb_payment pay WHERE pay.order_id = o.order_id) AS paid,
+                       (SELECT COUNT(*) FROM cb_payment pay WHERE pay.order_id = o.order_id) AS payments,
+                       (SELECT GROUP_CONCAT(pay.transaction_reference SEPARATOR ', ') FROM cb_payment pay WHERE pay.order_id = o.order_id) AS refs,
+                       (SELECT COUNT(*) FROM cb_payment pay WHERE pay.order_id = o.order_id AND pay.verified_at IS NOT NULL) AS verified,
                        r.amount AS refunded, r.status AS refund_status
-                FROM orders o
-                LEFT JOIN refunds r ON r.order_id = o.order_id
-                JOIN customer c ON o.customer_id = c.customer_id
-                LEFT JOIN brands b ON o.brand_id = b.brand_id
+                FROM cb_orders o
+                LEFT JOIN cb_refunds r ON r.order_id = o.order_id
+                JOIN cb_customer c ON o.customer_id = c.customer_id
+                LEFT JOIN cb_brands b ON o.brand_id = b.brand_id
                 WHERE o.order_date >= ? AND o.order_date < ?
                 ORDER BY o.order_date DESC";
         return $this->fetchAll($sql, [$from, $to]);
@@ -420,12 +420,12 @@ class OrderClass extends Database
         // Totals count only this kitchen's meals: orders from before the one-kitchen rule can mix kitchens
         $sql = "SELECT o.*, c.customer_name, c.customer_contact,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, pr.product_price)), 0)
-                        FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                        FROM cb_orderdetails od JOIN cb_products pr ON od.product_id = pr.product_id
                         WHERE od.order_id = o.order_id AND pr.product_brand = o.brand_id) AS items_total,
-                       (SELECT COALESCE(SUM(od.qty), 0) FROM orderdetails od JOIN products pr ON od.product_id = pr.product_id
+                       (SELECT COALESCE(SUM(od.qty), 0) FROM cb_orderdetails od JOIN cb_products pr ON od.product_id = pr.product_id
                         WHERE od.order_id = o.order_id AND pr.product_brand = o.brand_id) AS item_count
-                FROM orders o
-                JOIN customer c ON o.customer_id = c.customer_id
+                FROM cb_orders o
+                JOIN cb_customer c ON o.customer_id = c.customer_id
                 WHERE $where
                 ORDER BY o.order_id DESC";
         return $this->fetchAll($sql, [$brandId]);
@@ -441,20 +441,20 @@ class OrderClass extends Database
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0) AS sales,
                        COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price) * " . self::LINE_RATE . "), 0) AS commission,
                        COALESCE(SUM(od.qty), 0) AS meals
-                FROM orders o
-                JOIN orderdetails od ON od.order_id = o.order_id
-                JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_orders o
+                JOIN cb_orderdetails od ON od.order_id = o.order_id
+                JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE o.brand_id = ? AND o.order_status <> 'Cancelled'" . ($since ? " AND o.order_date >= ?" : "");
         $row = $this->fetchOne($sql, $params);
-        $fees = $this->fetchOne("SELECT COALESCE(SUM(delivery_fee), 0) AS fees FROM orders WHERE brand_id = ? AND order_status <> 'Cancelled'" . ($since ? " AND order_date >= ?" : ""), $params);
+        $fees = $this->fetchOne("SELECT COALESCE(SUM(delivery_fee), 0) AS fees FROM cb_orders WHERE brand_id = ? AND order_status <> 'Cancelled'" . ($since ? " AND order_date >= ?" : ""), $params);
         $row['delivery'] = (float)$fees['fees'];
         return $row;
     }
 
     public function countKitchenOrdersByStatus($brandId)
     {
-        $rows = $this->fetchAll("SELECT order_status, COUNT(*) AS total FROM orders WHERE brand_id = ? GROUP BY order_status", [$brandId]);
+        $rows = $this->fetchAll("SELECT order_status, COUNT(*) AS total FROM cb_orders WHERE brand_id = ? GROUP BY order_status", [$brandId]);
         return array_column($rows, 'total', 'order_status');
     }
 
@@ -463,9 +463,9 @@ class OrderClass extends Database
     {
         $sql = "SELECT p.product_id, p.product_title, p.product_image, SUM(od.qty) AS meals,
                        SUM(od.qty * COALESCE(od.price, p.product_price)) AS sales
-                FROM orderdetails od
-                JOIN orders o ON od.order_id = o.order_id
-                JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                FROM cb_orderdetails od
+                JOIN cb_orders o ON od.order_id = o.order_id
+                JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
                 WHERE o.brand_id = ? AND o.order_status <> 'Cancelled'" . ($since ? " AND o.order_date >= ?" : "") . "
                 GROUP BY p.product_id, p.product_title, p.product_image
                 ORDER BY meals DESC, sales DESC
@@ -483,13 +483,13 @@ class OrderClass extends Database
         $sql = "SELECT o.order_id, o.order_date, o.order_status, o.delivery_fee, o.cancel_reason,
                        COALESCE(o.commission_rate, b.commission_rate) AS rate,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0)
-                        FROM orderdetails od JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                        FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
                         WHERE od.order_id = o.order_id) AS items,
                        (SELECT COALESCE(SUM(od.qty), 0)
-                        FROM orderdetails od JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                        FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
                         WHERE od.order_id = o.order_id) AS meals
-                FROM orders o
-                JOIN brands b ON b.brand_id = o.brand_id
+                FROM cb_orders o
+                JOIN cb_brands b ON b.brand_id = o.brand_id
                 WHERE o.brand_id = ? AND o.order_date >= ?
                 ORDER BY o.order_date ASC";
         return $this->fetchAll($sql, [$brandId, $since]);
@@ -499,10 +499,10 @@ class OrderClass extends Database
     public function getKitchenCategorySplit($brandId, $since)
     {
         $sql = "SELECT c.cat_name, SUM(od.qty) AS meals, SUM(od.qty * COALESCE(od.price, p.product_price)) AS sales
-                FROM orders o
-                JOIN orderdetails od ON od.order_id = o.order_id
-                JOIN products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
-                JOIN categories c ON c.cat_id = p.product_cat
+                FROM cb_orders o
+                JOIN cb_orderdetails od ON od.order_id = o.order_id
+                JOIN cb_products p ON od.product_id = p.product_id AND p.product_brand = o.brand_id
+                JOIN cb_categories c ON c.cat_id = p.product_cat
                 WHERE o.brand_id = ? AND o.order_status <> 'Cancelled' AND o.order_date >= ?
                 GROUP BY c.cat_id, c.cat_name
                 ORDER BY meals DESC, sales DESC";
@@ -511,13 +511,13 @@ class OrderClass extends Database
 
     public function addTrackingUpdate($orderId, $status, $message)
     {
-        $sql = "INSERT INTO order_tracking (order_id, status, status_message) VALUES (?, ?, ?)";
+        $sql = "INSERT INTO cb_order_tracking (order_id, status, status_message) VALUES (?, ?, ?)";
         return $this->execute($sql, [$orderId, $status, $message]);
     }
 
     public function getTrackingHistory($orderId)
     {
-        $sql = "SELECT * FROM order_tracking WHERE order_id = ? ORDER BY tracking_id ASC";
+        $sql = "SELECT * FROM cb_order_tracking WHERE order_id = ? ORDER BY tracking_id ASC";
         return $this->fetchAll($sql, [$orderId]);
     }
 
@@ -526,20 +526,20 @@ class OrderClass extends Database
     {
         $sql = "SELECT o.order_id, o.invoice_no, o.order_date, o.order_status, o.delivery_fee,
                        (SELECT COALESCE(SUM(od.qty * COALESCE(od.price, p.product_price)), 0)
-                        FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                        FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id
                         WHERE od.order_id = o.order_id) AS items_total,
-                       (SELECT COUNT(*) FROM orderdetails od WHERE od.order_id = o.order_id) AS item_count,
-                       (SELECT p.product_title FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                       (SELECT COUNT(*) FROM cb_orderdetails od WHERE od.order_id = o.order_id) AS item_count,
+                       (SELECT p.product_title FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id
                         WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_title,
-                       (SELECT p.product_image FROM orderdetails od JOIN products p ON od.product_id = p.product_id
+                       (SELECT p.product_image FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id
                         WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_image,
-                       (SELECT c.cat_icon FROM orderdetails od JOIN products p ON od.product_id = p.product_id
-                        JOIN categories c ON p.product_cat = c.cat_id
+                       (SELECT c.cat_icon FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id
+                        JOIN cb_categories c ON p.product_cat = c.cat_id
                         WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS cat_icon,
-                       (SELECT b.brand_name FROM orderdetails od JOIN products p ON od.product_id = p.product_id
-                        JOIN brands b ON p.product_brand = b.brand_id
+                       (SELECT b.brand_name FROM cb_orderdetails od JOIN cb_products p ON od.product_id = p.product_id
+                        JOIN cb_brands b ON p.product_brand = b.brand_id
                         WHERE od.order_id = o.order_id ORDER BY p.product_id LIMIT 1) AS first_kitchen
-                FROM orders o
+                FROM cb_orders o
                 WHERE o.customer_id = ?
                 ORDER BY o.order_id DESC
                 LIMIT " . intval($limit);
@@ -555,7 +555,7 @@ class OrderClass extends Database
     public function getKitchenNewOrderState($brandId)
     {
         $row = $this->fetchOne("SELECT COALESCE(SUM(order_status = 'Placed'), 0) AS placed, COALESCE(MAX(order_id), 0) AS latest
-                                FROM orders WHERE brand_id = ?", [$brandId]);
+                                FROM cb_orders WHERE brand_id = ?", [$brandId]);
         return ['placed' => (int)$row['placed'], 'latest' => (int)$row['latest']];
     }
 
@@ -563,12 +563,12 @@ class OrderClass extends Database
     {
         $refunded = $this->fetchOne(
             "SELECT COALESCE(SUM(p.kitchen_share), 0) AS amount
-             FROM refunds r JOIN payment p ON p.pay_id = r.pay_id JOIN orders o ON o.order_id = r.order_id
+             FROM cb_refunds r JOIN cb_payment p ON p.pay_id = r.pay_id JOIN cb_orders o ON o.order_id = r.order_id
              WHERE o.brand_id = ? AND p.subaccount_code IS NOT NULL AND r.status NOT IN ('failed', 'not_needed')", [$brandId]);
         $recovered = $this->fetchOne(
             "SELECT COALESCE(SUM(p.refund_recovery), 0) AS amount
-             FROM payment p JOIN orders o ON o.order_id = p.order_id
-             WHERE o.brand_id = ? AND NOT EXISTS (SELECT 1 FROM refunds r WHERE r.order_id = o.order_id AND r.status NOT IN ('failed', 'not_needed'))", [$brandId]);
+             FROM cb_payment p JOIN cb_orders o ON o.order_id = p.order_id
+             WHERE o.brand_id = ? AND NOT EXISTS (SELECT 1 FROM cb_refunds r WHERE r.order_id = o.order_id AND r.status NOT IN ('failed', 'not_needed'))", [$brandId]);
         return ['refunded' => round((float)$refunded['amount'], 2), 'recovered' => round((float)$recovered['amount'], 2)];
     }
 }

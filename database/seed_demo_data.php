@@ -25,18 +25,18 @@ $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 mt_srand(20261121); // the same demo history every run
 
 function remove_demo(PDO $db) {
-    $ids = "SELECT customer_id FROM customer WHERE customer_email LIKE '%" . DEMO_DOMAIN . "'";
-    $orders = "SELECT order_id FROM orders WHERE customer_id IN ($ids)";
-    $db->exec("DELETE FROM support_replies WHERE message_id IN (SELECT message_id FROM support_messages WHERE customer_id IN ($ids))");
-    $db->exec("DELETE FROM support_messages WHERE customer_id IN ($ids)");
-    $db->exec("DELETE FROM refunds WHERE order_id IN ($orders)");
-    $db->exec("DELETE FROM order_tracking WHERE order_id IN ($orders)");
-    $db->exec("DELETE FROM payment WHERE order_id IN ($orders)");
-    $db->exec("DELETE FROM orderdetails WHERE order_id IN ($orders)");
-    $db->exec("DELETE FROM favorites WHERE customer_id IN ($ids)");
-    $db->exec("DELETE FROM cart WHERE c_id IN ($ids)");
-    $db->exec("DELETE FROM orders WHERE customer_id IN ($ids)");
-    $n = $db->exec("DELETE FROM customer WHERE customer_email LIKE '%" . DEMO_DOMAIN . "'");
+    $ids = "SELECT customer_id FROM cb_customer WHERE customer_email LIKE '%" . DEMO_DOMAIN . "'";
+    $orders = "SELECT order_id FROM cb_orders WHERE customer_id IN ($ids)";
+    $db->exec("DELETE FROM cb_support_replies WHERE message_id IN (SELECT message_id FROM cb_support_messages WHERE customer_id IN ($ids))");
+    $db->exec("DELETE FROM cb_support_messages WHERE customer_id IN ($ids)");
+    $db->exec("DELETE FROM cb_refunds WHERE order_id IN ($orders)");
+    $db->exec("DELETE FROM cb_order_tracking WHERE order_id IN ($orders)");
+    $db->exec("DELETE FROM cb_payment WHERE order_id IN ($orders)");
+    $db->exec("DELETE FROM cb_orderdetails WHERE order_id IN ($orders)");
+    $db->exec("DELETE FROM cb_favorites WHERE customer_id IN ($ids)");
+    $db->exec("DELETE FROM cb_cart WHERE c_id IN ($ids)");
+    $db->exec("DELETE FROM cb_orders WHERE customer_id IN ($ids)");
+    $n = $db->exec("DELETE FROM cb_customer WHERE customer_email LIKE '%" . DEMO_DOMAIN . "'");
     return $n;
 }
 
@@ -60,10 +60,10 @@ if (in_array('--remove', $argv, true)) {
 }
 
 // ---------- Kitchens and their meals ----------
-$kitchens = $db->query("SELECT brand_id, brand_name, zone, commission_rate FROM brands")->fetchAll(PDO::FETCH_ASSOC);
+$kitchens = $db->query("SELECT brand_id, brand_name, zone, commission_rate FROM cb_brands")->fetchAll(PDO::FETCH_ASSOC);
 $mealsByKitchen = [];
 foreach ($db->query("SELECT p.product_id, p.product_brand, p.product_price, p.prep_time_minutes, c.cat_name
-                     FROM products p JOIN categories c ON c.cat_id = p.product_cat")->fetchAll(PDO::FETCH_ASSOC) as $m) {
+                     FROM cb_products p JOIN cb_categories c ON c.cat_id = p.product_cat")->fetchAll(PDO::FETCH_ASSOC) as $m) {
     $mealsByKitchen[(int)$m['product_brand']][] = $m;
 }
 // How busy each kitchen is (bigger campus cafeterias get more orders); kitchens without meals get none
@@ -89,7 +89,7 @@ $last = ['Mensah', 'Owusu', 'Boateng', 'Asante', 'Osei', 'Agyeman', 'Appiah', 'D
          'Agbeko', 'Dogbe', 'Kpodo', 'Amedzro', 'Tsikata'];
 $hostels = array_keys(CustomerController::HOSTELS);
 $demoPass = password_hash('Demo123!', PASSWORD_DEFAULT);
-$insCustomer = $db->prepare("INSERT INTO customer (customer_name, customer_email, customer_pass, customer_contact, campus_hostel, user_role)
+$insCustomer = $db->prepare("INSERT INTO cb_customer (customer_name, customer_email, customer_pass, customer_contact, campus_hostel, user_role)
                              VALUES (?, ?, ?, ?, ?, 2)");
 $customers = [];
 for ($i = 1; $i <= CUSTOMERS; $i++) {
@@ -102,15 +102,15 @@ for ($i = 1; $i <= CUSTOMERS; $i++) {
 $customerWeights = array_map(function ($c) { return $c['weight']; }, $customers);
 
 // ---------- Orders ----------
-$insOrder = $db->prepare("INSERT INTO orders (customer_id, brand_id, invoice_no, order_date, order_status, delivery_zone, delivery_fee,
+$insOrder = $db->prepare("INSERT INTO cb_orders (customer_id, brand_id, invoice_no, order_date, order_status, delivery_zone, delivery_fee,
                                              drop_location, special_instructions, commission_rate, cancelled_at, cancelled_by, cancel_reason)
                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$insLine = $db->prepare("INSERT INTO orderdetails (order_id, product_id, qty, price, notes) VALUES (?, ?, ?, ?, ?)");
-$insPay = $db->prepare("INSERT INTO payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, payment_date, verified_at,
+$insLine = $db->prepare("INSERT INTO cb_orderdetails (order_id, product_id, qty, price, notes) VALUES (?, ?, ?, ?, ?)");
+$insPay = $db->prepare("INSERT INTO cb_payment (amt, customer_id, order_id, currency, payment_mode, transaction_reference, payment_date, verified_at,
                                             kitchen_share, campusbite_share)
                         VALUES (?, ?, ?, 'GHS', ?, ?, ?, ?, ?, ?)");
-$insTrack = $db->prepare("INSERT INTO order_tracking (order_id, status, status_message, updated_at) VALUES (?, ?, ?, ?)");
-$insRefund = $db->prepare("INSERT INTO refunds (order_id, pay_id, amount, status, created_at) VALUES (?, ?, ?, 'not_needed', ?)");
+$insTrack = $db->prepare("INSERT INTO cb_order_tracking (order_id, status, status_message, updated_at) VALUES (?, ?, ?, ?)");
+$insRefund = $db->prepare("INSERT INTO cb_refunds (order_id, pay_id, amount, status, created_at) VALUES (?, ?, ?, 'not_needed', ?)");
 
 $hourWeights = [7 => 3, 8 => 5, 9 => 4, 10 => 4, 11 => 9, 12 => 16, 13 => 15, 14 => 8, 15 => 4, 16 => 5, 17 => 8, 18 => 12, 19 => 14, 20 => 11, 21 => 6, 22 => 3];
 $payModes = ['Paystack - MTN MoMo' => 60, 'Paystack - Telecel Cash' => 15, 'Paystack - Card' => 25];
@@ -119,7 +119,7 @@ $reasons = ['customer' => ['Ordered by mistake', 'Changed my mind', 'Ordered fro
             'kitchen' => ['Ran out of this meal', 'Kitchen closing early today', 'Too many orders right now']];
 $stepMessages = ['Placed' => 'Order placed successfully and received by kitchen.', 'Preparing' => 'The kitchen is preparing your meal.',
                  'Ready' => 'Your meal is packed and ready to go.', 'In Transit' => 'Your meal is on its way.', 'Delivered' => 'Delivered. Enjoy your meal!'];
-$usedInvoices = array_flip($db->query("SELECT invoice_no FROM orders")->fetchAll(PDO::FETCH_COLUMN));
+$usedInvoices = array_flip($db->query("SELECT invoice_no FROM cb_orders")->fetchAll(PDO::FETCH_COLUMN));
 $now = time();
 $fees = ProductController::DELIVERY_FEES;
 $orderCount = 0;
@@ -226,8 +226,8 @@ for ($back = DAYS - 1; $back >= 0; $back--) {
 }
 
 // ---------- A few customer messages, some still waiting for the kitchen ----------
-$insMsg = $db->prepare("INSERT INTO support_messages (customer_id, order_id, brand_id, topic, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
-$recent = $db->query("SELECT o.order_id, o.customer_id, o.brand_id, o.order_date FROM orders o JOIN customer c ON c.customer_id = o.customer_id
+$insMsg = $db->prepare("INSERT INTO cb_support_messages (customer_id, order_id, brand_id, topic, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+$recent = $db->query("SELECT o.order_id, o.customer_id, o.brand_id, o.order_date FROM cb_orders o JOIN cb_customer c ON c.customer_id = o.customer_id
                       WHERE c.customer_email LIKE '%" . DEMO_DOMAIN . "' AND o.order_status = 'Delivered' ORDER BY o.order_date DESC LIMIT 40")->fetchAll(PDO::FETCH_ASSOC);
 $messages = [
     ['Order issue', 'My order arrived without the drink I paid for. Can you check?', 'Open'],
