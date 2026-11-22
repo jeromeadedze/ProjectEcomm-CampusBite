@@ -8,9 +8,17 @@
 
 define("MAIL_MODE", "log");
 
-// The site's public address with no trailing slash, used for links inside emails, e.g. "https://campusbite.example.com"
-// or "http://localhost:8000". Required in smtp mode, so a forged Host header can't change where reset links point.
-define("APP_URL", "http://localhost:8000");
+// Automatically detects whether running locally or on the live Ashesi CS server.
+// No trailing slash. Links inside emails (order receipts, password resets, etc.) use this.
+$__host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$__is_local = preg_match('/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/', $__host);
+
+if ($__is_local) {
+    define("APP_URL", "http://localhost:8000");
+} else {
+    // Ashesi CS server (Linux is case-sensitive: ensure casing matches the folder on the server)
+    define("APP_URL", "http://169.239.251.102:442/~jerome.adedze/e-commerce-class/CampusBite");
+}
 
 define("MAIL_FROM", "no-reply@example.com");
 define("MAIL_FROM_NAME", "CampusBite");

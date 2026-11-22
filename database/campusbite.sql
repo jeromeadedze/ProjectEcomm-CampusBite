@@ -331,11 +331,16 @@ INSERT INTO `cb_products` (`product_id`, `product_cat`, `product_brand`, `produc
 
 
 -- Demo accounts, so a fresh import can be signed into straight away (passwords are in README.md: demo only, change
--- or delete these on any real server). The kitchen login runs Munchees Grills. New sign-ups are customers (role 2).
+-- or delete these on any real server). Admin, staff, and kitchen admin accounts for all six kitchens. New sign-ups are customers (role 2).
 INSERT INTO `cb_customer` (`customer_id`, `customer_name`, `customer_email`, `customer_pass`, `customer_contact`, `user_role`, `brand_id`, `kitchen_role`) VALUES
 (1, 'CampusBite Admin', 'admin@campusbite.com', '$2y$12$4n3JILZhgVDkN34KVB90huBwquGjeUQk5Z8e3mFYGJhtKVp.qoe6i', '0241000001', 1, NULL, NULL),
 (2, 'Munchees Kitchen', 'kitchen@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002003', 4, 3, 'admin'),
-(3, 'Munchees Staff', 'staff@campusbite.com', '$2y$10$pljQtJ7HI79D60r/zk5hEuC1DgYDmFC6PMn7YRe9JuoT5x2TKX6ES', '0241002013', 4, 3, 'staff');
+(3, 'Munchees Staff', 'staff@campusbite.com', '$2y$10$pljQtJ7HI79D60r/zk5hEuC1DgYDmFC6PMn7YRe9JuoT5x2TKX6ES', '0241002013', 4, 3, 'staff'),
+(4, 'Hallmark Kitchen', 'hallmark@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002001', 4, 1, 'admin'),
+(5, 'Akonnor Kitchen', 'akonnor@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002002', 4, 2, 'admin'),
+(6, 'Peckish Kitchen', 'peckish@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002004', 4, 4, 'admin'),
+(7, 'Eat Healthy Kitchen', 'eathealthy@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002005', 4, 5, 'admin'),
+(8, 'Hi5 Kitchen', 'hi5@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002006', 4, 6, 'admin');
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;

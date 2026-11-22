@@ -76,11 +76,17 @@ A fresh import has six kitchens and 39 meals across nine categories: Rice & Joll
 
 | Role | Email | Password | Notes |
 |---|---|---|---|
-| Super admin | `admin@campusbite.com` | `Admin123!` | Opens the admin dashboard |
-| Kitchen staff | `kitchen@campusbite.com` | `Kitchen123!` | Linked to Munchees Grills (`brand_id` 3) |
+| Super admin | `admin@campusbite.com` | `Admin123!` | Platform Super Admin (money, users, support) |
+| Munchees Kitchen Admin | `kitchen@campusbite.com` | `Kitchen123!` | Munchees Grills (`brand_id` 3) owner |
+| Munchees Kitchen Staff | `staff@campusbite.com` | `Kitchen123!` | Munchees Grills (`brand_id` 3) shift staff |
+| Hallmark Kitchen Admin | `hallmark@campusbite.com` | `Kitchen123!` | Hallmark Cafeteria (`brand_id` 1) owner |
+| Akonnor Kitchen Admin | `akonnor@campusbite.com` | `Kitchen123!` | Akonnor Cafeteria (`brand_id` 2) owner |
+| Peckish Kitchen Admin | `peckish@campusbite.com` | `Kitchen123!` | Peckish Berekuso (`brand_id` 4) owner |
+| Eat Healthy Kitchen Admin | `eathealthy@campusbite.com` | `Kitchen123!` | Eat Healthy Spot (`brand_id` 5) owner |
+| Hi5 Kitchen Admin | `hi5@campusbite.com` | `Kitchen123!` | Hi5 Lounge & Kitchen (`brand_id` 6) owner |
 | Customer | Sign up on the site | Your choice | Every new account is a customer |
 
-`database/campusbite.sql` creates both staff accounts, so they work straight after a fresh import. They are for local testing only: **change their passwords or delete them on any real server.** An existing database won't get them from a migration. To add them there, sign up on the site and then:
+`database/campusbite.sql` creates all demo accounts, so they work straight after a fresh import. They are for testing only: **change their passwords or delete them on any real server.** An existing database can add them using `database/migrations/2026-12-01_all_kitchen_demo_accounts.sql`.
 
 ```sql
 UPDATE cb_customer SET user_role = 1 WHERE customer_email = 'admin@campusbite.com';
