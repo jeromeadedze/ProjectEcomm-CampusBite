@@ -23,11 +23,11 @@ class CartClass extends Database
     {
         [$where, $params] = $this->owner($token, $c_id);
         $sql = "SELECT c.*, p.product_title, p.product_price, p.product_image, p.is_available, p.product_brand,
-                       (SELECT cat_icon FROM categories WHERE cat_id = p.product_cat) AS cat_icon,
+                       (SELECT cat_icon FROM cb_categories WHERE cat_id = p.product_cat) AS cat_icon,
                        b.brand_name, b.zone, b.is_active AS brand_active
-                FROM cart c
-                JOIN products p ON c.p_id = p.product_id
-                JOIN brands b ON p.product_brand = b.brand_id
+                FROM cb_cart c
+                JOIN cb_products p ON c.p_id = p.product_id
+                JOIN cb_brands b ON p.product_brand = b.brand_id
                 WHERE $where";
         return $this->fetchAll($sql, $params);
     }
@@ -43,17 +43,17 @@ class CartClass extends Database
         if ($existing) {
             $newQty = min(self::MAX_QTY, (int)$existing['qty'] + $qty);
             [$where, $params] = $this->owner($token, $c_id);
-            $sql = "UPDATE cart c SET c.qty = ?, c.notes = COALESCE(?, c.notes) WHERE c.p_id = ? AND $where";
+            $sql = "UPDATE cb_cart c SET c.qty = ?, c.notes = COALESCE(?, c.notes) WHERE c.p_id = ? AND $where";
             return $this->execute($sql, array_merge([$newQty, $notes, $p_id], $params));
         }
-        $sql = "INSERT INTO cart (p_id, ip_add, c_id, qty, notes) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO cb_cart (p_id, ip_add, c_id, qty, notes) VALUES (?, ?, ?, ?, ?)";
         return $this->execute($sql, [$p_id, $token, $c_id, min(self::MAX_QTY, $qty), $notes]);
     }
 
     public function checkItemInCart($p_id, $token, $c_id = null)
     {
         [$where, $params] = $this->owner($token, $c_id);
-        return $this->fetchOne("SELECT * FROM cart c WHERE c.p_id = ? AND $where", array_merge([$p_id], $params));
+        return $this->fetchOne("SELECT * FROM cb_cart c WHERE c.p_id = ? AND $where", array_merge([$p_id], $params));
     }
 
     public function updateCartQty($p_id, $token, $qty, $c_id = null)
@@ -62,19 +62,19 @@ class CartClass extends Database
             return $this->removeFromCart($p_id, $token, $c_id);
         }
         [$where, $params] = $this->owner($token, $c_id);
-        return $this->execute("UPDATE cart c SET c.qty = ? WHERE c.p_id = ? AND $where", array_merge([$qty, $p_id], $params));
+        return $this->execute("UPDATE cb_cart c SET c.qty = ? WHERE c.p_id = ? AND $where", array_merge([$qty, $p_id], $params));
     }
 
     public function removeFromCart($p_id, $token, $c_id = null)
     {
         [$where, $params] = $this->owner($token, $c_id);
-        return $this->execute("DELETE c FROM cart c WHERE c.p_id = ? AND $where", array_merge([$p_id], $params));
+        return $this->execute("DELETE c FROM cb_cart c WHERE c.p_id = ? AND $where", array_merge([$p_id], $params));
     }
 
     public function clearCart($token, $c_id = null)
     {
         [$where, $params] = $this->owner($token, $c_id);
-        return $this->execute("DELETE c FROM cart c WHERE $where", $params);
+        return $this->execute("DELETE c FROM cb_cart c WHERE $where", $params);
     }
 
     /**

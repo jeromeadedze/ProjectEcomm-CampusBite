@@ -37,30 +37,46 @@ class Database
 
     public function fetchAll($sql, $params = [])
     {
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            die("<pre style='color:#b00;background:#fff;padding:16px;border:1px solid #ccc;font-family:monospace;font-size:13px;'>Database query failed:\n" . htmlspecialchars($e->getMessage()) . "\n\nQuery: " . htmlspecialchars($sql) . "</pre>");
+        }
     }
 
     public function fetchOne($sql, $params = [])
     {
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            die("<pre style='color:#b00;background:#fff;padding:16px;border:1px solid #ccc;font-family:monospace;font-size:13px;'>Database query failed:\n" . htmlspecialchars($e->getMessage()) . "\n\nQuery: " . htmlspecialchars($sql) . "</pre>");
+        }
     }
 
     public function execute($sql, $params = [])
     {
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute($params);
+        try {
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            die("<pre style='color:#b00;background:#fff;padding:16px;border:1px solid #ccc;font-family:monospace;font-size:13px;'>Database query failed:\n" . htmlspecialchars($e->getMessage()) . "\n\nQuery: " . htmlspecialchars($sql) . "</pre>");
+        }
     }
 
     // Runs a write and returns how many rows it changed (0 when a conditional UPDATE matched nothing)
     public function executeCount($sql, $params = [])
     {
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->rowCount();
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->rowCount();
+        } catch (PDOException $e) {
+            die("<pre style='color:#b00;background:#fff;padding:16px;border:1px solid #ccc;font-family:monospace;font-size:13px;'>Database query failed:\n" . htmlspecialchars($e->getMessage()) . "\n\nQuery: " . htmlspecialchars($sql) . "</pre>");
+        }
     }
 
     public function getLastInsertId()

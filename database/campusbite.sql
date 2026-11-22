@@ -11,24 +11,24 @@ SET NAMES utf8mb4;
 -- Customer and brands point at each other, so the drops and creates run with foreign key checks off
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS `support_replies`;
-DROP TABLE IF EXISTS `support_messages`;
-DROP TABLE IF EXISTS `favorites`;
-DROP TABLE IF EXISTS `order_tracking`;
-DROP TABLE IF EXISTS `refunds`;
-DROP TABLE IF EXISTS `payouts`;
-DROP TABLE IF EXISTS `password_resets`;
-DROP TABLE IF EXISTS `payment`;
-DROP TABLE IF EXISTS `orderdetails`;
-DROP TABLE IF EXISTS `orders`;
-DROP TABLE IF EXISTS `cart`;
-DROP TABLE IF EXISTS `products`;
-DROP TABLE IF EXISTS `brands`; -- Acts as Kitchens/Vendors (Hallmark, Akonnor, Munchees, Peckish, Eat Healthy, Hi5)
-DROP TABLE IF EXISTS `categories`; -- Food Categories (Rice & Bowls, Local Dishes, Grills & Fast Food, Drinks, Snacks, Healthy)
-DROP TABLE IF EXISTS `customer`;
+DROP TABLE IF EXISTS `cb_support_replies`;
+DROP TABLE IF EXISTS `cb_support_messages`;
+DROP TABLE IF EXISTS `cb_favorites`;
+DROP TABLE IF EXISTS `cb_order_tracking`;
+DROP TABLE IF EXISTS `cb_refunds`;
+DROP TABLE IF EXISTS `cb_payouts`;
+DROP TABLE IF EXISTS `cb_password_resets`;
+DROP TABLE IF EXISTS `cb_payment`;
+DROP TABLE IF EXISTS `cb_orderdetails`;
+DROP TABLE IF EXISTS `cb_orders`;
+DROP TABLE IF EXISTS `cb_cart`;
+DROP TABLE IF EXISTS `cb_products`;
+DROP TABLE IF EXISTS `cb_brands`; -- Acts as Kitchens/Vendors (Hallmark, Akonnor, Munchees, Peckish, Eat Healthy, Hi5)
+DROP TABLE IF EXISTS `cb_categories`; -- Food Categories (Rice & Bowls, Local Dishes, Grills & Fast Food, Drinks, Snacks, Healthy)
+DROP TABLE IF EXISTS `cb_customer`;
 
 -- ── 1. customer (Students, Faculty, Kitchen staff, Admins) ──────────
-CREATE TABLE `customer` (
+CREATE TABLE `cb_customer` (
   `customer_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_name` varchar(100) NOT NULL,
   `customer_email` varchar(100) NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE `customer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 2. brands / vendors (Kitchens & Food Spots) ─────────────────────
-CREATE TABLE `brands` (
+CREATE TABLE `cb_brands` (
   `brand_id` int(11) NOT NULL AUTO_INCREMENT,
   `brand_name` varchar(100) NOT NULL,
   `zone` enum('Zone A', 'Zone B') NOT NULL DEFAULT 'Zone A', -- Zone A: On-campus, Zone B: Berekuso corridor
@@ -69,10 +69,10 @@ CREATE TABLE `brands` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Kitchen accounts point at their kitchen (added here because brands is created after customer)
-ALTER TABLE `customer` ADD CONSTRAINT `customer_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`) ON DELETE SET NULL;
+ALTER TABLE `cb_customer` ADD CONSTRAINT `cb_customer_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `cb_brands` (`brand_id`) ON DELETE SET NULL;
 
 -- ── 3. categories (Meal types) ──────────────────────────────────────
-CREATE TABLE `categories` (
+CREATE TABLE `cb_categories` (
   `cat_id` int(11) NOT NULL AUTO_INCREMENT,
   `cat_name` varchar(100) NOT NULL,
   `cat_icon` varchar(50) DEFAULT 'bi-egg-fried',
@@ -80,7 +80,7 @@ CREATE TABLE `categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 4. products (Food Menu Items) ───────────────────────────────────
-CREATE TABLE `products` (
+CREATE TABLE `cb_products` (
   `product_id` int(11) NOT NULL AUTO_INCREMENT,
   `product_cat` int(11) NOT NULL,
   `product_brand` int(11) NOT NULL, -- references kitchen/vendor
@@ -94,12 +94,12 @@ CREATE TABLE `products` (
   PRIMARY KEY (`product_id`),
   KEY `product_cat` (`product_cat`),
   KEY `product_brand` (`product_brand`),
-  CONSTRAINT `products_cat_fk` FOREIGN KEY (`product_cat`) REFERENCES `categories` (`cat_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `products_brand_fk` FOREIGN KEY (`product_brand`) REFERENCES `brands` (`brand_id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `cb_products_cat_fk` FOREIGN KEY (`product_cat`) REFERENCES `cb_categories` (`cat_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `cb_products_brand_fk` FOREIGN KEY (`product_brand`) REFERENCES `cb_brands` (`brand_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 5. cart ────────────────────────────────────────────────────────
-CREATE TABLE `cart` (
+CREATE TABLE `cb_cart` (
   `p_id` int(11) NOT NULL,
   `ip_add` varchar(50) NOT NULL,
   `c_id` int(11) DEFAULT NULL,
@@ -107,12 +107,12 @@ CREATE TABLE `cart` (
   `notes` varchar(255) DEFAULT NULL,
   KEY `p_id` (`p_id`),
   KEY `c_id` (`c_id`),
-  CONSTRAINT `cart_p_fk` FOREIGN KEY (`p_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cart_c_fk` FOREIGN KEY (`c_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `cb_cart_p_fk` FOREIGN KEY (`p_id`) REFERENCES `cb_products` (`product_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `cb_cart_c_fk` FOREIGN KEY (`c_id`) REFERENCES `cb_customer` (`customer_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 6. orders ──────────────────────────────────────────────────────
-CREATE TABLE `orders` (
+CREATE TABLE `cb_orders` (
   `order_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_id` int(11) NOT NULL,
   `brand_id` int(11) DEFAULT NULL, -- the one kitchen this order is from
@@ -130,12 +130,12 @@ CREATE TABLE `orders` (
   PRIMARY KEY (`order_id`),
   KEY `customer_id` (`customer_id`),
   KEY `brand_id` (`brand_id`),
-  CONSTRAINT `orders_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`),
-  CONSTRAINT `orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`)
+  CONSTRAINT `cb_orders_brand_fk` FOREIGN KEY (`brand_id`) REFERENCES `cb_brands` (`brand_id`),
+  CONSTRAINT `cb_orders_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `cb_customer` (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 7. orderdetails ────────────────────────────────────────────────
-CREATE TABLE `orderdetails` (
+CREATE TABLE `cb_orderdetails` (
   `order_id` int(11) NOT NULL,
   `product_id` int(11) NOT NULL,
   `qty` int(11) NOT NULL,
@@ -143,12 +143,12 @@ CREATE TABLE `orderdetails` (
   `notes` varchar(255) DEFAULT NULL, -- customer's special request, copied from the cart
   KEY `order_id` (`order_id`),
   KEY `product_id` (`product_id`),
-  CONSTRAINT `orderdetails_order_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
-  CONSTRAINT `orderdetails_product_fk` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`)
+  CONSTRAINT `cb_orderdetails_order_fk` FOREIGN KEY (`order_id`) REFERENCES `cb_orders` (`order_id`) ON DELETE CASCADE,
+  CONSTRAINT `cb_orderdetails_product_fk` FOREIGN KEY (`product_id`) REFERENCES `cb_products` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 8. payment ─────────────────────────────────────────────────────
-CREATE TABLE `payment` (
+CREATE TABLE `cb_payment` (
   `pay_id` int(11) NOT NULL AUTO_INCREMENT,
   `amt` double NOT NULL,
   `customer_id` int(11) NOT NULL,
@@ -166,12 +166,12 @@ CREATE TABLE `payment` (
   UNIQUE KEY `transaction_reference` (`transaction_reference`),
   KEY `customer_id` (`customer_id`),
   KEY `order_id` (`order_id`),
-  CONSTRAINT `payment_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
-  CONSTRAINT `payment_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE
+  CONSTRAINT `cb_payment_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `cb_customer` (`customer_id`),
+  CONSTRAINT `cb_payment_o_fk` FOREIGN KEY (`order_id`) REFERENCES `cb_orders` (`order_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Refunds for cancelled orders (one per order, the full amount paid, through Paystack)
-CREATE TABLE `refunds` (
+CREATE TABLE `cb_refunds` (
   `refund_id` int(11) NOT NULL AUTO_INCREMENT,
   `order_id` int(11) NOT NULL,
   `pay_id` int(11) DEFAULT NULL,
@@ -183,12 +183,12 @@ CREATE TABLE `refunds` (
   PRIMARY KEY (`refund_id`),
   UNIQUE KEY `refund_order` (`order_id`),
   KEY `pay_id` (`pay_id`),
-  CONSTRAINT `refunds_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
-  CONSTRAINT `refunds_p_fk` FOREIGN KEY (`pay_id`) REFERENCES `payment` (`pay_id`) ON DELETE SET NULL
+  CONSTRAINT `cb_refunds_o_fk` FOREIGN KEY (`order_id`) REFERENCES `cb_orders` (`order_id`) ON DELETE CASCADE,
+  CONSTRAINT `cb_refunds_p_fk` FOREIGN KEY (`pay_id`) REFERENCES `cb_payment` (`pay_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Forgot-password links. Only a SHA-256 hash of each link's token is stored
-CREATE TABLE `password_resets` (
+CREATE TABLE `cb_password_resets` (
   `reset_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_id` int(11) NOT NULL,
   `token_hash` char(64) NOT NULL,
@@ -200,11 +200,11 @@ CREATE TABLE `password_resets` (
   UNIQUE KEY `token_hash` (`token_hash`),
   KEY `customer_id` (`customer_id`),
   KEY `request_ip` (`request_ip`, `created_at`),
-  CONSTRAINT `password_resets_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE
+  CONSTRAINT `cb_password_resets_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `cb_customer` (`customer_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 9. order_tracking (Live timeline tracking) ─────────────────────
-CREATE TABLE `order_tracking` (
+CREATE TABLE `cb_order_tracking` (
   `tracking_id` int(11) NOT NULL AUTO_INCREMENT,
   `order_id` int(11) NOT NULL,
   `status` varchar(50) NOT NULL,
@@ -212,22 +212,22 @@ CREATE TABLE `order_tracking` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`tracking_id`),
   KEY `order_id` (`order_id`),
-  CONSTRAINT `order_tracking_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE
+  CONSTRAINT `cb_order_tracking_fk` FOREIGN KEY (`order_id`) REFERENCES `cb_orders` (`order_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 10. favorites ───────────────────────────────────────────────────
-CREATE TABLE `favorites` (
+CREATE TABLE `cb_favorites` (
   `customer_id` int(11) NOT NULL,
   `product_id` int(11) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`customer_id`, `product_id`),
   KEY `product_id` (`product_id`),
-  CONSTRAINT `favorites_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE,
-  CONSTRAINT `favorites_p_fk` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+  CONSTRAINT `cb_favorites_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `cb_customer` (`customer_id`) ON DELETE CASCADE,
+  CONSTRAINT `cb_favorites_p_fk` FOREIGN KEY (`product_id`) REFERENCES `cb_products` (`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── 11. support_messages ────────────────────────────────────────────
-CREATE TABLE `support_messages` (
+CREATE TABLE `cb_support_messages` (
   `message_id` int(11) NOT NULL AUTO_INCREMENT,
   `customer_id` int(11) NOT NULL,
   `order_id` int(11) DEFAULT NULL,
@@ -240,13 +240,13 @@ CREATE TABLE `support_messages` (
   KEY `customer_id` (`customer_id`),
   KEY `order_id` (`order_id`),
   KEY `brand_id` (`brand_id`),
-  CONSTRAINT `support_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`) ON DELETE CASCADE,
-  CONSTRAINT `support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL,
-  CONSTRAINT `support_b_fk` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`) ON DELETE SET NULL
+  CONSTRAINT `cb_support_c_fk` FOREIGN KEY (`customer_id`) REFERENCES `cb_customer` (`customer_id`) ON DELETE CASCADE,
+  CONSTRAINT `cb_support_o_fk` FOREIGN KEY (`order_id`) REFERENCES `cb_orders` (`order_id`) ON DELETE SET NULL,
+  CONSTRAINT `cb_support_b_fk` FOREIGN KEY (`brand_id`) REFERENCES `cb_brands` (`brand_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Replies in a support conversation, from the customer, the kitchen or a CampusBite admin
-CREATE TABLE `support_replies` (
+CREATE TABLE `cb_support_replies` (
   `reply_id` int(11) NOT NULL AUTO_INCREMENT,
   `message_id` int(11) NOT NULL,
   `author_id` int(11) DEFAULT NULL,
@@ -256,15 +256,15 @@ CREATE TABLE `support_replies` (
   PRIMARY KEY (`reply_id`),
   KEY `message_id` (`message_id`),
   KEY `author_id` (`author_id`),
-  CONSTRAINT `support_replies_m_fk` FOREIGN KEY (`message_id`) REFERENCES `support_messages` (`message_id`) ON DELETE CASCADE,
-  CONSTRAINT `support_replies_a_fk` FOREIGN KEY (`author_id`) REFERENCES `customer` (`customer_id`) ON DELETE SET NULL
+  CONSTRAINT `cb_support_replies_m_fk` FOREIGN KEY (`message_id`) REFERENCES `cb_support_messages` (`message_id`) ON DELETE CASCADE,
+  CONSTRAINT `cb_support_replies_a_fk` FOREIGN KEY (`author_id`) REFERENCES `cb_customer` (`customer_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
 -- SEED DATA (Campus Vendors, Categories & Representative Meals)
 -- ============================================================
 
-INSERT INTO `categories` (`cat_id`, `cat_name`, `cat_icon`) VALUES
+INSERT INTO `cb_categories` (`cat_id`, `cat_name`, `cat_icon`) VALUES
 (1, 'Rice & Jollof Bowls', 'bi-egg-fried'),
 (2, 'Local Staples (Fufu & Banku)', 'bi-fire'),
 (3, 'Grills & Suya', 'bi-segmented-nav'),
@@ -275,7 +275,7 @@ INSERT INTO `categories` (`cat_id`, `cat_name`, `cat_icon`) VALUES
 (8, 'Desserts & Cakes', 'bi-cake2'),
 (9, 'Soft Drinks', 'bi-cup');
 
-INSERT INTO `brands` (`brand_id`, `brand_name`, `zone`, `location_desc`, `brand_phone`, `commission_rate`, `brand_image`) VALUES
+INSERT INTO `cb_brands` (`brand_id`, `brand_name`, `zone`, `location_desc`, `brand_phone`, `commission_rate`, `brand_image`) VALUES
 (1, 'Hallmark Cafeteria', 'Zone A', 'Ashesi Campus Ground Floor Court', '0241002001', 0.08, 'hallmark.jpg'),
 (2, 'Akonnor Cafeteria', 'Zone A', 'Akonnor Canteen Hub (Upper Floor)', '0241002002', 0.08, 'akonnor.jpg'),
 (3, 'Munchees Grills', 'Zone A', 'Student Center Pavilion', '0241002003', 0.10, 'munchees.jpg'),
@@ -283,7 +283,7 @@ INSERT INTO `brands` (`brand_id`, `brand_name`, `zone`, `location_desc`, `brand_
 (5, 'Eat Healthy Spot', 'Zone B', 'Off-Campus Valley View Road', '0241002005', 0.09, 'eathealthy.jpg'),
 (6, 'Hi5 Lounge & Kitchen', 'Zone B', 'Berekuso Main Street', '0241002006', 0.10, 'hi5.jpg');
 
-INSERT INTO `products` (`product_id`, `product_cat`, `product_brand`, `product_title`, `product_price`, `product_desc`, `product_image`, `product_keywords`, `is_available`, `prep_time_minutes`) VALUES
+INSERT INTO `cb_products` (`product_id`, `product_cat`, `product_brand`, `product_title`, `product_price`, `product_desc`, `product_image`, `product_keywords`, `is_available`, `prep_time_minutes`) VALUES
 (1, 1, 1, 'Hallmark Special Jollof + Grilled Chicken', 35.00, 'Smoky Ghana jollof rice served with seasoned crispy grilled chicken quarter, shito and fresh coleslaw.', 'jollof_chicken.jpg', 'jollof, chicken, hallmark, lunch, rice', 1, 15),
 (2, 1, 2, 'Akonnor Fried Rice + Spicy Gizzard', 32.00, 'Savory wok-tossed fried rice with diced garden veggies, pepper gizzard and chili sauce.', 'fried_rice.jpg', 'fried rice, gizzard, akonnor, lunch', 1, 15),
 (3, 7, 3, 'Munchees Beef Shawarma Wrap (Extra Cheese)', 30.00, 'Loaded double beef wrap with tahini-garlic cream sauce, melted cheddar, lettuce and french fries inside.', 'shawarma.jpg', 'shawarma, beef, munchees, snack, dinner', 1, 10),
@@ -327,7 +327,7 @@ INSERT INTO `products` (`product_id`, `product_cat`, `product_brand`, `product_t
 
 -- Demo accounts, so a fresh import can be signed into straight away (passwords are in README.md: demo only, change
 -- or delete these on any real server). The kitchen login runs Munchees Grills. New sign-ups are customers (role 2).
-INSERT INTO `customer` (`customer_id`, `customer_name`, `customer_email`, `customer_pass`, `customer_contact`, `user_role`, `brand_id`) VALUES
+INSERT INTO `cb_customer` (`customer_id`, `customer_name`, `customer_email`, `customer_pass`, `customer_contact`, `user_role`, `brand_id`) VALUES
 (1, 'CampusBite Admin', 'admin@campusbite.com', '$2y$12$4n3JILZhgVDkN34KVB90huBwquGjeUQk5Z8e3mFYGJhtKVp.qoe6i', '0241000001', 1, NULL),
 (2, 'Munchees Kitchen', 'kitchen@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002003', 4, 3);
 COMMIT;
