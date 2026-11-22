@@ -17,6 +17,7 @@ $roleCount = array_count_values(array_map(function ($c) { return (int)$c['user_r
 $openMessages = count(array_filter((new SupportController())->getAllMessages(), function ($m) { return $m['status'] === 'Open'; }));
 
 $pageHeading = 'CampusBite overview';
+$liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/../layout/header.php';
 
 $money = function ($amount) { return 'GH₵ ' . number_format($amount, 2); };

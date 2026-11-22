@@ -48,6 +48,7 @@ $stepIcons = ['Placed' => 'bi-receipt', 'Preparing' => 'bi-fire', 'Ready' => 'bi
 $next = OrderController::NEXT_STEP[$currentStatus] ?? null;
 
 $pageHeading = 'Order #' . $order['invoice_no'];
+$liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/layout/header.php';
 
 $mealTotal = 0;

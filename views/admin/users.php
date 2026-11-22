@@ -46,10 +46,10 @@ $staffRow = function ($account, $kitchenCell) use ($ROOT_DIR) { ?>
                     <input type="hidden" name="customer_id" value="<?php echo (int)$account['customer_id']; ?>">
                     <button type="submit" class="is-plain" aria-label="Reset <?php echo htmlspecialchars($account['customer_name']); ?>'s password">Reset password</button>
                 </form>
-                <form action="<?php echo $ROOT_DIR; ?>/actions/remove_kitchen_access_action.php" method="POST" data-confirm="Remove kitchen access for <?php echo htmlspecialchars($account['customer_name']); ?>? They can still sign in to order food, but can no longer open the kitchen portal.">
+                <form action="<?php echo $ROOT_DIR; ?>/actions/remove_kitchen_access_action.php" method="POST" data-confirm="Remove <?php echo htmlspecialchars($account['customer_name']); ?>'s kitchen login? It's deleted and they can't sign in any more. Replies they sent customers stay.">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="customer_id" value="<?php echo (int)$account['customer_id']; ?>">
-                    <button type="submit" aria-label="Remove kitchen access for <?php echo htmlspecialchars($account['customer_name']); ?>">Remove access</button>
+                    <button type="submit" aria-label="Remove <?php echo htmlspecialchars($account['customer_name']); ?>'s kitchen login">Remove</button>
                 </form>
             </div>
         </td>

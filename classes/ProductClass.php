@@ -63,7 +63,7 @@ class ProductClass extends Database
         return $this->execute("UPDATE cb_brands SET location_desc = ?, is_active = IF(admin_paused = 1, 0, ?), brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
     }
 
-    // Opening hours ('HH:MM', Ghana time), both null for no set hours (Sprint 32)
+    // Opening hours ('HH:MM', Ghana time), both null for no set hours (Sprint 33)
     public function setOpeningHours($id, $opens, $closes)
     {
         return $this->execute("UPDATE cb_brands SET opens_at = ?, closes_at = ? WHERE brand_id = ?", [$opens, $closes, $id]);

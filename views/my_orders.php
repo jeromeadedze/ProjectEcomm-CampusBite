@@ -13,6 +13,7 @@ require_once __DIR__ . '/../controllers/CartController.php';
 $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
 // "Order again" asks first when the basket already holds another kitchen's meals (a basket is one kitchen's)
 $basket = (new CartController())->basketKitchen(get_cart_token(), get_user_id());
+$liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/layout/header.php';
 ?>
 

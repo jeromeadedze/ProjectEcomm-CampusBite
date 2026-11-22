@@ -92,7 +92,7 @@ $cssVersion = function ($file) {
     <link rel="stylesheet" href="<?php echo $ROOT_DIR; ?>/css/admin.css?v=<?php echo $cssVersion('admin.css'); ?>">
 </head>
 <body>
-    <div class="cb<?php echo $showPanel ? ' has-panel' : ''; ?><?php echo $showBasket && $panelCount > 0 ? ' has-basket' : ''; ?>" id="cb-app" data-panel-signature="<?php echo $panelSignature; ?>" data-root="<?php echo htmlspecialchars($ROOT_DIR); ?>" data-shop-page="<?php echo $showBasket ? '1' : '0'; ?>">
+    <div class="cb<?php echo $showPanel ? ' has-panel' : ''; ?><?php echo $showBasket && $panelCount > 0 ? ' has-basket' : ''; ?>" id="cb-app" data-panel-signature="<?php echo $panelSignature; ?>" data-root="<?php echo htmlspecialchars($ROOT_DIR); ?>" data-shop-page="<?php echo $showBasket ? '1' : '0'; ?>" data-signed-in="<?php echo is_logged_in() ? '1' : '0'; ?>"<?php echo !empty($liveRefresh) ? ' data-live="5"' : ''; // pages that set $liveRefresh update themselves every 5 s (js/main.js) ?>>
         <?php if ($showPanel): ?>
         <script>
             // Keep the panel closed if the shopper closed it and the cart hasn't changed since

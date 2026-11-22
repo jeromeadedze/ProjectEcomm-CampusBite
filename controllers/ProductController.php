@@ -159,7 +159,7 @@ class ProductController
         return $this->productModel->updateBrandInfo($id, $location, $isActive, $phone);
     }
 
-    // ── Opening hours (Sprint 32) ────────────────────────────────────────────────────────────────────────
+    // ── Opening hours (Sprint 33) ────────────────────────────────────────────────────────────────────────
     // Kitchens' hours are Ghana time, whatever time zone the server's PHP is set to (XAMPP defaults to Berlin).
     const TIMEZONE = 'Africa/Accra';
 

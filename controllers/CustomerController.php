@@ -320,10 +320,23 @@ class CustomerController
         return $this->customerModel->getKitchenTeam($brandId);
     }
 
-    // Returns true if a staff login of this kitchen was removed
-    public function removeKitchenStaff($id, $brandId)
+    /**
+     * Removes a kitchen login: deletes it, or, in the rare case it has orders (which must keep their customer),
+     * only takes away its kitchen access. $brandId = the kitchen admin's kitchen (their staff only), or null for the
+     * CampusBite admin (any kitchen login). Returns 'deleted', 'access_removed' or null (not allowed / not found).
+     */
+    public function removeKitchenLogin($id, $brandId = null)
     {
-        return (int)$this->customerModel->removeKitchenStaff($id, $brandId) > 0;
+        $person = $this->customerModel->getCustomerById((int)$id);
+        if (!$person || (int)$person['user_role'] !== 4
+            || ($brandId !== null && ((int)$person['brand_id'] !== (int)$brandId || $person['kitchen_role'] !== 'staff'))) {
+            return null;
+        }
+        if ($this->customerModel->hasOrders((int)$id)) {
+            $done = $brandId !== null ? $this->customerModel->removeKitchenStaff((int)$id, (int)$brandId) : $this->customerModel->removeKitchenAccess((int)$id);
+            return $done ? 'access_removed' : null;
+        }
+        return $this->customerModel->deleteKitchenLogin((int)$id, $brandId, $brandId !== null) ? 'deleted' : null;
     }
 
     /**
