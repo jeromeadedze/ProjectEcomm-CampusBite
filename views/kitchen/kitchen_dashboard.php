@@ -38,6 +38,7 @@ $deliveredToday = $todayRow['orders'] - $activeToday; // today's orders that hav
 $sellingToday = $orderCtrl->getKitchenBestSellers($kitchenId, 5, date('Y-m-d 00:00:00'));
 
 $pageHeading = $kitchen['brand_name'];
+$liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/../layout/header.php';
 
 $plural = function ($n, $w) { return $n . ' ' . $w . ($n === 1 ? '' : 's'); };

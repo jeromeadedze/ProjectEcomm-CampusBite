@@ -14,20 +14,59 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 /**
- * Signed-in accounts are re-checked against the database on every request, so a deleted account is signed out
- * and removing someone's kitchen access (or moving them to another kitchen) takes effect immediately.
+ * A short fingerprint of the account's password hash. Saved in the session at sign-in; when the password changes
+ * (reset by an admin, "Forgot password?", or changed on another device) it no longer matches, and that session ends.
+ */
+function password_stamp($passwordHash) {
+    return substr(hash('sha256', 'cb-session:' . (string)$passwordHash), 0, 20);
+}
+
+// Path from the running script back to the site's root, e.g. "../.." for views/kitchen/x.php (core runs before ROOT_DIR is known)
+function path_to_root() {
+    $root = realpath(__DIR__ . '/..');
+    $script = realpath($_SERVER['SCRIPT_FILENAME'] ?? '') ?: '';
+    if ($root === false || $script === '' || strpos($script, $root) !== 0) {
+        return '..';
+    }
+    $depth = substr_count(trim(substr(dirname($script), strlen($root)), DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR)
+           + (dirname($script) === $root ? 0 : 1);
+    return $depth === 0 ? '.' : rtrim(str_repeat('../', $depth), '/');
+}
+
+/**
+ * Signed-in accounts are re-checked against the database on every request, so a deleted account is signed out,
+ * removing someone's kitchen access (or moving them to another kitchen) takes effect immediately, and a session
+ * whose password has since been changed or reset is signed out and sent to the sign-in page.
  */
 function sync_account_session() {
     if (empty($_SESSION['customer_id'])) {
         return;
     }
     require_once __DIR__ . '/db_class.php';
-    $row = (new Database())->fetchOne("SELECT user_role, brand_id, kitchen_role, must_change_password FROM cb_customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
+    $row = (new Database())->fetchOne("SELECT user_role, brand_id, kitchen_role, must_change_password, customer_pass FROM cb_customer WHERE customer_id = ?", [$_SESSION['customer_id']]);
     if (!$row) {
-        // The account was deleted while signed in
+        // The account was deleted while signed in (e.g. a kitchen admin removed this staff login)
         $_SESSION = [];
         session_regenerate_id(true);
+        set_form_message('login', 'This login was removed, so you were signed out.', 'error');
         return;
+    }
+    $stamp = password_stamp($row['customer_pass']);
+    if (empty($_SESSION['pass_stamp'])) {
+        $_SESSION['pass_stamp'] = $stamp; // signed in before this check existed
+    } elseif (!hash_equals($_SESSION['pass_stamp'], $stamp)) {
+        // The password was changed somewhere else: end this session
+        $_SESSION = [];
+        session_regenerate_id(true);
+        if (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false) {
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Your password was changed, so you were signed out. Reload the page to sign in again.']);
+            exit;
+        }
+        set_form_message('login', 'Your password was changed, so you were signed out. Sign in with the new password.', 'error');
+        header('Location: ' . path_to_root() . '/views/login.php');
+        exit;
     }
     $_SESSION['must_change_password'] = (int)$row['must_change_password'];
     if ((int)($_SESSION['user_role'] ?? 0) === 4) {
@@ -63,6 +102,8 @@ function log_in_customer($user) {
     // Kitchen accounts are the kitchen's admin (sales, staff, prices) or its staff (orders, messages)
     $_SESSION['kitchen_role'] = (int)$user['user_role'] === 4 ? (($user['kitchen_role'] ?? null) ?: 'admin') : null;
     $_SESSION['must_change_password'] = (int)($user['must_change_password'] ?? 0);
+    // So this session ends if the password is later changed or reset somewhere else
+    $_SESSION['pass_stamp'] = isset($user['customer_pass']) ? password_stamp($user['customer_pass']) : null;
 }
 
 /**

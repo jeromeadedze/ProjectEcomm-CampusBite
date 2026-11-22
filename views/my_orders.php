@@ -10,6 +10,7 @@ if (!can_order()) {
 
 require_once __DIR__ . '/../controllers/OrderController.php';
 $myOrders = (new OrderController())->getOrdersByCustomer(get_user_id());
+$liveRefresh = true; // orders and messages change on their own: the page updates itself every 5 s
 require_once __DIR__ . '/layout/header.php';
 ?>
 
