@@ -115,6 +115,49 @@ class OrderEmails
      * An order was cancelled: tells the customer (with the refund), and tells the kitchen when it wasn't the
      * one that cancelled, so it stops cooking.
      */
+    /**
+     * The refund for a cancelled order has finished: sent back to the customer (processed), or failed.
+     * Sent by OrderController::setRefundStatus() when Paystack's webhook or the order page sees the change.
+     */
+    // Where a refund goes, in words: "your Mobile Money", "the card you paid with" (payment_mode is e.g. "Paystack - Card")
+    private function refundDestination($paymentMode)
+    {
+        $mode = (string)$paymentMode;
+        if (stripos($mode, 'mobile money') !== false || stripos($mode, 'momo') !== false) {
+            return 'your Mobile Money';
+        }
+        if (stripos($mode, 'card') !== false) {
+            return 'the card you paid with';
+        }
+        if (stripos($mode, 'bank') !== false) {
+            return 'the bank account you paid from';
+        }
+        return 'the account you paid with';
+    }
+
+    public function refundFinished($orderId)
+    {
+        $order = $this->orderCtrl->getOrderById($orderId);
+        if (!$order || !in_array($order['refund_status'] ?? '', ['processed', 'failed'], true)) {
+            return;
+        }
+        $amount = $this->money((float)$order['refund_amount']);
+        $paidWith = $this->refundDestination($order['payment_mode'] ?? '');
+        $hi = 'Hi ' . $this->firstName($order['customer_name']) . ',';
+        if ($order['refund_status'] === 'processed') {
+            $lines = [$hi, "Your $amount refund for order #{$order['invoice_no']} has been sent back to $paidWith.",
+                      'Mobile Money refunds usually show within a day; card refunds can take a few working days, depending on your bank.'];
+            $this->send($order['customer_email'], $order['customer_name'], "Your $amount refund has been sent",
+                'Refund sent', $lines, 'View the order', $this->trackingLink($order), null,
+                [['Order', '#' . $order['invoice_no']], ['Refunded', $amount], ['To', ucfirst($paidWith)]]);
+        } else {
+            $lines = [$hi, "Your $amount refund for order #{$order['invoice_no']} didn't go through.",
+                      "We're looking into it and will make sure you get your money back. Reply to us on CampusBite if you have any questions."];
+            $this->send($order['customer_email'], $order['customer_name'], "There's a problem with your $amount refund",
+                "Your refund didn't go through", $lines, 'Contact CampusBite', app_url('views/contact.php'));
+        }
+    }
+
     public function cancelled($orderId)
     {
         $order = $this->orderCtrl->getOrderById($orderId);
@@ -129,7 +172,7 @@ class OrderEmails
                   "$who order #{$order['invoice_no']}" . ($reason !== '' ? ". Reason: $reason" : '') . '.'];
         $refund = (float)($order['refund_amount'] ?? 0);
         if ($refund > 0) {
-            $lines[] = $this->money($refund) . ' is being refunded to the ' . ($order['payment_mode'] ?: 'account') . ' you paid with. Mobile Money refunds usually arrive within a day; card refunds can take a few days.';
+            $lines[] = $this->money($refund) . ' is being refunded to ' . $this->refundDestination($order['payment_mode'] ?? '') . ". We'll email you again when it has been sent. Mobile Money refunds usually arrive within a day; card refunds can take a few days.";
         } else {
             $lines[] = 'Nothing was charged for this order, so there is nothing to refund.';
         }

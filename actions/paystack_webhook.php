@@ -10,7 +10,7 @@
  * and ignored, so Paystack doesn't keep retrying it.
  */
 require_once __DIR__ . '/../core/paystack.php';
-require_once __DIR__ . '/../classes/OrderClass.php';
+require_once __DIR__ . '/../controllers/OrderController.php';
 
 function webhook_reply($status, $text) {
     http_response_code($status);
@@ -46,7 +46,8 @@ $refundStatuses = [
 if (isset($refundStatuses[$name])) {
     $reference = (string)($data['transaction_reference'] ?? ($data['transaction']['reference'] ?? ''));
     $refundId = (string)($data['id'] ?? ($data['refund_id'] ?? ''));
-    $updated = (new OrderClass())->updateRefundFromPaystack($refundId, $reference, $refundStatuses[$name]);
+    // Saves the status, and emails the customer when their refund has been sent or has failed
+    $updated = (new OrderController())->refundUpdatedByPaystack($refundId, $reference, $refundStatuses[$name]);
     if (!$updated) {
         error_log("Paystack webhook: $name for $reference (refund $refundId) matched no refund here");
     }

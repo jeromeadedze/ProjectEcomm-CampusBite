@@ -306,23 +306,31 @@ class OrderClass extends Database
     }
 
     /**
-     * Paystack's webhook told us a refund changed: find it by Paystack's refund id, or else by the payment's reference
-     * (one refund per order). Returns how many refunds were updated (0 if it isn't ours).
+     * Changes a refund's status only if it is different, and says whether it did (1) or not (0), so the
+     * "refund sent" email goes out once even when the webhook and the order page report the same change.
      */
-    public function updateRefundFromPaystack($paystackRefundId, $transactionReference, $status)
+    public function setRefundStatusIfChanged($refundId, $status)
+    {
+        return $this->executeCount("UPDATE cb_refunds SET status = ?, updated_at = NOW() WHERE refund_id = ? AND status <> ?", [$status, $refundId, $status]);
+    }
+
+    /**
+     * The refunds a Paystack webhook is about: by Paystack's refund id, or else by the payment's reference
+     * (one refund per order). Simulated payments' refunds ('not_needed') are never touched.
+     */
+    public function findRefundsForPaystack($paystackRefundId, $transactionReference)
     {
         if ($paystackRefundId !== '') {
-            $n = $this->executeCount("UPDATE cb_refunds SET status = ?, updated_at = NOW() WHERE paystack_refund_id = ?", [$status, $paystackRefundId]);
-            if ($n > 0) {
-                return $n;
+            $rows = $this->fetchAll("SELECT refund_id, order_id, status FROM cb_refunds WHERE paystack_refund_id = ? AND status <> 'not_needed'", [$paystackRefundId]);
+            if ($rows) {
+                return $rows;
             }
         }
         if ($transactionReference === '') {
-            return 0;
+            return [];
         }
-        return $this->executeCount("UPDATE cb_refunds r JOIN cb_payment p ON p.order_id = r.order_id
-                                    SET r.status = ?, r.updated_at = NOW()
-                                    WHERE p.transaction_reference = ? AND r.status NOT IN ('not_needed')", [$status, $transactionReference]);
+        return $this->fetchAll("SELECT r.refund_id, r.order_id, r.status FROM cb_refunds r JOIN cb_payment p ON p.order_id = r.order_id
+                                WHERE p.transaction_reference = ? AND r.status <> 'not_needed'", [$transactionReference]);
     }
 
     // ---------- Admin dashboard (whole platform) ----------
