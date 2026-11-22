@@ -94,6 +94,7 @@ CREATE TABLE `cb_products` (
   `product_keywords` varchar(200) DEFAULT NULL,
   `is_available` tinyint(1) NOT NULL DEFAULT 1,
   `prep_time_minutes` int(11) NOT NULL DEFAULT 15,
+  `labels` set('spicy','mild','vegetarian','vegan','healthy') NOT NULL DEFAULT '', -- filter chips on the menu (ProductController::LABELS); Quick comes from prep time
   PRIMARY KEY (`product_id`),
   KEY `product_cat` (`product_cat`),
   KEY `product_brand` (`product_brand`),
@@ -341,6 +342,44 @@ INSERT INTO `cb_customer` (`customer_id`, `customer_name`, `customer_email`, `cu
 (6, 'Peckish Kitchen', 'peckish@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002004', 4, 4, 'admin'),
 (7, 'Eat Healthy Kitchen', 'eathealthy@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002005', 4, 5, 'admin'),
 (8, 'Hi5 Kitchen', 'hi5@campusbite.com', '$2y$12$ukKcIGJf/trm.WO9LgkYKOY/8vWRmTJ0LWqwi4x4uzrL5fNI0kBra', '0241002006', 4, 6, 'admin');
+
+-- Meal labels for the menu's filter chips (Sprint 31)
+UPDATE `cb_products` SET `labels` = 'mild' WHERE `product_title` = 'Hallmark Special Jollof + Grilled Chicken';
+UPDATE `cb_products` SET `labels` = 'spicy' WHERE `product_title` = 'Akonnor Fried Rice + Spicy Gizzard';
+UPDATE `cb_products` SET `labels` = 'mild' WHERE `product_title` = 'Munchees Beef Shawarma Wrap (Extra Cheese)';
+UPDATE `cb_products` SET `labels` = 'spicy' WHERE `product_title` = 'Akonnor Banku with Grilled Tilapia & Hot Pepper';
+UPDATE `cb_products` SET `labels` = 'mild,healthy' WHERE `product_title` = 'Eat Healthy Grilled Chicken & Avocado Salad';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Peckish Loaded Fried Plantain & Beans (Red Red)';
+UPDATE `cb_products` SET `labels` = 'spicy' WHERE `product_title` = 'Munchees Late-Night Suya Platter';
+UPDATE `cb_products` SET `labels` = 'vegan,healthy' WHERE `product_title` = 'Fresh Pineapple Ginger Juice (500ml)';
+UPDATE `cb_products` SET `labels` = 'mild' WHERE `product_title` = 'Hallmark Classic Chicken Shawarma';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Hallmark Butter Croissant';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Hallmark Chocolate Fudge Cake Slice';
+UPDATE `cb_products` SET `labels` = 'vegan' WHERE `product_title` = 'Coca-Cola Glass Bottle (300ml)';
+UPDATE `cb_products` SET `labels` = 'vegetarian,healthy' WHERE `product_title` = 'Hallmark Mango Smoothie';
+UPDATE `cb_products` SET `labels` = 'spicy' WHERE `product_title` = 'Akonnor Spicy Beef Shawarma with Shito';
+UPDATE `cb_products` SET `labels` = 'vegan,healthy' WHERE `product_title` = 'Akonnor Sobolo (Hibiscus Ginger)';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Akonnor Coconut Cake Slice';
+UPDATE `cb_products` SET `labels` = 'vegan' WHERE `product_title` = 'Fanta Orange Can (330ml)';
+UPDATE `cb_products` SET `labels` = 'spicy' WHERE `product_title` = 'Munchees Peri-Peri Chicken Wings (8 pcs)';
+UPDATE `cb_products` SET `labels` = 'vegan' WHERE `product_title` = 'Coca-Cola Can (330ml)';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Munchees Oreo Milkshake';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Munchees Red Velvet Cupcake';
+UPDATE `cb_products` SET `labels` = 'spicy,vegan' WHERE `product_title` = 'Peckish Spicy Kelewele';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Peckish Banana Bread Slice';
+UPDATE `cb_products` SET `labels` = 'vegan' WHERE `product_title` = 'Sprite Can (330ml)';
+UPDATE `cb_products` SET `labels` = 'mild,healthy' WHERE `product_title` = 'Eat Healthy Grilled Chicken Wholewheat Wrap';
+UPDATE `cb_products` SET `labels` = 'vegetarian,healthy' WHERE `product_title` = 'Eat Healthy Berry Protein Smoothie';
+UPDATE `cb_products` SET `labels` = 'vegan,healthy' WHERE `product_title` = 'Eat Healthy Green Detox Smoothie';
+UPDATE `cb_products` SET `labels` = 'vegetarian,healthy' WHERE `product_title` = 'Eat Healthy Greek Yoghurt Parfait';
+UPDATE `cb_products` SET `labels` = 'vegan,healthy' WHERE `product_title` = 'Eat Healthy Quinoa Power Bowl';
+UPDATE `cb_products` SET `labels` = 'mild' WHERE `product_title` = 'Hi5 Lamb Shawarma Platter';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Hi5 Chocolate Croissant';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Hi5 Strawberry Cheesecake Slice';
+UPDATE `cb_products` SET `labels` = 'vegetarian' WHERE `product_title` = 'Hi5 Coke Float';
+UPDATE `cb_products` SET `labels` = 'vegan,healthy' WHERE `product_title` = 'Hi5 Tropical Passion Smoothie';
+UPDATE `cb_products` SET `labels` = 'mild' WHERE `product_title` = 'Hi5 Jollof with Chicken Kebabs';
+
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;

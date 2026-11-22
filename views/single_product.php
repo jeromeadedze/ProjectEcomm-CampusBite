@@ -54,6 +54,9 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
             <span><i class="bi bi-clock" aria-hidden="true"></i> About <?php echo (int)($product['prep_time_minutes'] ?? 15); ?> min to prepare</span>
             <span><i class="bi bi-bicycle" aria-hidden="true"></i> <?php require_once __DIR__ . '/../controllers/DeliveryController.php'; echo htmlspecialchars(DeliveryController::feeTag($product)['text']); ?></span>
             <span><i class="bi bi-tag" aria-hidden="true"></i> <?php echo htmlspecialchars($product['cat_name']); ?></span>
+            <?php foreach (ProductController::labelsOf($product) as $mealLabel): ?>
+                <span><i class="bi <?php echo ProductController::LABEL_ICONS[$mealLabel]; ?>" aria-hidden="true"></i> <?php echo ProductController::LABELS[$mealLabel]; ?></span>
+            <?php endforeach; ?>
             <?php if (!empty($product['location_desc'])): ?>
                 <span><i class="bi bi-geo-alt" aria-hidden="true"></i> <?php echo htmlspecialchars($product['location_desc']); ?></span>
             <?php endif; ?>

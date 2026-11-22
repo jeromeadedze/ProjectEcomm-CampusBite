@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // and the basket bar (phones) stay in step. If the request fails, the forms still work as plain POSTs.
     const shopApp = document.getElementById('cb-app');
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    let bindMealCards = () => {};
     if (shopApp && csrfMeta) {
         const apiUrl = (shopApp.dataset.root || '..') + '/actions/cart_api.php';
         const shopPage = shopApp.dataset.shopPage === '1';
@@ -235,8 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }, { passive: true });
         }
 
-        // Meal cards
-        document.querySelectorAll('[data-step]').forEach(step => {
+        // Meal cards (also run on cards the menu filters swap in, below)
+        bindMealCards = (root) => root.querySelectorAll('[data-step]').forEach(step => {
             const current = () => parseInt(step.dataset.qty, 10) || 0;
             const max = parseInt(step.dataset.max, 10) || 20;
             step.addEventListener('submit', (event) => {
@@ -267,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setQty(step.dataset.product, next);
             });
         });
+        bindMealCards(document);
 
         // The order panel's − / + buttons (the panel is redrawn after each change, so listen on the page)
         document.addEventListener('submit', (event) => {
@@ -276,6 +278,53 @@ document.addEventListener('DOMContentLoaded', () => {
             const pid = form.querySelector('input[name="p_id"]').value;
             setQty(pid, parseInt(event.submitter.value, 10) || 0);
         });
+    }
+
+    // ── Menu filters without a page reload ───────────────────────────────────────────────────────────────
+    // On views/menu.php, a category chip, label chip or page link fetches the new menu and swaps only the
+    // [data-menu-results] section, so the page stays where it is instead of reloading at the top. The address bar
+    // follows (Back and Forward work, and the link can be shared). Page links bring the list's top into view.
+    // If anything goes wrong the browser just opens the link, which lands at #dishes.
+    if (document.querySelector('[data-menu-results]') && window.fetch && window.DOMParser && history.pushState) {
+        let menuRequest = null;
+        const loadMenu = (url, addToHistory, toListTop, focusKey) => {
+            const box = document.querySelector('[data-menu-results]');
+            if (menuRequest) menuRequest.abort();
+            menuRequest = new AbortController();
+            box.setAttribute('aria-busy', 'true');
+            box.classList.add('is-loading');
+            fetch(url, { credentials: 'same-origin', signal: menuRequest.signal })
+                .then(r => {
+                    if (!r.ok || r.redirected) throw new Error('menu'); // e.g. a paused kitchen: let the page handle it
+                    return r.text();
+                })
+                .then(html => {
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const fresh = doc.querySelector('[data-menu-results]');
+                    if (!fresh) throw new Error('menu');
+                    document.querySelector('[data-menu-results]').replaceWith(fresh);
+                    bindMealCards(fresh);
+                    if (doc.title) document.title = doc.title;
+                    if (addToHistory) history.pushState({ menu: true }, '', url);
+                    if (toListTop) fresh.scrollIntoView({ block: 'start' });
+                    // Keyboard users stay on the chip they pressed
+                    const again = focusKey && fresh.querySelector('[data-menu-filter="' + focusKey + '"]');
+                    if (again) again.focus({ preventScroll: true });
+                })
+                .catch(err => {
+                    if (err.name === 'AbortError') return; // a newer tap replaced this one
+                    window.location.href = url;
+                });
+        };
+        document.addEventListener('click', (event) => {
+            const link = event.target.closest('[data-menu-results] a[data-menu-filter]');
+            if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            const url = new URL(link.href);
+            url.hash = ''; // the #dishes jump is only for browsers without this script
+            loadMenu(url.href, true, link.hasAttribute('data-menu-page'), link.dataset.menuFilter);
+        });
+        window.addEventListener('popstate', () => loadMenu(window.location.href, false, false, null));
     }
 
     // Quantity steppers on the product page: the − and + buttons nudge the number input within its min and max

@@ -42,8 +42,9 @@ if (!$form) {
             'product_keywords' => $editMeal['product_keywords'] ?? '',
             'prep_time' => $editMeal['prep_time_minutes'],
             'is_available' => (int)$editMeal['is_available'],
+            'labels' => $controller->labelsOf($editMeal),
         ]
-        : ['product_title' => '', 'product_price' => '', 'product_cat' => '', 'product_desc' => '', 'product_keywords' => '', 'prep_time' => 15, 'is_available' => 1];
+        : ['product_title' => '', 'product_price' => '', 'product_cat' => '', 'product_desc' => '', 'product_keywords' => '', 'prep_time' => 15, 'is_available' => 1, 'labels' => []];
 }
 
 $pageHeading = $kitchen['brand_name'] . ' menu';
@@ -119,6 +120,18 @@ require_once __DIR__ . '/../layout/header.php';
                     <label for="product_keywords">Search words</label>
                     <input type="text" id="product_keywords" name="product_keywords" maxlength="200" value="<?php echo htmlspecialchars($form['product_keywords']); ?>" placeholder="chicken, spicy, rice" aria-describedby="kw_hint">
                     <p class="cb-field-hint" id="kw_hint">Words students might type to find it.</p>
+                </div>
+                <div class="cb-field mf-wide">
+                    <span class="mf-label" id="labels_label">Labels</span>
+                    <div class="mf-labels" role="group" aria-labelledby="labels_label" aria-describedby="labels_hint">
+                        <?php foreach (ProductController::LABELS as $labelKey => $labelName): ?>
+                            <label class="mf-label-chip">
+                                <input type="checkbox" name="labels[]" value="<?php echo $labelKey; ?>" <?php echo in_array($labelKey, $form['labels'] ?? [], true) ? 'checked' : ''; ?>>
+                                <span><i class="bi <?php echo ProductController::LABEL_ICONS[$labelKey]; ?>" aria-hidden="true"></i> <?php echo $labelName; ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="cb-field-hint" id="labels_hint">Students filter the menu by these. Quick is added on its own for meals ready in <?php echo ProductController::QUICK_MINUTES; ?> minutes or less.</p>
                 </div>
             </fieldset>
         </div>

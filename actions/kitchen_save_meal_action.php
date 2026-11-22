@@ -48,6 +48,8 @@ $saved = $existing
     : $controller->addProduct(...array_merge($args, [$image, $values['product_keywords'], (int)$values['prep_time'], $values['is_available']]));
 
 if ($saved) {
+    // Labels are saved separately so the add and update methods keep their arguments
+    $controller->setProductLabels($existing ? $productId : $controller->lastProductId(), $values['labels']);
     if ($existing && $image) {
         $controller->deleteProductImage($existing['product_image']);
     }
