@@ -192,6 +192,8 @@ Shared theme parts live in `snippets/`, for example `cb-sidebar`, `cb-panel`, `c
 
 ## Known issues
 
+- **Time zone (fixed in Sprint 31):** PHP and the database must agree on the time zone, or every "x min ago" and "today" is off (XAMPP on a Mac defaulted PHP to Europe/Berlin while the database used GMT, so new orders showed as "1 h" old). `core/core.php` and `core/db_class.php` now set both to Ghana time (`Africa/Accra` and `SET time_zone = '+00:00'`), so the server's own settings don't matter.
+
 - **Credentials on GitHub:** `core/db_cred.php` was purged from git history using `git filter-repo`, untracked, and added to `.gitignore`. Teammates must create their own `core/db_cred.php` locally. Any passwords previously committed should still be changed on the database server.
 - **Database errors are shown on screen:** `core/db_class.php` stops the page and prints the error and SQL on any query failure, and `core/core.php` turns `display_errors` on. Fine locally, but on the live server it shows table structure to visitors and stops code that expects to catch a `PDOException` (for example the Paystack callback when a payment was already saved). It should log the error and show a short message instead.
 - **Email and Paystack settings are per machine:** `core/mail_config.php` and `core/paystack_config.php` are git-ignored; each teammate and the live server need their own copy (see the `.example.php` files). Without `mail_config.php`, emails are saved to `storage/mail/`, which must be writable by the web server (XAMPP's Apache runs as `daemon`).

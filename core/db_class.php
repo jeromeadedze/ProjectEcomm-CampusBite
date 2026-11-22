@@ -29,6 +29,10 @@ class Database
                 $this->password
             );
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // Ghana time (GMT, no daylight saving) for NOW() and CURRENT_TIMESTAMP, matching PHP's zone in core.php,
+            // whatever time zone the database server itself uses
+            $this->conn->exec("SET time_zone = '+00:00'");
+            date_default_timezone_set('Africa/Accra');
             self::$sharedConn = $this->conn;
         } catch (PDOException $e) {
             die("Database connection failed: " . $e->getMessage());

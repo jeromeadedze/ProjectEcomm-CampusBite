@@ -9,6 +9,11 @@ error_reporting(E_ALL);
 
 ob_start();
 
+// Ghana time everywhere. PHP's own setting differs between computers (XAMPP on a Mac can default to Europe/Berlin),
+// and if it doesn't match the database's clock, "12 min ago" and "today" come out an hour off.
+// db_class.php sets the database connection to the same zone (+00:00).
+date_default_timezone_set('Africa/Accra');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
