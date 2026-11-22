@@ -67,6 +67,7 @@ if ($kitchen) {
     require_once __DIR__ . '/../controllers/DeliveryController.php';
     $fee = DeliveryController::feeTag($kitchen);
     $kitchenDishTotal = $controller->countAvailableProducts($brandId, 0);
+    $kitchenHours = ProductController::openingStatus($kitchen);
 }
 ?>
 
@@ -82,6 +83,9 @@ if ($kitchen) {
                 <span><?php echo $inZoneB ? 'Off-campus' : 'On campus'; ?></span>
                 <span><?php echo htmlspecialchars($fee['text']); ?></span>
                 <span><?php echo $kitchenDishTotal; ?> dish<?php echo $kitchenDishTotal === 1 ? '' : 'es'; ?></span>
+                <?php if ($kitchenHours['has_hours']): ?>
+                    <span><?php echo htmlspecialchars($kitchenHours['text']); ?></span>
+                <?php endif; ?>
             </div>
         </div>
         <div class="cb-hero-media">

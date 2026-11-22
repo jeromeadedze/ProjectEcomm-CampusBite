@@ -159,6 +159,79 @@ class ProductController
         return $this->productModel->updateBrandInfo($id, $location, $isActive, $phone);
     }
 
+    // ── Opening hours (Sprint 32) ────────────────────────────────────────────────────────────────────────
+    // Kitchens' hours are Ghana time, whatever time zone the server's PHP is set to (XAMPP defaults to Berlin).
+    const TIMEZONE = 'Africa/Accra';
+
+    /**
+     * Checks the opening and closing times typed on Kitchen info ("08:00", as an <input type="time"> sends them).
+     * Returns ['opens' => 'HH:MM' or null, 'closes' => ..., 'error' => message or null]. Both empty means no set hours.
+     */
+    public static function checkOpeningHours($opens, $closes)
+    {
+        $opens = is_string($opens) ? trim($opens) : '';
+        $closes = is_string($closes) ? trim($closes) : '';
+        if ($opens === '' && $closes === '') {
+            return ['opens' => null, 'closes' => null, 'error' => null];
+        }
+        if ($opens === '' || $closes === '') {
+            return ['opens' => null, 'closes' => null, 'error' => 'Set both an opening and a closing time, or leave both empty.'];
+        }
+        $isTime = function ($t) { return preg_match('/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/', $t) === 1; };
+        if (!$isTime($opens) || !$isTime($closes)) {
+            return ['opens' => null, 'closes' => null, 'error' => 'Enter the times as hours and minutes, such as 08:00 and 21:00.'];
+        }
+        $opens = substr($opens, 0, 5);
+        $closes = substr($closes, 0, 5);
+        if ($opens === $closes) {
+            return ['opens' => null, 'closes' => null, 'error' => "Opening and closing times can't be the same."];
+        }
+        return ['opens' => $opens, 'closes' => $closes, 'error' => null];
+    }
+
+    public function setOpeningHours($id, $opens, $closes)
+    {
+        return $this->productModel->setOpeningHours($id, $opens, $closes);
+    }
+
+    /**
+     * Whether a kitchen (a brand row) is inside its opening hours right now.
+     * Returns ['has_hours' => bool, 'open' => bool, 'text' => 'Open until 9:00 PM' / 'Closed · opens 8:00 AM' / ''].
+     * No set hours counts as open. Pausing ("Taking orders" off) is separate: is_active still hides the kitchen.
+     * $now is for tests; normally it's the current Ghana time.
+     */
+    public static function openingStatus($kitchen, $now = null)
+    {
+        $opens = $kitchen['opens_at'] ?? null;
+        $closes = $kitchen['closes_at'] ?? null;
+        if (!$opens || !$closes) {
+            return ['has_hours' => false, 'open' => true, 'text' => ''];
+        }
+        $now = $now ?: new DateTimeImmutable('now', new DateTimeZone(self::TIMEZONE));
+        $t = $now->format('H:i');
+        $o = substr($opens, 0, 5);
+        $c = substr($closes, 0, 5);
+        $overnight = $c < $o; // e.g. 18:00 to 02:00
+        $open = $overnight ? ($t >= $o || $t < $c) : ($t >= $o && $t < $c);
+        $show = function ($hm) { return DateTime::createFromFormat('H:i', $hm)->format('g:i A'); };
+        if ($open) {
+            return ['has_hours' => true, 'open' => true, 'text' => 'Open until ' . $show($c)];
+        }
+        // Closed: it opens later today, or (after closing on a same-day schedule) tomorrow
+        $tomorrow = !$overnight && $t >= $c;
+        return ['has_hours' => true, 'open' => false, 'text' => 'Closed · opens ' . ($tomorrow ? 'tomorrow ' : '') . $show($o)];
+    }
+
+    /** "8:00 AM – 9:00 PM" for Kitchen info, or null when no hours are set */
+    public static function openingHoursLabel($kitchen)
+    {
+        if (empty($kitchen['opens_at']) || empty($kitchen['closes_at'])) {
+            return null;
+        }
+        $show = function ($hms) { return DateTime::createFromFormat('H:i', substr($hms, 0, 5))->format('g:i A'); };
+        return $show($kitchen['opens_at']) . ' – ' . $show($kitchen['closes_at']);
+    }
+
     /**
      * A kitchen sets where Paystack pays it: a Mobile Money number or a Ghana bank account. The account is created
      * (or updated) as the kitchen's Paystack subaccount first, and only saved here once Paystack accepts it.

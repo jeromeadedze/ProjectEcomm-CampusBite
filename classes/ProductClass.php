@@ -63,6 +63,12 @@ class ProductClass extends Database
         return $this->execute("UPDATE cb_brands SET location_desc = ?, is_active = IF(admin_paused = 1, 0, ?), brand_phone = ? WHERE brand_id = ?", [$location, $isActive, $phone, $id]);
     }
 
+    // Opening hours ('HH:MM', Ghana time), both null for no set hours (Sprint 32)
+    public function setOpeningHours($id, $opens, $closes)
+    {
+        return $this->execute("UPDATE cb_brands SET opens_at = ?, closes_at = ? WHERE brand_id = ?", [$opens, $closes, $id]);
+    }
+
     // Where Paystack pays the kitchen (split payments), saved once Paystack has accepted the account
     public function setPayoutAccount($id, $type, $bankCode, $bankName, $number, $name, $subaccount)
     {
@@ -172,7 +178,8 @@ class ProductClass extends Database
 
     public function getProductById($id)
     {
-        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.near_drop_points, b.location_desc, b.is_active AS brand_active
+        $sql = "SELECT p.*, c.cat_name, c.cat_icon, b.brand_name, b.zone, b.near_drop_points, b.location_desc, b.is_active AS brand_active,
+                       b.opens_at, b.closes_at
                 FROM cb_products p
                 JOIN cb_categories c ON p.product_cat = c.cat_id
                 JOIN cb_brands b ON p.product_brand = b.brand_id

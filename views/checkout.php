@@ -46,6 +46,8 @@ $kitchenName = $cartItems[0]['brand_name'] ?? '';
 $kitchenIds = $cartCtrl->kitchenIds($cartItems);
 $billKitchen = count($kitchenIds) === 1 ? (new ProductController())->getBrandById((int)$kitchenIds[0]) : null;
 $canPay = $billKitchen && !empty($billKitchen['paystack_subaccount']);
+// Outside the kitchen's opening hours the bill can't be paid (checked again in checkout_process_action.php)
+$billKitchenHours = $billKitchen ? ProductController::openingStatus($billKitchen) : ['open' => true, 'text' => ''];
 
 
 require_once __DIR__ . '/layout/header.php';
@@ -123,7 +125,10 @@ require_once __DIR__ . '/layout/header.php';
             <div class="total"><span>Total</span><span data-delivery-total data-subtotal="<?php echo number_format($subtotal, 2, '.', ''); ?>"><?php echo $deliveryFee !== null ? 'GH₵ ' . number_format($grandTotal, 2) : 'GH₵ ' . number_format($subtotal, 2) . ' + delivery'; ?></span></div>
         </div>
         <?php echo form_message_html($checkoutMsg); ?>
-        <?php if ($canPay): ?>
+        <?php if (!$billKitchenHours['open']): ?>
+            <p class="cb-warn-note"><i class="bi bi-clock" aria-hidden="true"></i> <?php echo htmlspecialchars($kitchenName ?: 'This kitchen'); ?> is <?php echo htmlspecialchars(lcfirst($billKitchenHours['text'])); ?>. Your bill is saved, so you can pay once it opens.</p>
+            <button type="button" class="cb-checkout" disabled>Kitchen closed</button>
+        <?php elseif ($canPay): ?>
             <button type="submit" class="cb-checkout"><i class="bi bi-lock-fill" aria-hidden="true"></i> <span data-delivery-pay><?php echo $deliveryFee !== null ? 'Pay GH₵ ' . number_format($grandTotal, 2) . ' with Paystack' : 'Pay with Paystack'; ?></span></button>
         <?php else: ?>
             <p class="cb-warn-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> <?php echo htmlspecialchars($kitchenName ?: 'This kitchen'); ?> can't take online payments yet. Try again later or order from another kitchen.</p>

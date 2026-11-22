@@ -1041,6 +1041,14 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 .cb-sort.is-on{background:var(--ink);color:#fff}
 @media (hover:hover){.cb-sort:not(.is-on):hover{background:var(--paper)}}
 .cb-sort:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+/* Phones: Price and Sort each stay on one line that scrolls sideways, like the chip rows above */
+@media (max-width:860px){
+  .cb-menu-tools{flex-direction:column;align-items:stretch;gap:8px;margin-top:-8px}
+  .cb-sortbar{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+  .cb-sortbar::-webkit-scrollbar{display:none}
+  .cb-sort,.cb-tools-label{flex:none}
+  .cb-tools-label{min-width:38px}
+}
 
 /* ---------- Order again (Sprint 32): a button under each past order ---------- */
 .cb-order-item{display:flex;flex-direction:column;gap:8px}
@@ -1048,3 +1056,12 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 .cb-order-again{margin:0}
 .cb-order-again .cb-btn{width:100%;padding:9px 18px}
 .cb-bill-summary .cb-order-again{margin-top:14px}
+
+/* ---------- Opening hours (Sprint 32) ---------- */
+.ki-hours{border:0;padding:0;margin:0;min-width:0}
+.ki-hours legend{font-size:13px;font-weight:600;margin-bottom:6px;padding:0}
+.ki-hours-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.ki-hours-row label{font-size:13px;color:var(--muted);margin:0}
+.ki-hours-row input{width:auto;min-width:130px}
+.cb-open-tag{font-weight:600;color:var(--ink)}
+.cb-open-tag.is-closed{color:var(--ember-d)}

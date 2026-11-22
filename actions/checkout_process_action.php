@@ -88,6 +88,14 @@ if (!$kitchen || empty($kitchen['paystack_subaccount'])) {
     exit;
 }
 
+// Outside the kitchen's opening hours nobody is there to cook it (Ghana time; no set hours = always open)
+$kitchenHours = ProductController::openingStatus($kitchen);
+if (!$kitchenHours['open']) {
+    set_form_message('checkout', $kitchen['brand_name'] . " is " . lcfirst($kitchenHours['text']) . ". Your bill is saved, so you can pay once it opens.");
+    header("Location: ../views/checkout.php");
+    exit;
+}
+
 $subtotal = $cartCtrl->getCartTotal($cartIp, $userId);
 $grandTotal = $subtotal + $deliveryFee;
 // CampusBite's commission stays with CampusBite; the rest (meals minus commission, plus delivery) goes to the kitchen

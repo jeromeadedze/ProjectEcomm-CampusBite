@@ -53,6 +53,10 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
         <div class="cb-meal-tags">
             <span><i class="bi bi-clock" aria-hidden="true"></i> About <?php echo (int)($product['prep_time_minutes'] ?? 15); ?> min to prepare</span>
             <span><i class="bi bi-bicycle" aria-hidden="true"></i> <?php require_once __DIR__ . '/../controllers/DeliveryController.php'; echo htmlspecialchars(DeliveryController::feeTag($product)['text']); ?></span>
+            <?php $kitchenHours = ProductController::openingStatus($product); // the kitchen's hours, if it has set them ?>
+            <?php if ($kitchenHours['has_hours']): ?>
+                <span class="cb-open-tag <?php echo $kitchenHours['open'] ? '' : 'is-closed'; ?>"><i class="bi bi-shop" aria-hidden="true"></i> <?php echo htmlspecialchars($kitchenHours['text']); ?></span>
+            <?php endif; ?>
             <span><i class="bi bi-tag" aria-hidden="true"></i> <?php echo htmlspecialchars($product['cat_name']); ?></span>
             <?php foreach (ProductController::labelsOf($product) as $mealLabel): ?>
                 <span><i class="bi <?php echo ProductController::LABEL_ICONS[$mealLabel]; ?>" aria-hidden="true"></i> <?php echo ProductController::LABELS[$mealLabel]; ?></span>
