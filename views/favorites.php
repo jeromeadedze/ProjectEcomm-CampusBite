@@ -24,15 +24,16 @@ $unavailable = array_values(array_filter($saved, function ($meal) use ($productC
 require_once __DIR__ . '/layout/header.php';
 ?>
 
-<?php if (empty($saved)): ?>
-    <div class="cb-card cb-bill-empty">
+<div data-favorites-page>
+    <div data-favorites-empty class="cb-card cb-bill-empty"
+     <?php if ($saved) echo 'style="display:none"'; ?>>  
         <span class="cb-bill-empty-icon" aria-hidden="true"><i class="bi bi-heart"></i></span>
         <h2>No favourites yet</h2>
         <p>Tap the heart on any meal to save it here for quick reordering.</p>
         <a class="cb-btn" href="<?php echo $ROOT_DIR; ?>/views/menu.php">Find something tasty</a>
     </div>
-<?php else: ?>
-    <p class="cb-sub"><?php echo count($saved); ?> saved meal<?php echo count($saved) === 1 ? '' : 's'; ?></p>
+<?php if ($saved): ?>
+    <p data-favorite-count class="cb-sub"><?php echo count($saved); ?> saved meal<?php echo count($saved) === 1 ? '' : 's'; ?></p>
 
     <?php if (!empty($orderable)): ?>
         <div class="cb-grid">
@@ -43,7 +44,7 @@ require_once __DIR__ . '/layout/header.php';
     <?php endif; ?>
 
     <?php if (!empty($unavailable)): ?>
-        <div class="cb-row"><h2>Not available right now</h2></div>
+        <div data_unavailable-heading class="cb-row"><h2>Not available right now</h2></div>
         <section class="cb-card">
             <ul class="cb-bill-items">
                 <?php foreach ($unavailable as $meal): ?>
@@ -53,10 +54,10 @@ require_once __DIR__ . '/layout/header.php';
                             <b><?php echo htmlspecialchars($meal['product_title']); ?></b>
                             <small><?php echo htmlspecialchars($meal['brand_name']); ?> · sold out or kitchen paused</small>
                         </div>
-                        <form action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST">
+                        <form data-favorite action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST">
                             <?php echo csrf_field(); ?>
                             <input type="hidden" name="product_id" value="<?php echo (int)$meal['product_id']; ?>">
-                            <button type="submit" class="cb-btn cb-btn-quiet">Remove</button>
+                            <button type="submit" class="cb-btn cb-btn-quiet" aria-pressed="true">Remove</button>
                         </form>
                     </li>
                 <?php endforeach; ?>
@@ -64,5 +65,5 @@ require_once __DIR__ . '/layout/header.php';
         </section>
     <?php endif; ?>
 <?php endif; ?>
-
+</div>
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

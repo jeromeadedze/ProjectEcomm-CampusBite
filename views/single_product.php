@@ -90,12 +90,14 @@ $moreFromKitchen = array_slice(array_filter($prodCtrl->getProductsByBrand($produ
                 </div>
             </form>
             <?php if (is_logged_in()): ?>
-                <form action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST" class="cb-meal-save">
+                <form data-favorite action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST" class="cb-meal-save">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="product_id" value="<?php echo (int)$product['product_id']; ?>">
                     <button type="submit" class="cb-btn cb-btn-quiet" aria-pressed="<?php echo $mealSaved ? 'true' : 'false'; ?>">
                         <i class="bi <?php echo $mealSaved ? 'bi-heart-fill' : 'bi-heart'; ?>" aria-hidden="true"></i>
-                        <?php echo $mealSaved ? 'Saved to favourites' : 'Save to favourites'; ?>
+                       <span data-save-label>
+    <?php echo $mealSaved ? 'Saved to favourites' : 'Save to favourites'; ?>
+</span>
                     </button>
                 </form>
             <?php endif; ?>

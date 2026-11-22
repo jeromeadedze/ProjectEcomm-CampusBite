@@ -18,6 +18,32 @@ if (!can_order()) {
 
 $productId = (int)($_POST['product_id'] ?? 0);
 $product = (new ProductController())->getProductById($productId);
+if (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false) {
+    header('Content-Type: application/json');
+
+    $desiredState = $_POST['saved'] ?? null;
+
+    if (!$product) {
+        http_response_code(404);
+        echo json_encode(['error' => 'This meal is no longer available.']);
+        exit;
+    }
+
+    if (!in_array($desiredState, ['0', '1'], true)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid favourite state.']);
+        exit;
+    }
+
+    $saved = (new FavoriteController())->setFavorite(
+        get_user_id(),
+        $productId,
+        $desiredState === '1'
+    );
+
+    echo json_encode(['saved' => $saved]);
+    exit;
+}
 
 if (!$product) {
     $_SESSION['error'] = "That meal no longer exists.";

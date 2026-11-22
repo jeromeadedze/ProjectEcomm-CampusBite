@@ -455,4 +455,95 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bsAlert) bsAlert.close();
         }, 4500);
     });
+    document.addEventListener('submit', async (event) => {
+    const form = event.target;
+
+    if (!form.matches('form[data-favorite]')) return;
+    event.preventDefault();
+
+    const button = form.querySelector('button[type="submit"]');
+    if (button.disabled) return;
+
+    const wasSaved = button.getAttribute('aria-pressed') === 'true';
+    const icon = button.querySelector('i');
+    const label = button.querySelector('[data-save-label]');
+    const card = form.closest('.cb-dish');
+    const mealName = card?.querySelector('.cb-dish-name')?.textContent.trim();
+
+    function updateHeart(saved) {
+        button.setAttribute('aria-pressed', String(saved));
+        button.classList.toggle('is-on', saved);
+
+        if (icon) {
+            icon.classList.toggle('bi-heart-fill', saved);
+            icon.classList.toggle('bi-heart', !saved);
+        }
+
+        if (label) {
+            label.textContent = saved ? 'Saved to favourites' : 'Save to favourites';
+        }
+
+        if (mealName) {
+            button.setAttribute('aria-label', saved
+                ? `Remove ${mealName} from favourites`
+                : `Save ${mealName} to favourites`);
+        }
+    }
+
+    // Show the change immediately and ignore repeat taps while saving.
+    button.disabled = true;
+    updateHeart(!wasSaved);
+
+    try {
+        const body = new FormData(form);
+        body.set('saved', wasSaved ? '0' : '1');
+
+        const response = await fetch(form.action, {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            body,
+            redirect: 'error'
+        });
+
+        if (!response.ok) throw new Error('Save failed');
+
+        const result = await response.json();
+        if (typeof result.saved !== 'boolean') throw new Error('Unexpected reply');
+
+        updateHeart(result.saved);
+
+        const page = form.closest('[data-favorites-page]');
+
+        if (page && !result.saved) {
+            form.closest('article, li').remove();
+
+            const count = page.querySelectorAll('form[data-favorite]').length;
+            const summary = page.querySelector('[data-favorite-count]');
+            summary.textContent = `${count} saved ${count === 1 ? 'meal' : 'meals'}`;
+
+            if (!page.querySelector('li.is-unavailable')) {
+                page.querySelector('[data-unavailable-heading]')?.remove();
+                page.querySelector('section.cb-card')?.remove();
+            }
+
+            if (count === 0) {
+                summary.remove();
+                page.querySelector('[data-favorites-empty]').style.display = '';
+            }
+        }
+    } catch {
+        updateHeart(wasSaved);
+
+        const notice = document.createElement('div');
+        notice.className = 'cb-toast cb-toast-error';
+        notice.setAttribute('role', 'alert');
+        notice.textContent =
+            'Could not confirm your favourite. Check your connection or sign in again.';
+
+        document.querySelector('.cb-toasts').append(notice);
+        setTimeout(() => notice.remove(), 6500);
+    } finally {
+        button.disabled = false;
+    }
+});
 });

@@ -14,7 +14,7 @@ $heartIcon = '<i class="bi ' . ($dishSaved ? 'bi-heart-fill' : 'bi-heart') . '" 
 ?>
 <article class="cb-dish">
     <?php if (is_logged_in() && can_order()): ?>
-        <form action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST" class="cb-heart-form">
+        <form data-favorite action="<?php echo $ROOT_DIR; ?>/actions/toggle_favorite_action.php" method="POST" class="cb-heart-form">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="product_id" value="<?php echo (int)$dish['product_id']; ?>">
             <button type="submit" class="cb-heart<?php echo $dishSaved ? ' is-on' : ''; ?>" aria-pressed="<?php echo $dishSaved ? 'true' : 'false'; ?>" aria-label="<?php echo ($dishSaved ? 'Remove ' : 'Save ') . htmlspecialchars($dish['product_title']) . ($dishSaved ? ' from' : ' to'); ?> favourites"><?php echo $heartIcon; ?></button>
