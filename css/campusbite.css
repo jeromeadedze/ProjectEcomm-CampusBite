@@ -1056,12 +1056,3 @@ a.ka-now-tile:hover{border-color:var(--ember)}
 .cb-order-again{margin:0}
 .cb-order-again .cb-btn{width:100%;padding:9px 18px}
 .cb-bill-summary .cb-order-again{margin-top:14px}
-
-/* ---------- Opening hours (Sprint 33) ---------- */
-.ki-hours{border:0;padding:0;margin:0;min-width:0}
-.ki-hours legend{font-size:13px;font-weight:600;margin-bottom:6px;padding:0}
-.ki-hours-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-.ki-hours-row label{font-size:13px;color:var(--muted);margin:0}
-.ki-hours-row input{width:auto;min-width:130px}
-.cb-open-tag{font-weight:600;color:var(--ink)}
-.cb-open-tag.is-closed{color:var(--ember-d)}

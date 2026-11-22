@@ -30,14 +30,6 @@ $commissionPct = round($kitchen['commission_rate'] * 100);
 // The payout form starts open when there's no account yet (students can't pay without one) or a save just failed
 $payoutOpen = !$payoutLabel || $payoutFailed;
 $detailsOpen = isset($_GET['edit']) && $_GET['edit'] === 'details';
-// Opening hours (Ghana time). After a refused save, the form shows what was typed.
-$hoursLabel = ProductController::openingHoursLabel($kitchen);
-$hoursNow = ProductController::openingStatus($kitchen);
-$hoursForm = $_SESSION['hours_form'] ?? ['opens_at' => substr((string)($kitchen['opens_at'] ?? ''), 0, 5), 'closes_at' => substr((string)($kitchen['closes_at'] ?? ''), 0, 5)];
-if (isset($_SESSION['hours_form'])) {
-    $detailsOpen = true;
-    unset($_SESSION['hours_form']);
-}
 
 $pageHeading = 'Kitchen info';
 require_once __DIR__ . '/../layout/header.php';
@@ -63,7 +55,6 @@ $orDash = function ($v) { return trim((string)$v) !== '' ? htmlspecialchars($v) 
                 <div><dt>Location</dt><dd><?php echo $orDash($kitchen['location_desc'] ?? ''); ?></dd></div>
                 <div><dt>Phone</dt><dd><?php echo $orDash($kitchen['brand_phone'] ?? ''); ?></dd></div>
                 <div><dt>Taking orders</dt><dd><?php echo $adminPaused ? 'Paused by CampusBite' : ($kitchen['is_active'] ? 'Yes, open' : 'No, paused'); ?></dd></div>
-                <div><dt>Opening hours</dt><dd><?php if ($hoursLabel): ?><?php echo htmlspecialchars($hoursLabel); ?> <span class="cb-muted">· <?php echo htmlspecialchars($hoursNow['text']); ?></span><?php else: ?><span class="ki-missing">Not set</span> <span class="cb-muted">· open whenever you're taking orders</span><?php endif; ?></dd></div>
             </dl>
 
             <form class="mf-form mf-form-single" action="<?php echo $ROOT_DIR; ?>/actions/kitchen_update_info_action.php" method="POST" data-edit-form <?php echo $detailsOpen ? '' : 'hidden'; ?>>
@@ -79,16 +70,6 @@ $orDash = function ($v) { return trim((string)$v) !== '' ? htmlspecialchars($v) 
                             <input type="tel" id="brand_phone" name="brand_phone" maxlength="20" inputmode="tel" value="<?php echo htmlspecialchars($kitchen['brand_phone'] ?? ''); ?>" placeholder="0241234567" aria-describedby="phone_hint">
                             <p class="cb-field-hint" id="phone_hint">Students can call or WhatsApp this number.</p>
                         </div>
-                        <fieldset class="cb-field mf-wide ki-hours" aria-describedby="hours_hint">
-                            <legend>Opening hours</legend>
-                            <div class="ki-hours-row">
-                                <label for="opens_at">Opens</label>
-                                <input type="time" id="opens_at" name="opens_at" value="<?php echo htmlspecialchars($hoursForm['opens_at']); ?>">
-                                <label for="closes_at">Closes</label>
-                                <input type="time" id="closes_at" name="closes_at" value="<?php echo htmlspecialchars($hoursForm['closes_at']); ?>">
-                            </div>
-                            <p class="cb-field-hint" id="hours_hint">Ghana time. Students can't check out outside these hours. A closing time earlier than the opening time means you stay open past midnight. Leave both empty to take orders whenever "Taking orders" is on.</p>
-                        </fieldset>
                     </div>
                 </div>
                 <div class="mf-foot">

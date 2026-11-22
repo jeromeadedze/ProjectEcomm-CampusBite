@@ -61,10 +61,6 @@ CREATE TABLE `cb_brands` (
   `brand_image` varchar(150) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `admin_paused` tinyint(1) NOT NULL DEFAULT 0, -- 1: paused by the admin; the kitchen can't reopen itself
-  -- Opening hours in Ghana time, set by the kitchen admin in Kitchen info. Both NULL: no set hours (open whenever is_active).
-  -- closes_at earlier than opens_at means the kitchen is open past midnight (e.g. 18:00 to 02:00).
-  `opens_at` time DEFAULT NULL,
-  `closes_at` time DEFAULT NULL,
   -- Where Paystack pays the kitchen its share of each order (split payments). Set by the kitchen in Kitchen info.
   `payout_type` varchar(20) DEFAULT NULL, -- 'mobile_money' or 'bank'
   `payout_bank_code` varchar(20) DEFAULT NULL, -- Paystack's code for the network or bank, e.g. MTN, 040100
